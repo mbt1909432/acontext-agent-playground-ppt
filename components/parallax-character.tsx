@@ -25,7 +25,9 @@ export function ParallaxCharacter() {
 
   // Calculate parallax offset (character moves opposite to scroll direction)
   // Negative value: character moves up when scrolling down, moves down when scrolling up
-  const parallaxOffset = scrollY * -0.02; // Adjust this value to control movement speed (-0.02 = 2% of scroll speed, opposite direction)
+  const parallaxOffsetY = scrollY * -0.05; // Adjust this value to control movement speed (-0.02 = 2% of scroll speed, opposite direction)
+  // Calculate horizontal offset: character moves right when scrolling down to avoid being blocked by PPT Gallery
+  const parallaxOffsetX = scrollY * 0.3; // Positive value: moves right when scrolling down (15% of scroll speed)
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">
@@ -38,7 +40,7 @@ export function ParallaxCharacter() {
         <div 
           className="relative w-full max-w-[420px] lg:max-w-[360px] xl:max-w-[580px] opacity-100 dark:opacity-80"
           style={{
-            transform: `translateY(${parallaxOffset}px)`,
+            transform: `translate(${parallaxOffsetX}px, ${parallaxOffsetY}px)`,
             willChange: 'transform',
           }}
         >
