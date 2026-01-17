@@ -10,7 +10,7 @@ import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, ChevronUp, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, ChevronUp, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
 
 interface ChatbotPanelProps {
@@ -359,7 +359,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                       <div className="mb-1 text-xs text-muted-foreground">
                         Parameters:
                     </div>
-                      <pre className="text-xs font-mono overflow-x-auto">
+                      <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
                       {JSON.stringify(toolCall.arguments, null, 2)}
                     </pre>
                   </div>
@@ -412,7 +412,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                         <div className="mb-1 text-xs text-muted-foreground">
                           Result:
                       </div>
-                        <pre className="text-xs font-mono overflow-x-auto">
+                        <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
                         {formatStepContent(toolCall.result)}
                       </pre>
                     </div>
@@ -463,7 +463,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                 <div className="font-semibold text-primary">{toolCall.name}</div>
                 <div>
                   <div className="text-muted-foreground">Parameters:</div>
-                  <pre className="text-[10px] overflow-x-auto">
+                  <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
                     {JSON.stringify(toolCall.arguments, null, 2)}
                   </pre>
                 </div>
@@ -502,7 +502,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                 ) : toolCall.result !== undefined && toolCall.result !== null ? (
                   <div>
                     <div className="text-muted-foreground">Result:</div>
-                    <pre className="text-[10px] overflow-x-auto">
+                    <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
                       {formatStepContent(toolCall.result)}
                     </pre>
                   </div>
@@ -573,6 +573,7 @@ export function ChatbotPanel({
   const [isCompressing, setIsCompressing] = useState(false);
   const [pingLoading, setPingLoading] = useState(false);
   const [pingResponse, setPingResponse] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   
   const handlePing = async () => {
     setPingLoading(true);
@@ -617,6 +618,39 @@ export function ChatbotPanel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handle keyboard navigation for image lightbox
+  useEffect(() => {
+    if (selectedImageIndex === null) return;
+
+    const imageFiles = files.filter(f => {
+      const { isImage } = detectFileType(f.filename, f.mimeType);
+      return isImage;
+    });
+
+    if (imageFiles.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedImageIndex(null);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setSelectedImageIndex((prev) => {
+          if (prev === null) return null;
+          return prev === 0 ? imageFiles.length - 1 : prev - 1;
+        });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setSelectedImageIndex((prev) => {
+          if (prev === null) return null;
+          return prev === imageFiles.length - 1 ? 0 : prev + 1;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImageIndex, files]);
 
   // Cleanup typewriter timers on unmount
   useEffect(() => {
@@ -855,13 +889,29 @@ export function ChatbotPanel({
       setTokenCounts(data.tokenCounts ?? null);
       setSessionId(targetSessionId);
       
-      // Extract acontextDiskId from the sessions list
-      const session = sessions.find((s) => s.id === targetSessionId);
-      if (session?.acontextDiskId) {
-        setAcontextDiskId(session.acontextDiskId);
+      // Use diskId from API response (which may have just been created)
+      // Fallback to session list if not in response
+      if (data.acontextDiskId) {
+        setAcontextDiskId(data.acontextDiskId);
+        // Update the session in the list if it exists
+        const sessionIndex = sessions.findIndex((s) => s.id === targetSessionId);
+        if (sessionIndex >= 0) {
+          const updatedSessions = [...sessions];
+          updatedSessions[sessionIndex] = {
+            ...updatedSessions[sessionIndex],
+            acontextDiskId: data.acontextDiskId,
+          };
+          setSessions(updatedSessions);
+        }
       } else {
-        // Clear diskId if session doesn't have one
-        setAcontextDiskId(undefined);
+        // Extract acontextDiskId from the sessions list as fallback
+        const session = sessions.find((s) => s.id === targetSessionId);
+        if (session?.acontextDiskId) {
+          setAcontextDiskId(session.acontextDiskId);
+        } else {
+          // Clear diskId if session doesn't have one
+          setAcontextDiskId(undefined);
+        }
       }
     } catch (err) {
       const errorMessage =
@@ -1986,7 +2036,7 @@ export function ChatbotPanel({
       className={`relative flex h-full w-full min-h-0 overflow-hidden bg-background text-foreground ${className ?? ""}`}
     >
       {/* Left side: session list */}
-      <aside className="relative hidden h-full w-64 flex-col justify-between border-r bg-card px-4 py-3 md:flex">
+      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col justify-between border-r bg-card px-4 py-3 md:flex">
         <div className="space-y-4 overflow-y-auto pr-1">
           <Button
             className="w-full justify-start gap-2" 
@@ -2084,7 +2134,7 @@ export function ChatbotPanel({
       </aside>
 
       {/* Right side: main chat area */}
-      <section className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-4 py-2 md:px-8 md:py-3">
+      <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center px-4 py-2 md:px-8 md:py-3">
         <div className="flex h-full w-full max-w-8xl flex-1 flex-col gap-3 rounded-lg border bg-card px-3 pb-3 pt-2 sm:gap-4 sm:px-8 sm:pb-6 sm:pt-4 md:px-10 md:pt-5">
           {/* Top bar */}
           <div className="flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
@@ -2300,7 +2350,7 @@ export function ChatbotPanel({
           </div>
 
           {/* Messages area */}
-          <div className="flex min-h-0 flex-1 flex-col space-y-3 overflow-y-auto pr-1 sm:space-y-4 sm:pr-2">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col space-y-3 overflow-y-auto pr-1 sm:space-y-4 sm:pr-2">
             {messages.length === 0 && (
               <div className="py-12 text-center animate-fade-in">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 relative">
@@ -2335,7 +2385,7 @@ export function ChatbotPanel({
                     </div>
                   </div>
                 )}
-                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group">
+                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
                     {message.role === "assistant" && (
@@ -2369,7 +2419,7 @@ export function ChatbotPanel({
                     />
                   </div>
                 </div>
-                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden">
+                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 animate-pulse-slow" />
                   <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
                     <Heart className="h-3 w-3 text-primary/60 animate-pulse-slow" />
@@ -2908,7 +2958,7 @@ export function ChatbotPanel({
       </section>
 
       {/* Right side: Images sidebar */}
-      <aside className="relative hidden h-full w-64 flex-col border-l bg-card px-4 py-3 lg:flex">
+      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col border-l bg-card px-4 py-3 lg:flex">
         <div className="space-y-4 overflow-y-auto pr-1">
           <div className="sticky top-0 bg-card pb-2 z-10">
             <div className="flex items-center gap-2 mb-1">
@@ -3007,7 +3057,7 @@ export function ChatbotPanel({
                                 src={preview.content}
                                 alt={file.filename || "Preview"}
                                 className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(preview.content, '_blank')}
+                                onClick={() => setSelectedImageIndex(index)}
                                 onError={(e) => {
                                   console.error("[UI] Failed to load image preview from URL", {
                                     fileKey,
@@ -3024,10 +3074,7 @@ export function ChatbotPanel({
                                 src={`data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`}
                                 alt={file.filename || "Preview"}
                                 className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => {
-                                  const dataUrl = `data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`;
-                                  window.open(dataUrl, '_blank');
-                                }}
+                                onClick={() => setSelectedImageIndex(index)}
                                 onError={(e) => {
                                   console.error("[UI] Failed to load image preview", {
                                     fileKey,
@@ -3061,6 +3108,113 @@ export function ChatbotPanel({
             })}
         </div>
       </aside>
+
+      {/* Image Lightbox Modal */}
+      {selectedImageIndex !== null && (() => {
+        const imageFiles = files.filter(f => {
+          const { isImage } = detectFileType(f.filename, f.mimeType);
+          return isImage;
+        });
+
+        if (imageFiles.length === 0 || selectedImageIndex >= imageFiles.length) {
+          return null;
+        }
+
+        const currentFile = imageFiles[selectedImageIndex];
+        const fileKey = currentFile.id || currentFile.path || currentFile.filename || String(selectedImageIndex);
+        const preview = filePreviews.get(fileKey);
+        const mimeType = currentFile.mimeType || "";
+        const previewMimeType = preview?.mimeType || mimeType;
+        const imageSrc = preview?.isUrl 
+          ? preview.content 
+          : preview?.content 
+            ? `data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`
+            : null;
+
+        if (!imageSrc) return null;
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setSelectedImageIndex(null)}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedImageIndex(null)}
+              className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+              aria-label="Close lightbox"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Left arrow */}
+            {imageFiles.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex((prev) => {
+                    if (prev === null) return null;
+                    return prev === 0 ? imageFiles.length - 1 : prev - 1;
+                  });
+                }}
+                className="absolute left-4 z-10 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+            )}
+
+            {/* Right arrow */}
+            {imageFiles.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex((prev) => {
+                    if (prev === null) return null;
+                    return prev === imageFiles.length - 1 ? 0 : prev + 1;
+                  });
+                }}
+                className="absolute right-4 z-10 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            )}
+
+            {/* Image container */}
+            <div
+              className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Image */}
+              <img
+                src={imageSrc}
+                alt={currentFile.filename || "Image"}
+                className="max-w-full max-h-[85vh] object-contain"
+                onError={(e) => {
+                  console.error("[UI] Failed to load image in lightbox", {
+                    fileKey,
+                    filename: currentFile.filename,
+                  });
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+
+              {/* Image info */}
+              <div className="mt-4 text-center">
+                <div className="text-white text-sm font-medium">
+                  {currentFile.filename || currentFile.path || "Unknown file"}
+                </div>
+                {imageFiles.length > 1 && (
+                  <div className="text-white/70 text-xs mt-1">
+                    {selectedImageIndex + 1} / {imageFiles.length}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
