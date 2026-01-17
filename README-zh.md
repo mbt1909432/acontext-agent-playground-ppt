@@ -264,7 +264,7 @@
 1. **克隆仓库**
 
 ```bash
-git clone <your-repo-url> nextjs-with-supabase-acontext
+git clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext
 cd nextjs-with-supabase-acontext
 ```
 
@@ -509,7 +509,7 @@ Vercel 部署将引导您创建 Supabase 账户和项目。
 
 安装 Supabase 集成后，所有相关的环境变量将自动分配给项目，因此部署将完全正常运行。
 
-[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2FAcontext-Agent-Playground-feat-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=用于构建上下文感知自主%20AI%20智能体的生产就绪启动模板，由%20Acontext%20驱动。&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2FAcontext-Agent-Playground-feat-ppt)
+[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=用于构建上下文感知自主%20AI%20智能体的生产就绪启动模板，由%20Acontext%20驱动。&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)
 
 上述操作还会将 Starter kit 克隆到您的 GitHub，您可以本地克隆并在本地开发。
 

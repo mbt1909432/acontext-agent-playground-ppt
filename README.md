@@ -264,7 +264,7 @@ This intelligence comes from **Acontext's persistent memory and semantic search*
 1. **Clone the repository**
 
 ```bash
-git clone <your-repo-url> nextjs-with-supabase-acontext
+git clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext
 cd nextjs-with-supabase-acontext
 ```
 
@@ -509,7 +509,7 @@ Vercel deployment will guide you through creating a Supabase account and project
 
 After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2FAcontext-Agent-Playground-feat-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2FAcontext-Agent-Playground-feat-ppt)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)
 
 The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
 
