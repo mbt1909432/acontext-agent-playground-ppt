@@ -8,6 +8,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ChatMessage, ChatSession } from "@/types/chat";
 import { createAcontextSessionDirectly } from "@/lib/acontext-integration";
+import { getAcontextClient } from "@/lib/acontext-client";
 
 /**
  * Creates a new chat session directly in Acontext
@@ -167,16 +168,42 @@ export async function getOrCreateSession(
       .single();
 
     if (!error && data) {
-    return {
-      id: data.id,
-      userId: data.user_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      title: data.title,
-      acontextSessionId: data.acontext_session_id,
-      acontextSpaceId: data.acontext_space_id,
-      acontextDiskId: data.acontext_disk_id,
-    };
+      // If session doesn't have a disk, create one and update the session record
+      let diskId = data.acontext_disk_id;
+      if (!diskId) {
+        const acontext = getAcontextClient();
+        if (acontext) {
+          try {
+            const disk = await acontext.disks.create();
+            diskId = disk.id;
+            console.debug("[ChatSession] Created disk for session without disk", {
+              sessionId: data.id,
+              diskId,
+            });
+
+            // Update the session record with the new disk ID
+            await supabase
+              .from("chat_sessions")
+              .update({ acontext_disk_id: diskId })
+              .eq("id", data.id)
+              .eq("user_id", userId);
+          } catch (error) {
+            console.warn("[ChatSession] Failed to create disk for session:", error);
+            // Continue without disk - session will still work
+          }
+        }
+      }
+
+      return {
+        id: data.id,
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        title: data.title,
+        acontextSessionId: data.acontext_session_id,
+        acontextSpaceId: data.acontext_space_id,
+        acontextDiskId: diskId,
+      };
     }
     
     // If not found in Supabase but sessionId exists, it might be a valid Acontext session
