@@ -7,11 +7,95 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { flushSync } from "react-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, ChevronUp, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
+import { useCharacter } from "@/contexts/character-context";
+
+/**
+ * AnimatedAvatar - 带切换动画的头像组件
+ * 当src改变时，会平滑地从旧头像过渡到新头像（交叉淡入淡出 + 轻微缩放）
+ */
+function AnimatedAvatar({
+  src,
+  alt,
+  className = "",
+  sizes,
+  priority = false,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes?: string;
+  priority?: boolean;
+}) {
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [prevSrc, setPrevSrc] = useState<string | null>(null);
+  const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    if (src !== currentSrc) {
+      // 保存旧头像
+      setPrevSrc(currentSrc);
+      // 更新为新头像，初始状态为透明
+      setCurrentSrc(src);
+      setShowNew(false);
+      // 使用双重requestAnimationFrame确保DOM更新后再触发动画
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setShowNew(true);
+        });
+      });
+      // 动画完成后清理
+      const timer = setTimeout(() => {
+        setPrevSrc(null);
+        setShowNew(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [src, currentSrc]);
+
+  const hasPrev = prevSrc !== null;
+
+  return (
+    <div className={`relative w-full h-full ${className}`}>
+      {/* 旧头像 - 淡出 */}
+      {hasPrev && (
+        <Image
+          key={`prev-${prevSrc}`}
+          src={prevSrc!}
+          alt={alt}
+          fill
+          sizes={sizes}
+          className="object-cover transition-all duration-[400ms] ease-in-out"
+          style={{
+            opacity: 0,
+            transform: "scale(0.95)",
+          }}
+          priority={priority}
+        />
+      )}
+      {/* 新头像 - 淡入 */}
+      <Image
+        key={currentSrc}
+        src={currentSrc}
+        alt={alt}
+        fill
+        sizes={sizes}
+        className="object-cover transition-all duration-[400ms] ease-in-out"
+        style={{
+          opacity: hasPrev ? (showNew ? 1 : 0) : 1,
+          transform: hasPrev ? (showNew ? "scale(1)" : "scale(0.95)") : "scale(1)",
+        }}
+        priority={priority}
+      />
+    </div>
+  );
+}
 
 interface ChatbotPanelProps {
   className?: string;
@@ -85,7 +169,7 @@ function normalizeMessageContent(
 }
 
 /**
- * Render message content with support for images and links
+ * Render message content with support for images and markdown
  * Handles both string content and Vision API format (array with text and images)
  */
 function renderMessageContent(content: ChatMessage["content"]): React.ReactNode {
@@ -96,10 +180,85 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
 
     for (const item of content) {
       if (item.type === "text") {
-        // Render text with links
+        // Render text with markdown
         parts.push(
-          <div key={`text-${key++}`} className="mb-2">
-            {renderLinks(item.text)}
+          <div key={`text-${key++}`} className="mb-2 markdown-content">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // Customize link rendering
+                a: ({ node, ...props }) => (
+                  <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
+                  />
+                ),
+                // Customize code block rendering
+                code: ({ node, inline, className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || "");
+                  return !inline && match ? (
+                    <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  ) : (
+                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                // Customize image rendering
+                img: ({ node, ...props }) => (
+                  <img
+                    {...props}
+                    className="max-w-full h-auto rounded-lg border border-border my-2"
+                    style={{ maxHeight: "400px" }}
+                  />
+                ),
+                // Customize list rendering
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props} />
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
+                ),
+                // Customize heading rendering
+                h1: ({ node, ...props }) => (
+                  <h1 className="text-xl font-bold mt-4 mb-2" {...props} />
+                ),
+                h2: ({ node, ...props }) => (
+                  <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />
+                ),
+                h3: ({ node, ...props }) => (
+                  <h3 className="text-base font-semibold mt-2 mb-1" {...props} />
+                ),
+                // Customize paragraph rendering
+                p: ({ node, ...props }) => (
+                  <p className="my-2" {...props} />
+                ),
+                // Customize blockquote rendering
+                blockquote: ({ node, ...props }) => (
+                  <blockquote className="border-l-4 border-primary/30 pl-4 italic my-2 text-muted-foreground" {...props} />
+                ),
+                // Customize table rendering
+                table: ({ node, ...props }) => (
+                  <div className="overflow-x-auto my-2">
+                    <table className="min-w-full border-collapse border border-border rounded-lg" {...props} />
+                  </div>
+                ),
+                th: ({ node, ...props }) => (
+                  <th className="border border-border px-4 py-2 bg-muted font-semibold text-left" {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td className="border border-border px-4 py-2" {...props} />
+                ),
+              }}
+            >
+              {item.text}
+            </ReactMarkdown>
           </div>
         );
       } else if (item.type === "image_url") {
@@ -120,8 +279,87 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
     return parts.length > 0 ? <>{parts}</> : null;
   }
 
-  // If content is a string, render with links
-  return renderLinks(content);
+  // If content is a string, render with markdown
+  return (
+    <div className="markdown-content">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          // Customize link rendering
+          a: ({ node, ...props }) => (
+            <a
+              {...props}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
+            />
+          ),
+          // Customize code block rendering
+          code: ({ node, inline, className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || "");
+            return !inline && match ? (
+              <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              </pre>
+            ) : (
+              <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                {children}
+              </code>
+            );
+          },
+          // Customize image rendering
+          img: ({ node, ...props }) => (
+            <img
+              {...props}
+              className="max-w-full h-auto rounded-lg border border-border my-2"
+              style={{ maxHeight: "400px" }}
+            />
+          ),
+          // Customize list rendering
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
+          ),
+          // Customize heading rendering
+          h1: ({ node, ...props }) => (
+            <h1 className="text-xl font-bold mt-4 mb-2" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-base font-semibold mt-2 mb-1" {...props} />
+          ),
+          // Customize paragraph rendering
+          p: ({ node, ...props }) => (
+            <p className="my-2" {...props} />
+          ),
+          // Customize blockquote rendering
+          blockquote: ({ node, ...props }) => (
+            <blockquote className="border-l-4 border-primary/30 pl-4 italic my-2 text-muted-foreground" {...props} />
+          ),
+          // Customize table rendering
+          table: ({ node, ...props }) => (
+            <div className="overflow-x-auto my-2">
+              <table className="min-w-full border-collapse border border-border rounded-lg" {...props} />
+            </div>
+          ),
+          th: ({ node, ...props }) => (
+            <th className="border border-border px-4 py-2 bg-muted font-semibold text-left" {...props} />
+          ),
+          td: ({ node, ...props }) => (
+            <td className="border border-border px-4 py-2" {...props} />
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 /**
@@ -526,8 +764,13 @@ export function ChatbotPanel({
   fullPage = false,
   systemPrompt,
   assistantName = "PPT Girl",
-  assistantAvatarSrc = "/fonts/ppt_girl_chatbot.png",
+  assistantAvatarSrc,
 }: ChatbotPanelProps) {
+  const { character } = useCharacter();
+  // Use Context avatar if prop is not provided, otherwise use prop (for backward compatibility)
+  const avatarSrc = assistantAvatarSrc || character.chatbotAvatarPath;
+  // Use character's systemPrompt if prop is not provided, otherwise use prop
+  const effectiveSystemPrompt = systemPrompt || character.systemPrompt;
   const [isOpen, setIsOpen] = useState(fullPage);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -1556,7 +1799,7 @@ export function ChatbotPanel({
             content: m.content,
           })),
           // Optional custom system prompt/persona for specialized agents (e.g., PPT agent)
-          systemPrompt: systemPrompt || undefined,
+          systemPrompt: effectiveSystemPrompt || undefined,
           enabledToolNames: enabledToolsForRequest,
           stream: true, // Enable streaming for Browser Use tasks
           attachments: attachmentsForAPI.length > 0 ? attachmentsForAPI : undefined,
@@ -1932,7 +2175,7 @@ export function ChatbotPanel({
                     {message.toolCalls && message.toolCalls.length > 0 && (
                       <ToolCallsDisplay toolCalls={message.toolCalls} isFullPage={false} />
                     )}
-                    <div className="text-sm whitespace-pre-wrap relative z-10">
+                    <div className="text-sm relative z-10">
                       {renderMessageContent(message.content)}
                     </div>
                   </div>
@@ -2374,12 +2617,10 @@ export function ChatbotPanel({
                 {message.role === "assistant" && (
                   <div className="flex-shrink-0 w-24 h-24">
                     <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-white ring-2 ring-primary/10">
-                      <Image
-                        src={assistantAvatarSrc}
+                      <AnimatedAvatar
+                        src={avatarSrc}
                         alt={assistantName}
-                        fill
                         sizes="90px"
-                        className="object-cover"
                         priority
                       />
                     </div>
@@ -2409,12 +2650,10 @@ export function ChatbotPanel({
               <div className="flex justify-start items-start gap-3 animate-fade-in">
                 <div className="flex-shrink-0 w-24 h-24">
                   <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-white ring-2 ring-primary/10 animate-fade-in">
-                    <Image
-                      src={assistantAvatarSrc}
+                    <AnimatedAvatar
+                      src={avatarSrc}
                       alt={assistantName}
-                      fill
                       sizes="96px"
-                      className="object-cover"
                       priority
                     />
                   </div>

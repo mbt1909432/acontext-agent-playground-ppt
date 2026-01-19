@@ -1,15 +1,19 @@
+"use client";
+
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { CharacterSwitcher } from "@/components/character-switcher";
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { useCharacter } from "@/contexts/character-context";
 
 export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { character } = useCharacter();
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* Top navigation */}
@@ -21,8 +25,8 @@ export default function ProtectedLayout({
               className="flex items-center gap-2"
             >
               <Image
-                src="/fonts/ppt girl.png"
-                alt="PPT Girl"
+                src={character.avatarPath}
+                alt={character.name}
                 width={100}
                 height={100}
                 className="h-8 w-8 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 object-cover object-top"
@@ -40,9 +44,8 @@ export default function ProtectedLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <Suspense>
-              <AuthButton />
-            </Suspense>
+            <AuthButton />
+            <CharacterSwitcher />
             <ThemeSwitcher />
           </div>
         </div>

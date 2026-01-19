@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense } from "react";
+import { useEffect, useState } from "react";
 
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
@@ -8,11 +10,42 @@ import { ParallaxCharacter } from "@/components/parallax-character";
 import { InteractiveDemoGallery } from "@/components/interactive-demo-gallery";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { CharacterSwitcher } from "@/components/character-switcher";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { hasEnvVars } from "@/lib/utils";
+import { useCharacter } from "@/contexts/character-context";
 
 export default function Home() {
+  const { character } = useCharacter();
+  const [currentAvatarSrc, setCurrentAvatarSrc] = useState(character.avatarPath);
+  const [prevAvatarSrc, setPrevAvatarSrc] = useState<string | null>(null);
+  const [showNewAvatar, setShowNewAvatar] = useState(false);
+
+  // Handle character switching animation for nav avatar
+  useEffect(() => {
+    if (character.avatarPath !== currentAvatarSrc) {
+      // Save old avatar
+      setPrevAvatarSrc(currentAvatarSrc);
+      // Update to new avatar, initially transparent
+      setCurrentAvatarSrc(character.avatarPath);
+      setShowNewAvatar(false);
+      // Use double requestAnimationFrame to ensure DOM update before triggering animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setShowNewAvatar(true);
+        });
+      });
+      // Clean up after animation completes
+      const timer = setTimeout(() => {
+        setPrevAvatarSrc(null);
+        setShowNewAvatar(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [character.avatarPath, currentAvatarSrc]);
+
+  const hasPrevAvatar = prevAvatarSrc !== null;
   return (
     <main className="relative min-h-screen bg-background text-foreground dark:bg-[#0b0b0f] dark:text-neutral-50">
       {/* Background Character - Fixed Position with Parallax */}
@@ -28,14 +61,38 @@ export default function Home() {
                 href="/"
                 className="flex items-center gap-2"
               >
-                <Image
-                  src="/fonts/ppt girl.png"
-                  alt="PPT Girl"
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 object-cover"
-                  priority
-                />
+                <div className="relative h-10 w-10 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 overflow-hidden">
+                  {/* Old avatar - fade out */}
+                  {hasPrevAvatar && (
+                    <Image
+                      key={`prev-${prevAvatarSrc}`}
+                      src={prevAvatarSrc!}
+                      alt={character.name}
+                      width={40}
+                      height={40}
+                      className="absolute inset-0 h-10 w-10 object-cover transition-all duration-[400ms] ease-in-out"
+                      style={{
+                        opacity: 0,
+                        transform: "scale(0.95)",
+                      }}
+                      priority
+                    />
+                  )}
+                  {/* New avatar - fade in */}
+                  <Image
+                    key={currentAvatarSrc}
+                    src={currentAvatarSrc}
+                    alt={character.name}
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 object-cover transition-all duration-[400ms] ease-in-out"
+                    style={{
+                      opacity: hasPrevAvatar ? (showNewAvatar ? 1 : 0) : 1,
+                      transform: hasPrevAvatar ? (showNewAvatar ? "scale(1)" : "scale(0.95)") : "scale(1)",
+                    }}
+                    priority
+                  />
+                </div>
                 <span className="text-lg font-semibold tracking-tight">
                   Acontext PPT Girl
                 </span>
@@ -46,9 +103,8 @@ export default function Home() {
               <span className="text-sm text-muted-foreground hidden sm:inline-block">
                 Acontext-based AI slide generator for beautiful PPT-style decks
               </span>
-              <Suspense>
-                <AuthButton />
-              </Suspense>
+              <AuthButton />
+              <CharacterSwitcher />
               <ThemeSwitcher />
             </div>
           </div>

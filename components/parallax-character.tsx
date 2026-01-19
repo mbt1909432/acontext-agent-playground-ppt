@@ -2,9 +2,37 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useCharacter } from "@/contexts/character-context";
 
 export function ParallaxCharacter() {
+  const { character } = useCharacter();
   const [scrollY, setScrollY] = useState(0);
+  const [currentSrc, setCurrentSrc] = useState(character.avatarPath);
+  const [prevSrc, setPrevSrc] = useState<string | null>(null);
+  const [showNew, setShowNew] = useState(false);
+
+  // Handle character switching animation
+  useEffect(() => {
+    if (character.avatarPath !== currentSrc) {
+      // Save old avatar
+      setPrevSrc(currentSrc);
+      // Update to new avatar, initially transparent
+      setCurrentSrc(character.avatarPath);
+      setShowNew(false);
+      // Use double requestAnimationFrame to ensure DOM update before triggering animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setShowNew(true);
+        });
+      });
+      // Clean up after animation completes
+      const timer = setTimeout(() => {
+        setPrevSrc(null);
+        setShowNew(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [character.avatarPath, currentSrc]);
 
   useEffect(() => {
     let ticking = false;
@@ -29,6 +57,8 @@ export function ParallaxCharacter() {
   // Calculate horizontal offset: character moves right when scrolling down to avoid being blocked by PPT Gallery
   const parallaxOffsetX = scrollY * 0.3; // Positive value: moves right when scrolling down (15% of scroll speed)
 
+  const hasPrev = prevSrc !== null;
+
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">
       {/* Adjust vertical position: modify the following parameters to control vertical positioning
@@ -44,12 +74,36 @@ export function ParallaxCharacter() {
             willChange: 'transform',
           }}
         >
+          {/* Old avatar - fade out */}
+          {hasPrev && (
+            <div className="absolute inset-0">
+              <Image
+                key={`prev-${prevSrc}`}
+                src={prevSrc!}
+                alt={character.name}
+                width={800}
+                height={800}
+                className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-[400ms] ease-in-out"
+                style={{
+                  opacity: 0,
+                  transform: "scale(0.95)",
+                }}
+                priority
+              />
+            </div>
+          )}
+          {/* New avatar - fade in */}
           <Image
-            src="/fonts/ppt girl.png"
-            alt="PPT Girl"
+            key={currentSrc}
+            src={currentSrc}
+            alt={character.name}
             width={800}
             height={800}
-            className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)]"
+            className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-[400ms] ease-in-out"
+            style={{
+              opacity: hasPrev ? (showNew ? 1 : 0) : 1,
+              transform: hasPrev ? (showNew ? "scale(1)" : "scale(0.95)") : "scale(1)",
+            }}
             priority
           />
         </div>

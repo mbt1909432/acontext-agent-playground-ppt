@@ -5,6 +5,7 @@ import "@fontsource-variable/jetbrains-mono";
 import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CharacterProvider } from "@/contexts/character-context";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -30,10 +31,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            {children}
-            <Toaster position="top-center" richColors />
-          </TooltipProvider>
+          <CharacterProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster position="top-center" richColors />
+            </TooltipProvider>
+          </CharacterProvider>
         </ThemeProvider>
       </body>
     </html>
