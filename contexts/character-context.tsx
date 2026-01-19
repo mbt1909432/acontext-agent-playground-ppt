@@ -11,11 +11,35 @@ export type CharacterId =
   | "character6"
   | "character7";
 
+export interface CharacterGlowConfig {
+  /** Hex color for glow/outline (e.g. "#ff4d6d") */
+  color: string;
+  /** Outline thickness (kept fixed during breathing) */
+  outlineWidth: number;
+  /** Base glow blur radius (this will be multiplied by pulse) */
+  glowRadius: number;
+  /** Base glow opacity (this will be modulated by pulse) */
+  opacity: number;
+  /** Breathing frequency multiplier (higher = faster) */
+  pulseSpeed: number;
+  /** Pulse amplitude (0.2 => ±20% radius swing) */
+  pulseStrength: number;
+  /** How much opacity follows pulse (0..1). 0 => fixed opacity */
+  opacityPulseMix: number;
+}
+
 export interface CharacterConfig {
   id: CharacterId;
   name: string;
   avatarPath: string;
   chatbotAvatarPath: string;
+  glow: CharacterGlowConfig;
+  // Home page character info card fields
+  title: string;
+  tagline: string;
+  description: string;
+  bestFor: string[];
+  prompts: string[];
   systemPrompt?: string;
 }
 
@@ -25,6 +49,29 @@ const CHARACTERS: Record<CharacterId, CharacterConfig> = {
     name: "Florence",
     avatarPath: "/fonts/character1/ppt girl.png",
     chatbotAvatarPath: "/fonts/character1/ppt_girl_chatbot.png",
+    glow: {
+      color: "#ff3b3b",
+      outlineWidth: 2.5,
+      glowRadius: 12,
+      opacity: 0.9,
+      pulseSpeed: 1.1,
+      pulseStrength: 0.18,
+      opacityPulseMix: 0.3,
+    },
+    title: "Medical Data & Report PPT Designer",
+    tagline: "I turn clinical data and long reports into clear, medical-grade slides.",
+    description:
+      "I specialize in healthcare and data-heavy presentations, transforming clinical notes and analytical reports into clean, professional slides. I focus on clarity, trust, and making complex information easy for medical and executive audiences to understand.",
+    bestFor: [
+      "Medical and healthcare presentations",
+      "Clinical or data-heavy reports",
+      "Hospital, pharma, or health-tech decks",
+    ],
+    prompts: [
+      '“Turn this medical report into a 10-slide deck.”',
+      '“Rewrite this slide so non-doctors can understand it.”',
+      '“Propose a slide structure for this clinical summary.”',
+    ],
     systemPrompt: `You are "Florence" (also known as "PPT Girl"), an AI slide designer who turns user text into PPT-style slide images. Your signature look is a confident blonde nurse with a white nurse cap featuring a red cross, a clean white uniform with red trim, and medical/data-report sheets in hand—blending healthcare professionalism with analytical reporting.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -71,6 +118,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Lilith",
     avatarPath: "/fonts/character2/ppt girl.png",
     chatbotAvatarPath: "/fonts/character2/ppt_girl_chatbot.png",
+    glow: {
+      color: "#8b5cf6",
+      outlineWidth: 2.8,
+      glowRadius: 14,
+      opacity: 0.95,
+      pulseSpeed: 0.9,
+      pulseStrength: 0.22,
+      opacityPulseMix: 0.35,
+    },
+    title: "Gothic Dark Fantasy PPT Designer",
+    tagline: "I wrap your ideas in elegant, mysterious, dark-themed slides.",
+    description:
+      "I design dramatic, gothic-style slides that stay professional while adding a luxurious dark fantasy flair. I am best when your story needs intensity, atmosphere, and a visually striking edge without losing clarity.",
+    bestFor: [
+      "Dark-themed branding or creative decks",
+      "Game, entertainment, or storytelling pitches",
+      "Eye-catching keynotes with a gothic aesthetic",
+    ],
+    prompts: [
+      '“Make this pitch deck feel more gothic and dramatic.”',
+      '“Suggest a dark, elegant slide layout for this key message.”',
+      '“Turn this story concept into a 6-slide gothic presentation.”',
+    ],
     systemPrompt: `You are "Lilith", a charming and sophisticated AI slide designer with a mysterious demonic aesthetic. You have long black hair with bangs, dark reddish-brown horns, dark purple bat-like wings, and striking golden eyes. You wear elegant dark lace clothing with a heart-shaped pendant necklace, and you're always holding presentation documents, ready to transform any content into stunning slides.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -118,6 +188,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Athena",
     avatarPath: "/fonts/character3/ppt girl.png",
     chatbotAvatarPath: "/fonts/character3/ppt_girl_chatbot.png",
+    glow: {
+      color: "#22d3ee",
+      outlineWidth: 2.4,
+      glowRadius: 12,
+      opacity: 0.85,
+      pulseSpeed: 1.3,
+      pulseStrength: 0.2,
+      opacityPulseMix: 0.25,
+    },
+    title: "Sporty & Motivational PPT Designer",
+    tagline: "I bring fitness energy and momentum to your slides.",
+    description:
+      "I specialize in energetic, goal-driven slides that feel like a workout for your ideas—clear, dynamic, and motivating. I’m perfect for decks about growth, performance, coaching, or any topic that needs action and progress.",
+    bestFor: [
+      "Fitness, wellness, and lifestyle presentations",
+      "Coaching, training, or workshop decks",
+      "Goal, KPI, or progress review slides",
+    ],
+    prompts: [
+      '“Turn this workshop outline into an energetic slide deck.”',
+      '“Design a performance review slide with a sporty feel.”',
+      '“Propose a 1-page summary slide with a motivational tone.”',
+    ],
     systemPrompt: `You are "Athena", an energetic AI slide designer with a fitness/athleisure aesthetic. You have long brown hair in a high ponytail, a confident athletic build, and wear sleek navy workout gear with white accents. You’re always ready with headphones and a water bottle, turning any content into high-impact, motivational slides.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -164,6 +257,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Elara",
     avatarPath: "/fonts/character4/ppt girl.png",
     chatbotAvatarPath: "/fonts/character4/ppt_girl_chatbot.png",
+    glow: {
+      color: "#00e5ff",
+      outlineWidth: 2.6,
+      glowRadius: 16,
+      opacity: 0.9,
+      pulseSpeed: 1.0,
+      pulseStrength: 0.17,
+      opacityPulseMix: 0.3,
+    },
+    title: "Arcane-Tech Concept PPT Designer",
+    tagline: "I turn abstract and technical concepts into mystical, visual stories.",
+    description:
+      "I bridge fantasy and technology for presentations about complex ideas, systems, and innovation. I help you explain the invisible—frameworks, architectures, strategies—using clean, arcane-tech visuals that stay clear and professional.",
+    bestFor: [
+      "Tech, product, or architecture overviews",
+      "Vision, concept, or strategy storytelling",
+      "Complex systems explained with visuals",
+    ],
+    prompts: [
+      '“Turn this system architecture into a slide-friendly story.”',
+      '“Design a concept slide that feels mystical but still clear.”',
+      '“Propose a slide flow for explaining this new framework.”',
+    ],
     systemPrompt: `You are "Elara", an elegant arcane technomage slide designer. You have flowing emerald hair, pointed elven ears, and wear a sleek teal-and-black outfit with glowing cyan accents. Holographic runes and energy rings orbit your hands as you transform any topic into luminous, high-impact slides.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -210,6 +326,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Mimi",
     avatarPath: "/fonts/character5/ppt girl.png",
     chatbotAvatarPath: "/fonts/character5/ppt_girl_chatbot.png",
+    glow: {
+      color: "#ff79c6",
+      outlineWidth: 2.3,
+      glowRadius: 12,
+      opacity: 0.8,
+      pulseSpeed: 1.25,
+      pulseStrength: 0.2,
+      opacityPulseMix: 0.28,
+    },
+    title: "Friendly Everyday PPT Designer",
+    tagline: "I make your everyday ideas feel warm, clear, and approachable.",
+    description:
+      "I’m best for casual, friendly presentations where you still want structure and clarity. I help you turn messy notes, personal plans, or informal reports into slides that feel light, cute, and easy to follow.",
+    bestFor: [
+      "Lightweight internal updates or informal decks",
+      "Personal, community, or educational presentations",
+      "Turning rough notes into simple, readable slides",
+    ],
+    prompts: [
+      '“Turn these meeting notes into a simple, friendly deck.”',
+      '“Make this slide feel warmer and less corporate.”',
+      '“Suggest a cute, clear layout for this summary slide.”',
+    ],
     systemPrompt: `You are "Mimi", a friendly and approachable AI slide designer with a cute cat-girl aesthetic. You have long wavy light brown hair with fluffy cat ears, a fluffy cat tail, and wear casual summer attire—a white tank top, light blue denim shorts, and white flip-flops. You're always holding presentation documents and ready to help transform any content into clear, engaging slides with a warm, friendly touch.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -256,6 +395,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Astra",
     avatarPath: "/fonts/character6/ppt girl.png",
     chatbotAvatarPath: "/fonts/character6/ppt_girl_chatbot.png",
+    glow: {
+      color: "#3b82f6",
+      outlineWidth: 2.6,
+      glowRadius: 15,
+      opacity: 0.9,
+      pulseSpeed: 1.05,
+      pulseStrength: 0.16,
+      opacityPulseMix: 0.3,
+    },
+    title: "Futuristic Strategy PPT Designer",
+    tagline: "I give your strategy and data a sharp, sci‑fi presentation edge.",
+    description:
+      "I focus on futuristic, tactical presentations that feel like a control room for your business. I’m ideal for strategy, dashboards, and roadmaps where you want a high-tech look without sacrificing readability.",
+    bestFor: [
+      "Strategic roadmaps and quarterly business reviews",
+      "Dashboards and KPI-focused presentations",
+      "Tech, SaaS, or data-driven product decks",
+    ],
+    prompts: [
+      '“Turn this strategy doc into a futuristic executive deck.”',
+      '“Design a sci‑fi dashboard slide for these KPIs.”',
+      '“Propose a slide outline for this product roadmap.”',
+    ],
     systemPrompt: `You are "Astra", a sleek sci-fi strategist AI slide designer. You have long lavender hair, calm silver-blue eyes, and wear a black futuristic bodysuit with neon cyan accents, armored gloves and boots, and a flowing dark cape. You hold a holographic tablet and bring a high-tech, commanding presence to every presentation.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):
@@ -302,6 +464,29 @@ Unless the user explicitly asks for theory, focus on: outline → confirm → ge
     name: "Vega",
     avatarPath: "/fonts/character7/ppt girl.png",
     chatbotAvatarPath: "/fonts/character7/ppt_girl_chatbot.png",
+    glow: {
+      color: "#ff8a3d",
+      outlineWidth: 2.4,
+      glowRadius: 13,
+      opacity: 0.85,
+      pulseSpeed: 1.15,
+      pulseStrength: 0.18,
+      opacityPulseMix: 0.3,
+    },
+    title: "Corporate Business PPT Designer",
+    tagline: "I transform raw business content into sharp, board-ready decks.",
+    description:
+      "I specialize in clean, modern corporate slides for executives, clients, and stakeholders. I help you structure your story, highlight the signal in the noise, and present numbers and decisions with confidence.",
+    bestFor: [
+      "Executive and board presentations",
+      "Client proposals and business reviews",
+      "Investor or fundraising pitch decks",
+    ],
+    prompts: [
+      '“Turn this memo into a 12-slide executive deck.”',
+      '“Rewrite this slide so a busy decision-maker gets it in 5 seconds.”',
+      '“Suggest a clean layout for this key metric and decision slide.”',
+    ],
     systemPrompt: `You are "Vega", a dynamic corporate strategist AI slide designer. You have long flame-orange hair, confident amber eyes, and wear a sharp light-blue blouse with a navy pleated skirt, ID lanyard, and business heels. A clipped comms device rests at your waist, showing your poised, on-the-go executive presence.
 
 Visual style (keep consistent; do NOT quote this verbatim to the user):

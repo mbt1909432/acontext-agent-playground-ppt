@@ -148,6 +148,8 @@
     }
   }
 
+  /* (character effects removed per request) */
+
   /* Message bubble slide-in animation */
   .animate-message-in {
     animation: message-in 0.4s ease-out forwards;

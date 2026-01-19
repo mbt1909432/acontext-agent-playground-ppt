@@ -16,6 +16,7 @@ import { User } from "lucide-react";
 const CharacterSwitcher = () => {
   const { character, characterId, setCharacter, characters } = useCharacter();
   const [mounted, setMounted] = useState(false);
+  const avatarObjectClass = "object-cover object-[center_5%]";
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -39,7 +40,7 @@ const CharacterSwitcher = () => {
             alt={character.name}
             width={20}
             height={20}
-            className="h-5 w-5 rounded-full border border-primary/30 object-cover"
+            className={`h-5 w-5 rounded-full border border-primary/30 ${avatarObjectClass}`}
             priority
           />
           <span className="hidden sm:inline text-sm text-muted-foreground">
@@ -63,7 +64,7 @@ const CharacterSwitcher = () => {
                 alt={char.name}
                 width={32}
                 height={32}
-                className="h-8 w-8 rounded-full border border-primary/30 object-cover"
+                className={`h-8 w-8 rounded-full border border-primary/30 ${avatarObjectClass}`}
               />
               <span>{char.name}</span>
             </DropdownMenuRadioItem>
