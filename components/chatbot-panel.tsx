@@ -196,7 +196,8 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
                   />
                 ),
                 // Customize code block rendering
-                code: ({ node, inline, className, children, ...props }) => {
+                code: (codeProps: any) => {
+                  const { inline, className, children, ...props } = codeProps;
                   const match = /language-(\w+)/.exec(className || "");
                   return !inline && match ? (
                     <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
@@ -295,7 +296,8 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
             />
           ),
           // Customize code block rendering
-          code: ({ node, inline, className, children, ...props }) => {
+          code: (codeProps: any) => {
+            const { inline, className, children, ...props } = codeProps;
             const match = /language-(\w+)/.exec(className || "");
             return !inline && match ? (
               <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
@@ -857,10 +859,10 @@ export function ChatbotPanel({
   const isTokenCritical =
     tokenUsage !== null && tokenUsage >= TOKEN_LIMIT_THRESHOLD;
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll only when message count changes (not on every streamed character)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages.length]);
 
   // Handle keyboard navigation for image lightbox
   useEffect(() => {
@@ -1026,13 +1028,10 @@ export function ChatbotPanel({
     // Calculate how much new content to display
     const newContent = targetContent.slice(currentDisplay.length);
     
-    // Typewriter settings: characters per interval, interval in ms
-    // Adjust these values to control speed:
-    // - Higher CHARS_PER_INTERVAL = faster display
-    // - Lower INTERVAL_MS = smoother but more frequent updates
-    // Current: ~60 chars/second (user-friendly speed)
-    const CHARS_PER_INTERVAL = 2; // Display 2 characters at a time
-    const INTERVAL_MS = 30; // Update every 30ms (~33 updates/second)
+    // Typewriter settings: chunked updates to reduce layout thrash on long streams
+    // (slightly slower but keeps surrounding UI like bottom bars stable)
+    const CHARS_PER_INTERVAL = 6; // Display 6 characters at a time
+    const INTERVAL_MS = 80; // Update every 80ms
     
     let displayIndex = 0;
     
@@ -2276,10 +2275,10 @@ export function ChatbotPanel({
   // Full-page chat layout (used on /protected) - Futuristic style
   return (
     <div
-      className={`relative flex h-full w-full min-h-0 overflow-hidden bg-background text-foreground ${className ?? ""}`}
+      className={`relative flex h-full w-full min-h-0 overflow-hidden bg-background text-foreground md:flex-row-reverse ${className ?? ""}`}
     >
-      {/* Left side: session list */}
-      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col justify-between border-r bg-card px-4 py-3 md:flex">
+      {/* Session list (shown on the right in desktop via row-reverse) */}
+      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col justify-between border-r md:border-r-0 md:border-l bg-card px-4 py-3 md:flex">
         <div className="space-y-4 overflow-y-auto pr-1">
           <Button
             className="w-full justify-start gap-2" 
@@ -2376,7 +2375,7 @@ export function ChatbotPanel({
         {/* Tools list removed: replaced by View Tools button + modal */}
       </aside>
 
-      {/* Right side: main chat area */}
+      {/* Main chat area */}
       <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center px-4 py-2 md:px-8 md:py-3">
         <div className="flex h-full w-full max-w-8xl flex-1 flex-col gap-3 rounded-lg border bg-card px-3 pb-3 pt-2 sm:gap-4 sm:px-8 sm:pb-6 sm:pt-4 md:px-10 md:pt-5">
           {/* Top bar */}
@@ -2616,7 +2615,7 @@ export function ChatbotPanel({
               >
                 {message.role === "assistant" && (
                   <div className="flex-shrink-0 w-24 h-24">
-                    <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-white ring-2 ring-primary/10">
+                  <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-2 ring-primary/10">
                       <AnimatedAvatar
                         src={avatarSrc}
                         alt={assistantName}
@@ -2649,7 +2648,7 @@ export function ChatbotPanel({
             {isLoading && (
               <div className="flex justify-start items-start gap-3 animate-fade-in">
                 <div className="flex-shrink-0 w-24 h-24">
-                  <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-white ring-2 ring-primary/10 animate-fade-in">
+                  <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-2 ring-primary/10 animate-fade-in">
                     <AnimatedAvatar
                       src={avatarSrc}
                       alt={assistantName}
