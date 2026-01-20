@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
       {
         pathname: "/fonts/character7/**",
       },
+      {
+        pathname: "/fonts/character8/**",
+      },
     ],
   },
 };

@@ -5,6 +5,14 @@ How to add a new character (frontend)
 - Create a new folder under `public/fonts/` (e.g., `character3/`).
 - Add the avatar image (for the selector) and chatbot avatar image (for in-chat UI). Keep names consistent with existing ones, e.g., `ppt girl.png` and `ppt_girl_chatbot.png`, and use transparent background PNGs.
 
+1.5) Allow the new local image path (Next.js `next/image`)
+- If you use `next/image` with `images.localPatterns` configured, you MUST add your new folder to `next.config.ts` or you will get a runtime error like:
+  - `Invalid src prop (/fonts/character8/ppt girl.png) on 'next/image' does not match 'images.localPatterns' configured in your next.config.*`
+- Update `next.config.ts`:
+  - Add `{ pathname: "/fonts/<your-character-id>/**" }` under `images.localPatterns`
+  - Example: `{ pathname: "/fonts/character8/**" }`
+- Restart the dev server after changing `next.config.ts` (config is not hot-reloaded).
+
 2) Extend the type
 - In `contexts/character-context.tsx`, update the `CharacterId` union to include your new id (e.g., `"character3"`).
 
