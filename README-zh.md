@@ -22,9 +22,9 @@
   </p>
   
   <p align="center">
-    <img src="./public/fonts/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
+    <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
     &nbsp;&nbsp;&nbsp;
-    <img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
+    <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
   </p>
 </div>
 
@@ -344,19 +344,19 @@ UI 使用 **Tailwind CSS** 和 **shadcn/ui** 组件构建，易于自定义：
 在本 PPT Girl 分支中，已经预置了一位护士风二次元角色作为默认头像，您也可以很方便地替换为自己的角色：
 
 <div align="center">
-  <img src="./public/fonts/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
+  <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
   &nbsp;&nbsp;&nbsp;
-  <img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
+  <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
 </div>
 
-1. **角色图片**：直接替换 `/public/fonts/ppt girl.png` 为您的角色图片（保持同名即可，无需改代码），或修改 `components/parallax-character.tsx` 中的图片路径
+1. **角色图片**：默认头像在 `/public/fonts/character1/ppt girl.png`（保持同名即可，无需改代码），或修改 `contexts/character-context.tsx` / `components/parallax-character.tsx` 中的图片路径
 2. **首页头像**：首页 hero 区域通过视差组件展示 `ppt girl.png`，如果想调整位置和大小，可编辑 `ParallaxCharacter` 组件
-3. **聊天头像**：如果希望在聊天界面也使用 PPT Girl，可在 `components/chatbot-panel.tsx` 中替换为 `/public/fonts/ppt_girl_chatbot.png` 或您自己的图片
+3. **聊天头像**：默认聊天头像在 `/public/fonts/character1/ppt_girl_chatbot.png`，可在 `contexts/character-context.tsx` 中替换为您自己的图片
 
 示例位置：
 - `components/parallax-character.tsx` - 首页视差角色（使用 `/fonts/ppt girl.png`）
-- `public/fonts/ppt girl.png` - 首页使用的 PPT Girl 人物 PNG 资源
-- `public/fonts/ppt_girl_chatbot.png` - 聊天头像的 PPT Girl 资源（可选）
+- `public/fonts/character1/ppt girl.png` - 默认首页角色 PNG 资源
+- `public/fonts/character1/ppt_girl_chatbot.png` - 默认聊天头像 PNG 资源
 - `app/page.tsx` - 首页布局和 PPT Girl 相关文案
 
 ### 添加自定义工具
@@ -600,6 +600,11 @@ Vercel 部署将引导您创建 Supabase 账户和项目。
 
 ## 📖 文档
 
+- 项目内文档（经验总结 / SOP / context）：
+  - `public/fonts/skills/README.md` - skills 文件夹说明（作为项目经验/context 入口）
+  - `public/fonts/skills/ADDING_NEW_CHARACTER.md` - 如何新增角色（前端）
+  - `docs/skills-summary.md`
+  - `docs/agent-dabaihua.md`
 - [Acontext 文档](https://docs.acontext.io)
 - [Next.js 文档](https://nextjs.org/docs)
 - [Supabase 文档](https://supabase.com/docs)

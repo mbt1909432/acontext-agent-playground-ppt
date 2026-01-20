@@ -56,10 +56,11 @@ glow: {
 5) Verify usage
 - Ensure any character picker or UI components read from `characters` (they map over `Object.values(CHARACTERS)`), so adding the config entry makes it appear automatically.
 - Run the app and switch to the new character to confirm avatars load, prompts behave as intended, and the home page character info card shows the right English introduction.
-- Home page character card shows only name/title/tagline and two `bestFor` items by default. Description, remaining `bestFor`, and `prompts` appear under “Show more”, so keep those fields concise but useful.
+- Home page character card shows only name/title/tagline and two `bestFor` items by default. Description, remaining `bestFor`, and `prompts` appear under "Show more", so keep those fields concise but useful.
 
 Notes on systemPrompt
 - Keep prompts in English (the image prompts must be English).
 - Spell out the visual style: theme, palette, background/foreground separation, 16:9 requirement, and mandatory keywords for image generation.
 - Include tool-use rules if you need outline confirmation before generation.
+
 

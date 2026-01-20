@@ -22,9 +22,9 @@
   </p>
   
   <p align="center">
-    <img src="./public/fonts/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
+    <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
     &nbsp;&nbsp;&nbsp;
-    <img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
+    <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
   </p>
 </div>
 
@@ -344,9 +344,9 @@ The UI is built with **Tailwind CSS** and **shadcn/ui** components, making it ea
 The agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.
 
 <div align="center">
-  <img src="./public/fonts/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
+  <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
   &nbsp;&nbsp;&nbsp;
-  <img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
+  <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
 </div>
 
 1. **Character Image**: Replace the image at `/public/fonts/ppt girl.png` with your own character/logo (keep the same filename to avoid code changes), or update `components/parallax-character.tsx` to point to a different path
@@ -355,8 +355,8 @@ The agent avatar can be customized in several ways. In this PPT Girl branch, a n
 
 Example locations:
 - `components/parallax-character.tsx` - Homepage parallax character (uses `/fonts/ppt girl.png`)
-- `public/fonts/ppt girl.png` - PPT Girl character asset used on the homepage
-- `public/fonts/ppt_girl_chatbot.png` - Optional PPT Girl asset for chatbot avatar
+- `public/fonts/character1/ppt girl.png` - Default character asset used on the homepage
+- `public/fonts/character1/ppt_girl_chatbot.png` - Default chat avatar asset
 - `app/page.tsx` - Homepage layout and PPT Girl landing copy
 
 ### Adding Custom Tools
@@ -740,6 +740,11 @@ ACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development
 
 ## 📖 Documentation
 
+- Project docs (context / SOPs):
+  - `public/fonts/skills/README.md` - Skills folder purpose (project experience / context entry)
+  - `public/fonts/skills/ADDING_NEW_CHARACTER.md` - How to add a new character (frontend)
+  - `docs/skills-summary.md`
+  - `docs/agent-dabaihua.md`
 - [Acontext Documentation](https://docs.acontext.io)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Supabase Documentation](https://supabase.com/docs)
