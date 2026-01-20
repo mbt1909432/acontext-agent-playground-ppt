@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -305,11 +307,56 @@ export function InteractiveDemoGallery() {
                     <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                   <div className="text-sm whitespace-pre-wrap relative z-10">
-                    {message.role === "user"
-                      ? message.content
-                      : message.displayContent !== undefined
-                      ? message.displayContent
-                      : message.content}
+                    {message.role === "user" ? (
+                      message.content
+                    ) : (
+                      <div className="markdown-content">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ node, ...props }) => (
+                              <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
+                              />
+                            ),
+                            code: (codeProps: any) => {
+                              const { inline, className, children, ...props } = codeProps;
+                              const match = /language-(\\w+)/.exec(className || "");
+                              return !inline && match ? (
+                                <pre className="bg-muted/60 rounded-lg p-3 overflow-x-auto my-2">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              ) : (
+                                <code className="bg-muted/60 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+                                  {children}
+                                </code>
+                              );
+                            },
+                            img: ({ node, ...props }) => (
+                              <img
+                                {...props}
+                                className="max-w-full h-auto rounded-lg border border-border my-2"
+                                style={{ maxHeight: "400px" }}
+                              />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props} />
+                            ),
+                            ol: ({ node, ...props }) => (
+                              <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
+                            ),
+                            p: ({ node, ...props }) => <p className="my-2" {...props} />,
+                          }}
+                        >
+                          {message.displayContent !== undefined ? message.displayContent : message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                     {currentTyping === message.id && (
                       <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
                     )}
