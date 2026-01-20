@@ -507,7 +507,8 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks MUST use it.
               acontextDiskId,
               acontextSessionId,
               user.id,
-              session.id
+              session.id,
+              { characterId: body.characterId }
             )) {
               console.log(`[API] Received event from stream: ${event.type}`);
               
@@ -606,7 +607,8 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks MUST use it.
       acontextDiskId,
       acontextSessionId,
       user.id,
-      session.id
+      session.id,
+      { characterId: body.characterId }
     );
 
     const timeoutPromise = new Promise<never>((_, reject) => {

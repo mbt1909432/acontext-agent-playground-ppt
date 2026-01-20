@@ -434,7 +434,8 @@ export async function POST(request: NextRequest) {
               acontextDiskId,
               acontextSessionId,
               userId,
-              sessionId
+              sessionId,
+              { characterId: body.characterId }
             )) {
               if (event.type === "message") {
                 sendEvent("message", {
@@ -523,7 +524,8 @@ export async function POST(request: NextRequest) {
       acontextDiskId,
       acontextSessionId,
       userId,
-      sessionId
+      sessionId,
+      { characterId: body.characterId }
     );
 
     const timeoutPromise = new Promise<never>((_, reject) => {

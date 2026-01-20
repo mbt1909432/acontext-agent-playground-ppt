@@ -121,7 +121,8 @@ async function executeToolCall(
   diskId?: string,
   acontextSessionId?: string,
   userId?: string,
-  sessionId?: string
+  sessionId?: string,
+  toolContext?: { characterId?: string }
 ): Promise<unknown> {
   if (toolCall.type !== "function" || !toolCall.function) {
     throw new Error(`Unsupported tool call type: ${toolCall.type}`);
@@ -168,7 +169,7 @@ async function executeToolCall(
 
   if (isImageGenerateToolName(name)) {
     const args = JSON.parse(argsJson || "{}");
-    return runImageGenerate(args, diskId);
+    return runImageGenerate(args, diskId, toolContext);
   }
 
   throw new Error(`Unknown tool: ${name}`);
@@ -248,6 +249,7 @@ export async function chatCompletion(
   acontextSessionId?: string,
   userId?: string,
   sessionId?: string,
+  toolContext?: { characterId?: string },
   maxIterations: number = 10
 ): Promise<{
   message: string;
@@ -317,7 +319,14 @@ export async function chatCompletion(
 
         const { name, arguments: argsJson } = toolCall.function;
 
-        const result = await executeToolCall(toolCall, diskId, acontextSessionId, userId, sessionId);
+        const result = await executeToolCall(
+          toolCall,
+          diskId,
+          acontextSessionId,
+          userId,
+          sessionId,
+          toolContext
+        );
         allToolCalls.push({
           id: toolCall.id,
           name,
@@ -393,6 +402,7 @@ export async function* chatCompletionStream(
   acontextSessionId?: string,
   userId?: string,
   sessionId?: string,
+  toolContext?: { characterId?: string },
   maxIterations: number = 10
 ): AsyncGenerator<
   | { type: "message"; content: string }
@@ -638,7 +648,14 @@ export async function* chatCompletionStream(
 
           yield { type: "tool_call_start", toolCall: toolCallInvocation };
 
-          const result = await executeToolCall(toolCall, diskId, acontextSessionId, userId, sessionId);
+          const result = await executeToolCall(
+            toolCall,
+            diskId,
+            acontextSessionId,
+            userId,
+            sessionId,
+            toolContext
+          );
           toolCallInvocation.result = result;
           allToolCalls.push(toolCallInvocation);
 

@@ -768,7 +768,7 @@ export function ChatbotPanel({
   assistantName = "PPT Girl",
   assistantAvatarSrc,
 }: ChatbotPanelProps) {
-  const { character } = useCharacter();
+  const { character, characterId } = useCharacter();
   // Use Context avatar if prop is not provided, otherwise use prop (for backward compatibility)
   const avatarSrc = assistantAvatarSrc || character.chatbotAvatarPath;
   // Use character's systemPrompt if prop is not provided, otherwise use prop
@@ -1799,6 +1799,8 @@ export function ChatbotPanel({
           })),
           // Optional custom system prompt/persona for specialized agents (e.g., PPT agent)
           systemPrompt: effectiveSystemPrompt || undefined,
+          // Server-only context (does not affect LLM tool schema)
+          characterId,
           enabledToolNames: enabledToolsForRequest,
           stream: true, // Enable streaming for Browser Use tasks
           attachments: attachmentsForAPI.length > 0 ? attachmentsForAPI : undefined,

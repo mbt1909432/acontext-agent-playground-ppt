@@ -71,6 +71,13 @@ export interface ChatRequest {
   messages?: ChatMessage[];
   systemPrompt?: string;
   /**
+   * Optional selected character id from the UI (NOT a tool argument).
+   * This is server-side context used to enhance tools (e.g. injecting a character reference image).
+   *
+   * NOTE: This does NOT change any LLM-exposed tool JSON schema.
+   */
+  characterId?: string;
+  /**
    * Optional list of tool names the user allows for this request.
    * If empty/omitted, the server can disable tools entirely.
    */

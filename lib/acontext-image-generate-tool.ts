@@ -12,6 +12,8 @@ import { uploadFileToAcontext } from "@/lib/acontext-integration";
 import { getAcontextClient } from "@/lib/acontext-client";
 import sharp from "sharp";
 import { GoogleGenAI } from "@google/genai";
+import fs from "node:fs";
+import path from "node:path";
 
 export type ImageGenerateToolArgs = {
   /**
@@ -129,7 +131,8 @@ function randId(): string {
 
 export async function runImageGenerate(
   args: ImageGenerateToolArgs,
-  diskId?: string
+  diskId?: string,
+  toolContext?: { characterId?: string }
 ): Promise<ImageGenerateToolResult> {
   if (!args || typeof args !== "object") {
     throw new Error("Arguments must be an object");
@@ -141,6 +144,44 @@ export async function runImageGenerate(
   const prompt = args.prompt.trim();
   const size = (args.size ?? "1K") as NonNullable<ImageGenerateToolArgs["size"]>;
   const ratio = "16:9" as const;
+
+  const characterIdRaw =
+    toolContext && typeof toolContext.characterId === "string"
+      ? toolContext.characterId.trim()
+      : "";
+  const characterId =
+    /^character\d+$/i.test(characterIdRaw) ? characterIdRaw.toLowerCase() : "";
+
+  function tryLoadCharacterReferenceInlineData():
+    | { mimeType: string; data: string; sourcePath: string }
+    | null {
+    if (!characterId) return null;
+
+    // Prefer a dedicated high-res reference file if present; fallback to the UI avatar.
+    // Files live under public/fonts/<characterId>/
+    const candidates = ["reference.png", "reference.webp", "reference.jpg", "reference.jpeg", "ppt girl.png"];
+    for (const filename of candidates) {
+      const abs = path.join(process.cwd(), "public", "fonts", characterId, filename);
+      try {
+        if (!fs.existsSync(abs)) continue;
+        const buf = fs.readFileSync(abs);
+        const ext = path.extname(abs).toLowerCase();
+        const mimeType =
+          ext === ".png"
+            ? "image/png"
+            : ext === ".webp"
+            ? "image/webp"
+            : ext === ".jpg" || ext === ".jpeg"
+            ? "image/jpeg"
+            : "application/octet-stream";
+        return { mimeType, data: buf.toString("base64"), sourcePath: abs };
+      } catch {
+        // If anything goes wrong, skip and try next candidate.
+        continue;
+      }
+    }
+    return null;
+  }
 
   const apiKey = process.env.IMAGE_GEN_API_KEY;
   const baseUrl = process.env.IMAGE_GEN_BASE_URL;
@@ -208,7 +249,7 @@ export async function runImageGenerate(
   // gemini-2.5-flash-image: only supports aspectRatio (optional)
   let generateContentParams: {
     model: string;
-    contents: string;
+    contents: any;
     config?: {
       imageConfig: {
         aspectRatio: string;
@@ -219,6 +260,34 @@ export async function runImageGenerate(
     model,
     contents: prompt,
   };
+
+  const characterInline = tryLoadCharacterReferenceInlineData();
+  if (characterInline) {
+    const enhancedPrompt =
+      `Use the provided character image as the MAIN SUBJECT. ` +
+      `Preserve identity (face, hair, outfit), pose can change, keep the same person. ` +
+      `Integrate the character naturally into the scene; match lighting/shadows; avoid cutout/sticker look.\n\n` +
+      prompt;
+
+    generateContentParams.contents = {
+      parts: [
+        {
+          inlineData: {
+            mimeType: characterInline.mimeType,
+            data: characterInline.data,
+          },
+        },
+        { text: enhancedPrompt },
+      ],
+    };
+
+    console.log("[image-generate] Injected character reference image", {
+      characterId,
+      referencePath: characterInline.sourcePath,
+      mimeType: characterInline.mimeType,
+      base64Length: characterInline.data.length,
+    });
+  }
 
   if (supportsImageSize) {
     // gemini-3-pro-image-preview: always pass config with aspectRatio and imageSize
@@ -239,7 +308,10 @@ export async function runImageGenerate(
 
   console.log("[image-generate] Calling ai.models.generateContent", {
     model: generateContentParams.model,
-    promptLength: generateContentParams.contents.length,
+    promptLength:
+      typeof generateContentParams.contents === "string"
+        ? generateContentParams.contents.length
+        : "(multimodal)",
     config: generateContentParams.config
       ? JSON.stringify(generateContentParams.config, null, 2)
       : null,
