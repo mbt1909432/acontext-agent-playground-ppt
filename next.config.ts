@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
         hostname: "acontext.io",
       },
     ],
+    localPatterns: [
+      // Allow local slide assets to include cache-busting query strings like `?v=2026-01-20`.
+      {
+        pathname: "/fonts/slides/**",
+        search: "?v=*",
+      },
+    ],
   },
 };
 
