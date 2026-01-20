@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Bump this value to bust browser/CDN/Next Image caches when slide binaries change.
+const SLIDES_VERSION = "2026-01-20";
+
 // Preset messages and corresponding responses
 const PRESET_MESSAGES = [
   {
@@ -28,12 +31,12 @@ const PRESET_MESSAGES = [
 
 // All available slides
 const SLIDES = [
-  { id: 1, src: "/fonts/slides/slide1.jpg", alt: "What is an LLM?" },
-  { id: 2, src: "/fonts/slides/slide2.jpg", alt: "Key Applications of LLMs" },
-  { id: 3, src: "/fonts/slides/slide3.jpg", alt: "How Do LLMs Work?" },
-  { id: 4, src: "/fonts/slides/slide4.jpg", alt: "Advantages and Challenges" },
-  { id: 5, src: "/fonts/slides/slide5.jpg", alt: "Future of LLMs" },
-  { id: 6, src: "/fonts/slides/slide6.jpg", alt: "Advantages and Challenges (Detailed)" },
+  { id: 1, src: `/fonts/slides/slide1.jpg?v=${SLIDES_VERSION}`, alt: "What is an LLM?" },
+  { id: 2, src: `/fonts/slides/slide2.jpg?v=${SLIDES_VERSION}`, alt: "Key Applications of LLMs" },
+  { id: 3, src: `/fonts/slides/slide3.jpg?v=${SLIDES_VERSION}`, alt: "How Do LLMs Work?" },
+  { id: 4, src: `/fonts/slides/slide4.jpg?v=${SLIDES_VERSION}`, alt: "Advantages and Challenges" },
+  { id: 5, src: `/fonts/slides/slide5.jpg?v=${SLIDES_VERSION}`, alt: "Future of LLMs" },
+  { id: 6, src: `/fonts/slides/slide6.jpg?v=${SLIDES_VERSION}`, alt: "Advantages and Challenges (Detailed)" },
 ];
 
 interface Message {

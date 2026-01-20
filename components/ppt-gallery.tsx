@@ -7,13 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Bump this value to bust browser/CDN/Next Image caches when slide binaries change.
+const SLIDES_VERSION = "2026-01-20";
+
 const SLIDES = [
-  { id: 1, src: "/fonts/slides/slide1.jpg", alt: "Slide 1" },
-  { id: 2, src: "/fonts/slides/slide2.jpg", alt: "Slide 2" },
-  { id: 3, src: "/fonts/slides/slide3.jpg", alt: "Slide 3" },
-  { id: 4, src: "/fonts/slides/slide4.jpg", alt: "Slide 4" },
-  { id: 5, src: "/fonts/slides/slide5.jpg", alt: "Slide 5" },
-  { id: 6, src: "/fonts/slides/slide6.jpg", alt: "Slide 6" },
+  { id: 1, src: `/fonts/slides/slide1.jpg?v=${SLIDES_VERSION}`, alt: "Slide 1" },
+  { id: 2, src: `/fonts/slides/slide2.jpg?v=${SLIDES_VERSION}`, alt: "Slide 2" },
+  { id: 3, src: `/fonts/slides/slide3.jpg?v=${SLIDES_VERSION}`, alt: "Slide 3" },
+  { id: 4, src: `/fonts/slides/slide4.jpg?v=${SLIDES_VERSION}`, alt: "Slide 4" },
+  { id: 5, src: `/fonts/slides/slide5.jpg?v=${SLIDES_VERSION}`, alt: "Slide 5" },
+  { id: 6, src: `/fonts/slides/slide6.jpg?v=${SLIDES_VERSION}`, alt: "Slide 6" },
 ];
 
 export function PPTGallery() {
