@@ -17,6 +17,28 @@ const nextConfig: NextConfig = {
         pathname: "/fonts/slides/**",
         search: "?v=*",
       },
+      // Allow character avatar images (character1 through character7).
+      {
+        pathname: "/fonts/character1/**",
+      },
+      {
+        pathname: "/fonts/character2/**",
+      },
+      {
+        pathname: "/fonts/character3/**",
+      },
+      {
+        pathname: "/fonts/character4/**",
+      },
+      {
+        pathname: "/fonts/character5/**",
+      },
+      {
+        pathname: "/fonts/character6/**",
+      },
+      {
+        pathname: "/fonts/character7/**",
+      },
     ],
   },
 };
