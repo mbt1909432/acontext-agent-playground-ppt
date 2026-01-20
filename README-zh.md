@@ -22,7 +22,7 @@
   </p>
   
   <p align="center">
-    <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
+    <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - 首页角色" width="300" />
     &nbsp;&nbsp;&nbsp;
     <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
   </p>
@@ -344,7 +344,7 @@ UI 使用 **Tailwind CSS** 和 **shadcn/ui** 组件构建，易于自定义：
 在本 PPT Girl 分支中，已经预置了一位护士风二次元角色作为默认头像，您也可以很方便地替换为自己的角色：
 
 <div align="center">
-  <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" />
+  <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - 首页角色" width="300" />
   &nbsp;&nbsp;&nbsp;
   <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
 </div>
@@ -509,7 +509,7 @@ Vercel 部署将引导您创建 Supabase 账户和项目。
 
 安装 Supabase 集成后，所有相关的环境变量将自动分配给项目，因此部署将完全正常运行。
 
-[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=用于构建上下文感知自主%20AI%20智能体的生产就绪启动模板，由%20Acontext%20驱动。&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)
+[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground-ppt&repository-name=acontext-agent-playground-ppt&demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&demo-description=%E5%9F%BA%E4%BA%8E%20Acontext%20%E7%9A%84%20PPT%20%E9%A3%8E%E6%A0%BC%E5%B9%BB%E7%81%AF%E7%89%87%E7%94%9F%E6%88%90%EF%BC%8C%E5%AF%B9%E8%AF%9D%E5%BC%8F%E6%B5%81%E7%A8%8B%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E8%AE%B0%E5%BF%86%E5%92%8C%E7%AE%80%E5%8E%86%E7%AE%A1%E7%90%86%E5%BC%95%E6%93%8E%E6%94%AF%E6%92%91%E3%80%82&demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)
 
 上述操作还会将 Starter kit 克隆到您的 GitHub，您可以本地克隆并在本地开发。
 

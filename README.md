@@ -22,7 +22,7 @@
   </p>
   
   <p align="center">
-    <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
+    <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - Homepage Character" width="300" />
     &nbsp;&nbsp;&nbsp;
     <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
   </p>
@@ -344,7 +344,7 @@ The UI is built with **Tailwind CSS** and **shadcn/ui** components, making it ea
 The agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.
 
 <div align="center">
-  <img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" />
+  <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - Homepage Character" width="300" />
   &nbsp;&nbsp;&nbsp;
   <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
 </div>
@@ -509,7 +509,7 @@ Vercel deployment will guide you through creating a Supabase account and project
 
 After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground&repository-name=acontext-agent-playground&demo-title=ACONTEXT%20Agent%20Playground&demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground-ppt&repository-name=acontext-agent-playground-ppt&demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&demo-description=PPT-style%20slide%20generator%20powered%20by%20Acontext%2C%20with%20chat-driven%20workflow%20and%20semantic%20memory.&demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)
 
 The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
 

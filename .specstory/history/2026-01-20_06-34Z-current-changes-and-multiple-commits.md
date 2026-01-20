@@ -25,12 +25,1586 @@ I plan to check the git status to identify modifications and determine if multip
 ```bash
 cd /d C:\acontext-agent-playground-ppt && git status --short
 ```
+
+```
+At C:\Users\admin\AppData\Local\Temp\ps-script-2e73fb14-9198-4a15-a960-897f027046d5.ps1:7 char:40
++ cd /d C:\acontext-agent-playground-ppt &amp;&amp; git status --short
++                                        ~~
+The token '&amp;&amp;' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
+**Adjusting command syntax for PowerShell**
 
+The command needs semicolons instead of && for proper execution in PowerShell, so I'll use `cd ...; git status --short`.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /d C:\acontext-agent-playground-ppt; git status --short</summary>
+
+```bash
+cd /d C:\acontext-agent-playground-ppt; git status --short
+```
+
+```
+Set-Location : A positional parameter cannot be found that accepts argument 'C:\acontext-agent-playground-ppt'.
+At C:\Users\admin\AppData\Local\Temp\ps-script-ae522d8f-5d44-4e97-9c10-fdf6c261619b.ps1:7 char:1
++ cd /d C:\acontext-agent-playground-ppt; git status --short
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Set-Location], ParameterBindingException
+    + FullyQualifiedErrorId : PositionalParameterNotFound,Microsoft.PowerShell.Commands.SetLocationCommand
+ 
+ M ".specstory/history/2026-01-17_08-07Z-\346\217\220\347\244\272\350\257\215ppt\347\224\237\346\210\220\346\225\260\351\207\217\351\231\220\345\210\266.md"
+ M README-zh.md
+ M README.md
+ D public/fonts/ADDING_NEW_CHARACTER.md
+?? docs/skills-summary.md
+?? public/fonts/skills/
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Correcting directory change command**
+
+Noticed the directory change failed but git status still showed changes, likely because the command ran in the default repo root instead of the target directory; planning to fix this by using PowerShell's Set-Location with quotes before running git status.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: Set-Location -Path 'C:\acontext-agent-playground-ppt'; git status --short</summary>
+
+```bash
+Set-Location -Path 'C:\acontext-agent-playground-ppt'; git status --short
+```
+
+```
+ M ".specstory/history/2026-01-17_08-07Z-\346\217\220\347\244\272\350\257\215ppt\347\224\237\346\210\220\346\225\260\351\207\217\351\231\220\345\210\266.md"
+ M README-zh.md
+ M README.md
+ D public/fonts/ADDING_NEW_CHARACTER.md
+?? docs/skills-summary.md
+?? public/fonts/skills/
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning multi-file diff and content reads**
+
+I'm preparing to gather diffs and file contents for multiple modified, new, and deleted files, aiming to review changes carefully per file; I'll combine directory listing for new folders and read key files or diffs selectively to handle large files cautiously.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git diff --stat</summary>
+
+```bash
+git diff --stat
+```
+
+```
+ ...225\260\351\207\217\351\231\220\345\210\266.md" | 2482 ++++++++++++++++++++
+ README-zh.md                                       |   21 +-
+ README.md                                          |   17 +-
+ public/fonts/ADDING_NEW_CHARACTER.md               |   65 -
+ 4 files changed, 2506 insertions(+), 79 deletions(-)
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning detailed diff and file inspection**
+
+I'm planning to run a combined git diff on key updated text files for manageable output, then partially read large new docs to capture structure without full load. I'll also list the new fonts folder contents and glimpse the large spec story history to decide how to represent it in commits.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git diff -- README.md README-zh.md public/fonts/ADDING_NEW_CHARACTER.md</summary>
+
+```bash
+git diff -- README.md README-zh.md public/fonts/ADDING_NEW_CHARACTER.md
+```
+
+```
+diff --git a/README-zh.md b/README-zh.md
+index 2aff0a0..275108c 100644
+--- a/README-zh.md
++++ b/README-zh.md
+@@ -22,9 +22,9 @@
+   &lt;/p&gt;
+   
+   &lt;p align="center"&gt;
+-    &lt;img src="./public/fonts/ppt girl.png" alt="PPT Girl - 首页角色" width="300" /&gt;
++    &lt;img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" /&gt;
+     &amp;nbsp;&amp;nbsp;&amp;nbsp;
+-    &lt;img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" /&gt;
++    &lt;img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" /&gt;
+   &lt;/p&gt;
+ &lt;/div&gt;
+ 
+@@ -344,19 +344,19 @@ UI 使用 **Tailwind CSS** 和 **shadcn/ui** 组件构建，易于自定义：
+ 在本 PPT Girl 分支中，已经预置了一位护士风二次元角色作为默认头像，您也可以很方便地替换为自己的角色：
+ 
+ &lt;div align="center"&gt;
+-  &lt;img src="./public/fonts/ppt girl.png" alt="PPT Girl - 首页角色" width="300" /&gt;
++  &lt;img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - 首页角色" width="300" /&gt;
+   &amp;nbsp;&amp;nbsp;&amp;nbsp;
+-  &lt;img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" /&gt;
++  &lt;img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" /&gt;
+ &lt;/div&gt;
+ 
+-1. **角色图片**：直接替换 &#96;/public/fonts/ppt girl.png&#96; 为您的角色图片（保持同名即可，无需改代码），或修改 &#96;components/parallax-character.tsx&#96; 中的图片路径
++1. **角色图片**：默认头像在 &#96;/public/fonts/character1/ppt girl.png&#96;（保持同名即可，无需改代码），或修改 &#96;contexts/character-context.tsx&#96; / &#96;components/parallax-character.tsx&#96; 中的图片路径
+ 2. **首页头像**：首页 hero 区域通过视差组件展示 &#96;ppt girl.png&#96;，如果想调整位置和大小，可编辑 &#96;ParallaxCharacter&#96; 组件
+-3. **聊天头像**：如果希望在聊天界面也使用 PPT Girl，可在 &#96;components/chatbot-panel.tsx&#96; 中替换为 &#96;/public/fonts/ppt_girl_chatbot.png&#96; 或您自己的图片
++3. **聊天头像**：默认聊天头像在 &#96;/public/fonts/character1/ppt_girl_chatbot.png&#96;，可在 &#96;contexts/character-context.tsx&#96; 中替换为您自己的图片
+ 
+ 示例位置：
+ - &#96;components/parallax-character.tsx&#96; - 首页视差角色（使用 &#96;/fonts/ppt girl.png&#96;）
+-- &#96;public/fonts/ppt girl.png&#96; - 首页使用的 PPT Girl 人物 PNG 资源
+-- &#96;public/fonts/ppt_girl_chatbot.png&#96; - 聊天头像的 PPT Girl 资源（可选）
++- &#96;public/fonts/character1/ppt girl.png&#96; - 默认首页角色 PNG 资源
++- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - 默认聊天头像 PNG 资源
+ - &#96;app/page.tsx&#96; - 首页布局和 PPT Girl 相关文案
+ 
+ ### 添加自定义工具
+@@ -600,6 +600,11 @@ Vercel 部署将引导您创建 Supabase 账户和项目。
+ 
+ ## 📖 文档
+ 
++- 项目内文档（经验总结 / SOP / context）：
++  - &#96;public/fonts/skills/README.md&#96; - skills 文件夹说明（作为项目经验/context 入口）
++  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - 如何新增角色（前端）
++  - &#96;docs/skills-summary.md&#96;
++  - &#96;docs/agent-dabaihua.md&#96;
+ - [Acontext 文档](https://docs.acontext.io)
+ - [Next.js 文档](https://nextjs.org/docs)
+ - [Supabase 文档](https://supabase.com/docs)
+diff --git a/README.md b/README.md
+index ee60063..8bd7d1f 100644
+--- a/README.md
++++ b/README.md
+@@ -22,9 +22,9 @@
+   &lt;/p&gt;
+   
+   &lt;p align="center"&gt;
+-    &lt;img src="./public/fonts/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" /&gt;
++    &lt;img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" /&gt;
+     &amp;nbsp;&amp;nbsp;&amp;nbsp;
+-    &lt;img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" /&gt;
++    &lt;img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" /&gt;
+   &lt;/p&gt;
+ &lt;/div&gt;
+ 
+@@ -344,9 +344,9 @@ The UI is built with **Tailwind CSS** and **shadcn/ui** components, making it ea
+ The agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.
+ 
+ &lt;div align="center"&gt;
+-  &lt;img src="./public/fonts/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" /&gt;
++  &lt;img src="./public/fonts/character1/ppt girl.png" alt="PPT Girl - Homepage Character" width="300" /&gt;
+   &amp;nbsp;&amp;nbsp;&amp;nbsp;
+-  &lt;img src="./public/fonts/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" /&gt;
++  &lt;img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" /&gt;
+ &lt;/div&gt;
+ 
+ 1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path
+@@ -355,8 +355,8 @@ The agent avatar can be customized in several ways. In this PPT Girl branch, a n
+ 
+ Example locations:
+ - &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)
+-- &#96;public/fonts/ppt girl.png&#96; - PPT Girl character asset used on the homepage
+-- &#96;public/fonts/ppt_girl_chatbot.png&#96; - Optional PPT Girl asset for chatbot avatar
++- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage
++- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset
+ - &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy
+ 
+ ### Adding Custom Tools
+@@ -740,6 +740,11 @@ ACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development
+ 
+ ## 📖 Documentation
+ 
++- Project docs (context / SOPs):
++  - &#96;public/fonts/skills/README.md&#96; - Skills folder purpose (project experience / context entry)
++  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - How to add a new character (frontend)
++  - &#96;docs/skills-summary.md&#96;
++  - &#96;docs/agent-dabaihua.md&#96;
+ - [Acontext Documentation](https://docs.acontext.io)
+ - [Next.js Documentation](https://nextjs.org/docs)
+ - [Supabase Documentation](https://supabase.com/docs)
+diff --git a/public/fonts/ADDING_NEW_CHARACTER.md b/public/fonts/ADDING_NEW_CHARACTER.md
+deleted file mode 100644
+index 76b7723..0000000
+--- a/public/fonts/ADDING_NEW_CHARACTER.md
++++ /dev/null
+@@ -1,65 +0,0 @@
+-How to add a new character (frontend)
+-======================================
+-
+-1) Prepare assets
+-- Create a new folder under &#96;public/fonts/&#96; (e.g., &#96;character3/&#96;).
+-- Add the avatar image (for the selector) and chatbot avatar image (for in-chat UI). Keep names consistent with existing ones, e.g., &#96;ppt girl.png&#96; and &#96;ppt_girl_chatbot.png&#96;, and use transparent background PNGs.
+-
+-1.5) Allow the new local image path (Next.js &#96;next/image&#96;)
+-- If you use &#96;next/image&#96; with &#96;images.localPatterns&#96; configured, you MUST add your new folder to &#96;next.config.ts&#96; or you will get a runtime error like:
+-  - &#96;Invalid src prop (/fonts/character8/ppt girl.png) on 'next/image' does not match 'images.localPatterns' configured in your next.config.*&#96;
+-- Update &#96;next.config.ts&#96;:
+-  - Add &#96;{ pathname: "/fonts/&lt;your-character-id&gt;/**" }&#96; under &#96;images.localPatterns&#96;
+-  - Example: &#96;{ pathname: "/fonts/character8/**" }&#96;
+-- Restart the dev server after changing &#96;next.config.ts&#96; (config is not hot-reloaded).
+-
+-2) Extend the type
+-- In &#96;contexts/character-context.tsx&#96;, update the &#96;CharacterId&#96; union to include your new id (e.g., &#96;"character3"&#96;).
+-
+-3) Add the config entry
+-- In &#96;CHARACTERS&#96;, add a new object keyed by your id with:
+-  - &#96;id&#96;: the same string as your new CharacterId
+-  - &#96;name&#96;: display name (short English name)
+-  - &#96;avatarPath&#96;: path to the selector avatar (e.g., &#96;/fonts/character3/ppt girl.png&#96;)
+-  - &#96;chatbotAvatarPath&#96;: path to the chat avatar (e.g., &#96;/fonts/character3/ppt_girl_chatbot.png&#96;)
+-  - &#96;glow&#96;: SVG filter settings for the character avatar outline + breathing glow (used on home page / parallax character)
+-    - &#96;color&#96;: hex color string (e.g., &#96;"#ff4d6d"&#96;)
+-    - &#96;outlineWidth&#96;: outline thickness (number)
+-    - &#96;glowRadius&#96;: base glow blur radius (number)
+-    - &#96;opacity&#96;: base glow opacity (0..1)
+-    - &#96;pulseSpeed&#96;: breathing speed multiplier (number)
+-    - &#96;pulseStrength&#96;: breathing amplitude (0..1-ish; &#96;0.2&#96; =&gt; ±20% radius swing)
+-    - &#96;opacityPulseMix&#96;: how much opacity follows the pulse (0..1). &#96;0&#96; means fixed opacity.
+-  - &#96;title&#96;: short English role/title for the character (e.g., &#96;"Visual Storytelling PPT Designer"&#96;)
+-  - &#96;tagline&#96;: one-line English tagline (e.g., &#96;"I turn your rough ideas into polished, presentation-ready slides."&#96;)
+-  - &#96;description&#96;: 2–3 sentence English description of what this character is good at and their style
+-  - &#96;bestFor&#96;: array of short English strings describing ideal use cases (e.g., &#96;["Executive presentations", "Investor decks"]&#96;)
+-  - &#96;prompts&#96;: array of short English example queries the user can ask this character (e.g., &#96;['"Turn this text into a 10-slide deck outline."', '"Rewrite this slide for executives."']&#96;)
+-  - &#96;systemPrompt&#96;: full English prompt describing personality, visual style, palette, layout rules, tool usage rules, and response flow (outline → confirm → generate)
+-
+-Example &#96;glow&#96; (copy/paste):
+-&#96;&#96;&#96;ts
+-glow: {
+-  color: "#ff4d6d",
+-  outlineWidth: 2.5,
+-  glowRadius: 12,
+-  opacity: 0.9,
+-  pulseSpeed: 1.1,
+-  pulseStrength: 0.18,
+-  opacityPulseMix: 0.3,
+-},
+-&#96;&#96;&#96;
+-
+-4) Default selection (optional)
+-- If you want the new character to be the default, set &#96;DEFAULT_CHARACTER&#96; to your new id.
+-
+-5) Verify usage
+-- Ensure any character picker or UI components read from &#96;characters&#96; (they map over &#96;Object.values(CHARACTERS)&#96;), so adding the config entry makes it appear automatically.
+-- Run the app and switch to the new character to confirm avatars load, prompts behave as intended, and the home page character info card shows the right English introduction.
+-- Home page character card shows only name/title/tagline and two &#96;bestFor&#96; items by default. Description, remaining &#96;bestFor&#96;, and &#96;prompts&#96; appear under “Show more”, so keep those fields concise but useful.
+-
+-Notes on systemPrompt
+-- Keep prompts in English (the image prompts must be English).
+-- Spell out the visual style: theme, palette, background/foreground separation, 16:9 requirement, and mandatory keywords for image generation.
+-- Include tool-use rules if you need outline confirmation before generation.
+-
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Listing new fonts directory**
+
+I'm preparing to list the contents of the new `public/fonts/skills/` folder using Get-ChildItem to gather files for the updated docs and folder READMEs.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: Get-ChildItem -Path public/fonts/skills -Recurse</summary>
+
+```bash
+Get-ChildItem -Path public/fonts/skills -Recurse
+```
+
+```
+
+
+    目录: C:\acontext-agent-playground-ppt\public\fonts\skills
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----         2026/1/20     12:02           4108 ADDING_NEW_CHARACTER.md                                              
+-a----         2026/1/20     12:03            786 README.md                                                            
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning parallel reading of new docs**
+
+I'll read the full skills-summary.md, the README in the new fonts folder, and the ADDING_NEW_CHARACTER file in parallel to understand their contents and differences for the commit.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: docs/skills-summary.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: public/fonts/skills/README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: public/fonts/skills/ADDING_NEW_CHARACTER.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning commit grouping and content**
+
+I'm assessing file moves and docs updates, deciding on grouping: one commit for reorganizing character asset docs and adding skills docs, another for the specstory history log; also confirming the specstory file is a large Chinese conversation log to treat separately.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: Get-ChildItem .specstory/history</summary>
+
+```bash
+Get-ChildItem .specstory/history
+```
+
+```
+
+
+    目录: C:\acontext-agent-playground-ppt\.specstory\history
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----         2026/1/20     14:35        4281044 2026-01-17_08-07Z-提示词ppt生成数量限制.md                                    
+-a----         2026/1/20     14:36            971 2026-01-20_06-34Z-current-changes-and-multiple-commits.md            
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Verifying untracked specstory files**
+
+Noticed discrepancy in git status showing only one specstory file while there appear to be two, possibly with one new or untracked. Planning to rerun git status to confirm the full list and clarify file tracking state.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+
+```
+ M ".specstory/history/2026-01-17_08-07Z-\346\217\220\347\244\272\350\257\215ppt\347\224\237\346\210\220\346\225\260\351\207\217\351\231\220\345\210\266.md"
+ M README-zh.md
+ M README.md
+ D public/fonts/ADDING_NEW_CHARACTER.md
+?? .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md
+?? docs/skills-summary.md
+?? public/fonts/skills/
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Inspecting modified and new specstory files**
+
+I'm planning to read the first 80 lines of the large modified specstory file to understand the changes without loading all 4MB, and read the entire small new specstory file to summarize it, enabling a clear commit message about updating the specstory log.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: .specstory/history/2026-01-17_08-07Z-提示词ppt生成数量限制.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning multi-commit staging**
+
+I'm organizing commits into two grouped sets: first for docs reorganization including skill docs and moved files, second for specstory log additions and related modifications. Next, I'll stage the first group of README and docs files for the initial commit.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git add README.md README-zh.md docs/skills-summary.md public/fonts/skills/README.md public/fonts/skills/ADDING_NEW_CHARACTER.md public/fonts/ADDING_NEW_CHARACTER.md</summary>
+
+```bash
+git add README.md README-zh.md docs/skills-summary.md public/fonts/skills/README.md public/fonts/skills/ADDING_NEW_CHARACTER.md public/fonts/ADDING_NEW_CHARACTER.md
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Committing documentation updates**</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git commit -m "docs: add skills summary and reorganize character guide"</summary>
+
+```bash
+git commit -m "docs: add skills summary and reorganize character guide"
+```
+
+```
+[main 4f07ab5] docs: add skills summary and reorganize character guide
+ 5 files changed, 354 insertions(+), 15 deletions(-)
+ create mode 100644 docs/skills-summary.md
+ rename public/fonts/{ =&gt; skills}/ADDING_NEW_CHARACTER.md (97%)
+ create mode 100644 public/fonts/skills/README.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Staging specstory files**</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git add .specstory/history/2026-01-17_08-07Z-提示词ppt生成数量限制.md .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md</summary>
+
+```bash
+git add .specstory/history/2026-01-17_08-07Z-提示词ppt生成数量限制.md .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Preparing commit message**</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git commit -m "chore: add specstory session logs"</summary>
+
+```bash
+git commit -m "chore: add specstory session logs"
+```
+
+```
+[main e98ed8d] chore: add specstory session logs
+ 2 files changed, 2518 insertions(+)
+ create mode 100644 .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Verifying clean git status**</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Summarizing final commits and workspace state**
+
+Two commits completed: the first adds a skills summary document, reorganizes character-related docs into a dedicated skills folder with a README, and updates README image paths accordingly; the second commit introduces specstory logs. The workspace is clean with no tests run. Next steps could include reviewing changes or pushing the commits.</details></think>
+
+---
+
+Completed. Two commits created:
+
+- `docs: add skills summary and reorganize character guide`
+  - Added `docs/skills-summary.md` describing skills/experience flow, APIs, UI, and data structures.
+  - Moved the character guide to `public/fonts/skills/ADDING_NEW_CHARACTER.md` and added `public/fonts/skills/README.md` to explain the skills docs folder.
+  - Updated `README.md` and `README-zh.md` to point character assets at `public/fonts/character1/*` and list the new docs entries.
+
+- `chore: add specstory session logs`
+  - Added new SpecStory log for today and updated the existing January 17 log.
+
+Workspace is now clean (`git status` shows no pending changes). If you want, I can push these commits.
+
+---
+
+_**User (2026-01-20 03:04Z)**_
+
+帮我推送
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+
+
+---
+
+我来把刚才这两次提交推送到远端 `main`。接下来我会先检查远端配置/分支，再执行 `git push`。
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git remote -v && git branch --show-current</summary>
+
+```bash
+git remote -v && git branch --show-current
+```
+
+```
+At C:\Users\admin\AppData\Local\Temp\ps-script-3971c657-cae1-4a1c-99f8-bc842eab12c4.ps1:116 char:15
++ git remote -v &amp;&amp; git branch --show-current
++               ~~
+The token '&amp;&amp;' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Evaluating command usage**
+
+I'm thinking about how to run commands in cmd.exe while considering that the tool might be using PowerShell. I need to run separate commands, or perhaps use a semicolon to separate them. It seems I’ll be executing these commands separately to ensure they work correctly. It's a bit of an adjustment, but I’m curious to see how it'll all come together! Let's get this figured out.</details></think>
+
+---
+
+Got it：这个终端实际在用 PowerShell，所以 `&&` 不支持。我分两条命令查远端/分支，然后直接 `git push`。
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git remote -v</summary>
+
+```bash
+git remote -v
+```
+
+```
+origin	git@github.com:mbt1909432/acontext-agent-playground-ppt.git (fetch)
+origin	git@github.com:mbt1909432/acontext-agent-playground-ppt.git (push)
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git branch --show-current</summary>
+
+```bash
+git branch --show-current
+```
+
+```
+main
+
+```
+</details>
+</tool-use>
+
+---
+
+远端是 `origin`，当前分支是 `main`，可以直接推送。我现在执行 `git push origin main`。
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git push origin main</summary>
+
+```bash
+git push origin main
+```
+
+```
+To github.com:mbt1909432/acontext-agent-playground-ppt.git
+   e632c93..e98ed8d  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+</details>
+</tool-use>
+
+---
+
+### 已推送完成
+
+- **已执行**：`git push origin main`
+- **结果**：`main` 已从 `e632c93` 推到 `e98ed8d`
+- **当前状态**：工作区干净（无未提交改动）
+
+---
+
+_**User (2026-01-20 03:04Z)**_
+
+https://github.com/mbt1909432/acontext-agent-playground-ppt  opensource链接是这个homepage的显示错了 readme的也检查下
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+**Reviewing README and homepage links**
+
+I'm inspecting README.md and README-zh.md to verify if the homepage link is correct or causing the wrong display, aiming to clarify potential issues with homepage referencing.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README-zh.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Searching for homepage URL**
+
+I'm searching the codebase for the homepage URL or references to "acontext-agent-playground-ppt.vercel.app" to verify and correct the homepage link in the README or docs.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "home ?page|homepage|vercel.app|acontext-agent-playground-ppt",
+  "path": ".",
+  "outputMode": "content",
+  "caseInsensitive": false,
+  "headLimit": 20
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "home ?page|homepage|vercel.app|acontext-agent-playground-ppt",
+    "path": ".",
+    "outputMode": "content",
+    "workspaceResults": {
+      "c:/acontext-agent-playground-ppt": {
+        "content": {
+          "matches": [
+            {
+              "file": ".\\README-zh.md",
+              "matches": [
+                {
+                  "lineNumber": 267,
+                  "content": "git clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext"
+                },
+                {
+                  "lineNumber": 512,
+                  "content": "[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=用于构建上下文感知自主%20AI%20智能体的生产就绪启动模板，由%20Acontext%20驱动。&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)"
+                }
+              ]
+            },
+            {
+              "file": ".\\README.md",
+              "matches": [
+                {
+                  "lineNumber": 267,
+                  "content": "git clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext"
+                },
+                {
+                  "lineNumber": 353,
+                  "content": "2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy"
+                },
+                {
+                  "lineNumber": 358,
+                  "content": "- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage"
+                },
+                {
+                  "lineNumber": 512,
+                  "content": "[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)"
+                }
+              ]
+            },
+            {
+              "file": ".\\public\\fonts\\skills\\ADDING_NEW_CHARACTER.md",
+              "matches": [
+                {
+                  "lineNumber": 25,
+                  "content": "  - &#96;glow&#96;: SVG filter settings for the character avatar outline + breathing glow (used on home page / parallax character)"
+                },
+                {
+                  "lineNumber": 58,
+                  "content": "- Run the app and switch to the new character to confirm avatars load, prompts behave as intended, and the home page character info card shows the right English introduction."
+                }
+              ]
+            }
+          ],
+          "totalLines": 8,
+          "totalMatchedLines": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Checking package.json for homepage link**</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Investigating homepage link source**
+
+I'm inspecting the README and related files for any hardcoded homepage URLs or badges referencing the playground domain that might cause the wrong homepage display.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Homepage|home page|homepage|Hero|landing|acontext-agent",
+  "path": "README.md",
+  "outputMode": "content",
+  "contextBefore": 2,
+  "contextAfter": 2,
+  "caseInsensitive": false,
+  "headLimit": 40
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "Homepage|home page|homepage|Hero|landing|acontext-agent",
+    "path": "README.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "c:/acontext-agent-playground-ppt": {
+        "content": {
+          "matches": [
+            {
+              "file": "README.md",
+              "matches": [
+                {
+                  "lineNumber": 23,
+                  "content": "  ",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 24,
+                  "content": "  &lt;p align=\"center\"&gt;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 25,
+                  "content": "    &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 26,
+                  "content": "    &amp;nbsp;&amp;nbsp;&amp;nbsp;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 27,
+                  "content": "    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 265,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 266,
+                  "content": "&#96;&#96;&#96;bash",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 267,
+                  "content": "git clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext"
+                },
+                {
+                  "lineNumber": 268,
+                  "content": "cd nextjs-with-supabase-acontext",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 269,
+                  "content": "&#96;&#96;&#96;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 337,
+                  "content": "2. **Components**: All UI components are in &#96;components/ui/&#96; - modify as needed",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 338,
+                  "content": "3. **Layout**: Main pages are in &#96;app/&#96; directory",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 339,
+                  "content": "4. **Homepage**: Customize &#96;app/page.tsx&#96; for your landing page"
+                },
+                {
+                  "lineNumber": 340,
+                  "content": "5. **Chat Interface**: Modify &#96;components/chatbot-panel.tsx&#96; for chat UI changes",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 341,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 345,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 346,
+                  "content": "&lt;div align=\"center\"&gt;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 347,
+                  "content": "  &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 348,
+                  "content": "  &amp;nbsp;&amp;nbsp;&amp;nbsp;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 349,
+                  "content": "  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 351,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 352,
+                  "content": "1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 353,
+                  "content": "2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy"
+                },
+                {
+                  "lineNumber": 354,
+                  "content": "3. **Chat Avatar**: Modify the avatar display in &#96;components/chatbot-panel.tsx&#96; if you also want PPT Girl (or another character) in the chat UI",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 355,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 356,
+                  "content": "Example locations:",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 357,
+                  "content": "- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)"
+                },
+                {
+                  "lineNumber": 358,
+                  "content": "- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage"
+                },
+                {
+                  "lineNumber": 359,
+                  "content": "- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 360,
+                  "content": "- &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy"
+                },
+                {
+                  "lineNumber": 361,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 362,
+                  "content": "### Adding Custom Tools",
+                  "isContextLine": true
+                }
+              ]
+            }
+          ],
+          "totalLines": 32,
+          "totalMatchedLines": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Identifying README and homepage link display issues**
+
+The README’s image paths with spaces likely cause broken displays on GitHub, so updating them to URL-encoded `%20` should fix that. Also, the Vercel deployment and homepage links may still reference the old repo name, so updating those to the correct new names will fix the homepage link display.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Adjusting README-zh around Vercel button**</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README-zh.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Fixing Vercel button parameters and image paths**
+
+I'm updating the Vercel button to use the correct project and repo name `acontext-agent-playground-ppt` and adjusting README and README-zh image paths by encoding spaces as `%20` to ensure proper display without renaming files. I'll apply these changes via patches targeting all relevant references, including demo titles for better alignment.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ppt girl.png",
+  "path": "README.md",
+  "outputMode": "content",
+  "caseInsensitive": false,
+  "headLimit": 20
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ppt girl.png",
+    "path": "README.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "c:/acontext-agent-playground-ppt": {
+        "content": {
+          "matches": [
+            {
+              "file": "README.md",
+              "matches": [
+                {
+                  "lineNumber": 25,
+                  "content": "    &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 347,
+                  "content": "  &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 352,
+                  "content": "1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path"
+                },
+                {
+                  "lineNumber": 353,
+                  "content": "2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy"
+                },
+                {
+                  "lineNumber": 357,
+                  "content": "- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)"
+                },
+                {
+                  "lineNumber": 358,
+                  "content": "- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage"
+                }
+              ]
+            }
+          ],
+          "totalLines": 6,
+          "totalMatchedLines": 6
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Considering selective README changes**
+
+I'm evaluating whether to encode only image lines in the README to fix rendering issues while keeping textual path references intact, including in readme-zh.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="rg">
+<details>
+<summary>Tool use: **rg**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ppt girl.png",
+  "path": "README-zh.md",
+  "outputMode": "content",
+  "caseInsensitive": false,
+  "headLimit": 20
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ppt girl.png",
+    "path": "README-zh.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "c:/acontext-agent-playground-ppt": {
+        "content": {
+          "matches": [
+            {
+              "file": "README-zh.md",
+              "matches": [
+                {
+                  "lineNumber": 25,
+                  "content": "    &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 347,
+                  "content": "  &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;"
+                },
+                {
+                  "lineNumber": 352,
+                  "content": "1. **角色图片**：默认头像在 &#96;/public/fonts/character1/ppt girl.png&#96;（保持同名即可，无需改代码），或修改 &#96;contexts/character-context.tsx&#96; / &#96;components/parallax-character.tsx&#96; 中的图片路径"
+                },
+                {
+                  "lineNumber": 353,
+                  "content": "2. **首页头像**：首页 hero 区域通过视差组件展示 &#96;ppt girl.png&#96;，如果想调整位置和大小，可编辑 &#96;ParallaxCharacter&#96; 组件"
+                },
+                {
+                  "lineNumber": 357,
+                  "content": "- &#96;components/parallax-character.tsx&#96; - 首页视差角色（使用 &#96;/fonts/ppt girl.png&#96;）"
+                },
+                {
+                  "lineNumber": 358,
+                  "content": "- &#96;public/fonts/character1/ppt girl.png&#96; - 默认首页角色 PNG 资源"
+                }
+              ]
+            }
+          ],
+          "totalLines": 6,
+          "totalMatchedLines": 6
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning Vercel button updates**
+
+I'm preparing to update both Vercel buttons by changing strings and modifying multiple parts including the image source to use an encoded path, considering using apply_patch for efficient batch changes.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="apply_patch">
+<details>
+<summary>Tool use: **apply_patch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "relativeWorkspacePath": "README.md"
+}
+```
+Additional data:
+
+```json
+{
+  "codeblockId": "711cc5b9-00cc-48c5-b199-0b62b4d7c052",
+  "codeblock": {
+    "uri": {
+      "scheme": "file",
+      "authority": "",
+      "path": "/c:/acontext-agent-playground-ppt/README.md",
+      "query": "",
+      "fragment": "",
+      "_formatted": "file:///c%3A/acontext-agent-playground-ppt/README.md",
+      "_fsPath": null
+    },
+    "codeblockId": "711cc5b9-00cc-48c5-b199-0b62b4d7c052",
+    "codeBlockIdx": 0,
+    "content": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;A PPT-style slide generator experience built on the Acontext Agent Playground template&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    Powered by &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#features\"&gt;&lt;strong&gt;Features&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#getting-started\"&gt;&lt;strong&gt;Getting Started&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#deployment\"&gt;&lt;strong&gt;Deployment&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#documentation\"&gt;&lt;strong&gt;Documentation&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** is an intelligent PPT slide generation system powered by [Acontext](https://acontext.io). Simply chat with **\"PPT Girl\"** (an AI assistant) about your presentation topic, and she will automatically create a series of beautiful, cyberpunk-style slide images ready for your presentation.\r\n\r\n## 🎯 Core Functionality\r\n\r\n### What Does It Do?\r\n\r\n**Transform text into professional PPT slides** through natural conversation:\r\n\r\n1. **📝 Input**: You provide presentation content (text, paragraphs, topics, or outlines)\r\n2. **🧠 Planning**: PPT Girl analyzes your content and proposes a slide-by-slide outline (titles + bullet points)\r\n3. **✏️ Review**: You review and confirm the outline\r\n4. **🎨 Generation**: PPT Girl generates 16:9 cyberpunk-style slide images using AI image generation\r\n5. **📦 Delivery**: Each slide image is automatically stored and accessible via URLs\r\n\r\n### Key Features of PPT Generation\r\n\r\n- **🎨 Consistent Visual Style**: All slides share a unified cyberpunk aesthetic (neon lights, holographic effects, futuristic backgrounds)\r\n- **📐 Smart Layout**: Clean, professional layouts with ample space for text overlays\r\n- **🔄 Interactive Workflow**: Confirm outlines before generation, iterate on specific slides\r\n- **💾 Automatic Storage**: All generated slides are stored in Acontext Disk for easy access\r\n- **🧠 Context Awareness**: Remembers your previous slides and maintains visual consistency across sessions\r\n\r\n## 🤔 Why Acontext? The Key Integration Benefits\r\n\r\n**Acontext is not optional** - it's what makes this PPT generator intelligent and practical. Here's why:\r\n\r\n### 1. **Persistent Memory for Multi-Slide Presentations** 🧠\r\n**Problem**: Generating a full presentation requires multiple rounds of conversation. Without memory, the AI would forget:\r\n- What slides were already created\r\n- The visual style and theme you agreed upon\r\n- The overall structure of your presentation\r\n\r\n**Solution with Acontext**: Every chat session persists to an Acontext Session. PPT Girl remembers:\r\n- All previously generated slides in your current presentation\r\n- Your preferences (e.g., \"use more purple tones\", \"make slides simpler\")\r\n- The presentation structure and context\r\n\r\n**Real Impact**: You can say \"add one more slide about pricing\" or \"make slide 3 more detailed\" - and PPT Girl knows exactly which slide you're referring to.\r\n\r\n### 2. **Semantic Search for Style Consistency** 🔍\r\n**Problem**: When generating multiple slides, maintaining visual consistency is challenging. You might want:\r\n- All slides to share similar color schemes\r\n- Consistent background elements\r\n- Similar layouts across related slides\r\n\r\n**Solution with Acontext**: Before generating each new slide, Acontext performs semantic search to retrieve:\r\n- Previous slide generation prompts\r\n- Your feedback and style preferences\r\n- Related slides from the same presentation\r\n\r\n**Real Impact**: When you say \"make this slide match the style of the intro slide,\" PPT Girl can find and reference your earlier slides automatically.\r\n\r\n### 3. **Skill Learning for Better Results Over Time** 📈\r\n**Problem**: Every user has different preferences. Some like minimal designs, others prefer detailed backgrounds. Without learning, the AI starts from scratch each time.\r\n\r\n**Solution with Acontext**: Acontext Space learns from completed presentations:\r\n- Your preferred slide styles\r\n- Common patterns in your presentations (e.g., \"you always include a conclusion slide\")\r\n- Successful slide structures that worked well before\r\n\r\n**Real Impact**: The more presentations you create, the better PPT Girl understands your style. Your 10th presentation will be much more aligned with your preferences than your first.\r\n\r\n### 4. **Automatic File Management for Generated Slides** 📁\r\n**Problem**: Generated slide images need to be stored, organized, and easily accessible. Managing files manually is tedious and error-prone.\r\n\r\n**Solution with Acontext Disk**:\r\n- All generated slides are automatically stored in Acontext Disk\r\n- Each slide has a unique URL for easy sharing and embedding\r\n- Files are organized by session and date\r\n- No need to manually download or manage files\r\n\r\n**Real Impact**: You can view all your generated slides in one place, download them in bulk, or share individual slides instantly.\r\n\r\n### 5. **Context Compression for Long Presentations** 💾\r\n**Problem**: Creating a 20-slide presentation involves many messages, tool calls, and generated images. Without compression, the conversation context becomes too large for the LLM to process efficiently.\r\n\r\n**Solution with Acontext**: \r\n- Automatic context compression when conversations get long\r\n- Important information (slide structures, confirmed outlines) is preserved\r\n- Less relevant intermediate messages are compressed or summarized\r\n\r\n**Real Impact**: You can create presentations of any length without hitting token limits or losing important context.\r\n\r\n### 6. **Cross-Session Intelligence** 🔄\r\n**Problem**: Without memory, each new conversation starts from zero. You can't reference slides from previous presentations or build upon past work.\r\n\r\n**Solution with Acontext**:\r\n- Search across all your previous presentations\r\n- Reference slides from past sessions\r\n- Build upon existing slide libraries\r\n\r\n**Real Impact**: \"Create a presentation similar to the one I made last week\" becomes possible. PPT Girl can find and reference your previous work.\r\n\r\n---\r\n\r\n**Bottom Line**: Acontext transforms PPT Girl from a \"one-shot slide generator\" into an **intelligent presentation assistant** that learns your preferences, maintains context across sessions, and delivers increasingly better results over time.\r\n\r\n## ✨ Features\r\n\r\n### 🎨 PPT Slide Generation (Core Feature)\r\n\r\n- **🤖 AI-Powered Generation**: Natural language conversation with PPT Girl to create professional slides\r\n- **📋 Smart Outline Planning**: Automatically breaks down content into logical slide structure (titles + bullets)\r\n- **🎨 Cyberpunk Visual Style**: Consistent, futuristic aesthetic with neon lights and holographic effects\r\n- **📐 Professional Layouts**: Clean, 16:9 layouts optimized for text overlays and content\r\n- **🔄 Interactive Workflow**: Review and confirm outlines before generation; iterate on individual slides\r\n- **🖼️ Image Generation Tool**: Seamless integration with AI image generation APIs\r\n- **💾 Automatic Storage**: Generated slides stored in Acontext Disk with shareable URLs\r\n- **📊 Multi-Slide Support**: Generate entire presentations with consistent style across all slides\r\n\r\n### 💬 Chat &amp; Interface\r\n\r\n- **🔐 Authentication**: Email/password authentication with Supabase\r\n- **💬 Rich Chat UI**: Full-featured chat interface with message history, streaming responses, and tool call visualization\r\n- **🎨 Customizable UI**: Built with Tailwind CSS and shadcn/ui components - fully customizable\r\n- **🤖 Avatar Support**: Customizable agent avatar (PPT Girl character included)\r\n- **📁 File Upload**: Support for uploading PDFs, images, and documents for context\r\n- **🌐 Browser Automation**: Integrated Browser Use SDK for web automation tasks (optional)\r\n- **🌓 Theme Support**: Dark/light mode with next-themes\r\n\r\n### 🧠 Acontext-Powered Intelligence\r\n\r\n- **💾 Session Persistence**: Every chat session persists to Acontext Session - PPT Girl remembers your presentations\r\n- **🔍 Semantic Context Search**: Automatically retrieves relevant historical context (previous slides, style preferences) before generating responses\r\n- **📦 Disk Storage**: All generated slides automatically stored in Acontext Disk with organized access\r\n- **📈 Experience Learning**: Learns from your Space to understand your preferred slide styles and improve over time\r\n- **🗜️ Context Compression**: Automatic token management for long presentations with manual compression option\r\n- **🔄 Cross-Session Intelligence**: Reference slides from previous presentations and build upon past work\r\n\r\n## 🛠️ Tech Stack\r\n\r\n- **Framework**: Next.js 15+ (App Router)\r\n- **Authentication &amp; Database**: Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI Platform**: Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**: OpenAI (&#96;openai&#96; SDK) - compatible with OpenAI API\r\n- **Browser Agent**: Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI Components**: Tailwind CSS, shadcn/ui, Lucide icons\r\n- **Language**: TypeScript\r\n- **Theming**: next-themes\r\n\r\n## 📖 Usage Example\r\n\r\nHere's a real conversation flow with PPT Girl:\r\n\r\n### Example 1: Creating a Product Launch Presentation\r\n\r\n**You**: \"I need a presentation about our new AI chatbot product launch. It should cover: introduction, features, pricing, and next steps.\"\r\n\r\n**PPT Girl**: \r\n&gt; I'll help you create a presentation about your AI chatbot product launch. Let me propose a slide outline:\r\n&gt; \r\n&gt; **Slide 1: Introduction**\r\n&gt; - Welcome to the AI Chatbot Launch\r\n&gt; - Revolutionizing customer support\r\n&gt; \r\n&gt; **Slide 2: Key Features**\r\n&gt; - 24/7 intelligent support\r\n&gt; - Natural language understanding\r\n&gt; - Multi-platform integration\r\n&gt; \r\n&gt; **Slide 3: Pricing**\r\n&gt; - Flexible pricing tiers\r\n&gt; - Enterprise solutions available\r\n&gt; \r\n&gt; **Slide 4: Next Steps**\r\n&gt; - Sign up for early access\r\n&gt; - Schedule a demo\r\n&gt; \r\n&gt; Does this outline work for you? Should I proceed with generating the slide images?\r\n\r\n**You**: \"Yes, looks good! Make the introduction slide more dramatic.\"\r\n\r\n**PPT Girl**: \r\n&gt; [Generates 4 slide images using image_generate tool]\r\n&gt; \r\n&gt; ✅ **Slide 1: Introduction** (updated with more dramatic visuals)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 2: Key Features**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 3: Pricing**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 4: Next Steps**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Your presentation is ready! All slides have been saved and are accessible via the URLs above. You can download them or use them directly in your presentation software.\r\n\r\n### Example 2: Iterating on Slides\r\n\r\n**You** (in a later conversation): \"I want to add one more slide about customer testimonials before the pricing slide.\"\r\n\r\n**PPT Girl** (remembers your previous presentation):\r\n&gt; I'll add a testimonials slide between the features and pricing slides. Let me propose:\r\n&gt; \r\n&gt; **Slide 3: Customer Testimonials**\r\n&gt; - \"Best chatbot we've ever used\" - Company A\r\n&gt; - \"Reduced support tickets by 60%\" - Company B\r\n&gt; - \"Easy to integrate\" - Company C\r\n&gt; \r\n&gt; Should I generate this slide with the same cyberpunk style to match your previous slides?\r\n\r\n**You**: \"Yes, but use more purple tones to differentiate it slightly.\"\r\n\r\n**PPT Girl**:\r\n&gt; [Generates the slide with purple-toned cyberpunk style]\r\n&gt; \r\n&gt; ✅ **Slide 3: Customer Testimonials** (purple-toned, matching your previous style)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Done! This slide will fit perfectly with your existing presentation.\r\n\r\n**Key Takeaway**: Notice how PPT Girl remembers:\r\n- Your previous presentation structure\r\n- The visual style you used\r\n- How to maintain consistency while allowing variations\r\n\r\nThis intelligence comes from **Acontext's persistent memory and semantic search** - without it, PPT Girl would have no memory of your previous slides and couldn't maintain consistency.\r\n\r\n## 📦 Getting Started\r\n\r\n### Prerequisites\r\n\r\n- Node.js 18+ and npm/yarn/pnpm\r\n- A Supabase account ([create one here](https://database.new))\r\n- An Acontext account ([sign up here](https://acontext.io))\r\n- An OpenAI API key (or compatible API endpoint)\r\n\r\n### Installation\r\n\r\n1. **Clone the repository**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **Install dependencies**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# or\r\nyarn install\r\n# or\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **Set up Supabase**\r\n\r\n   - Create a new project at [Supabase Dashboard](https://database.new)\r\n   - Note your &#96;Project URL&#96; and &#96;Anon (publishable) key&#96;\r\n\r\n4. **Configure environment variables**\r\n\r\n   Create a &#96;.env.local&#96; file in the root directory:\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (required)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (required for full functionality)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# OpenAI LLM (required)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # or gpt-3.5-turbo, gpt-4, etc.\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (optional, for browser automation)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **Set up database schema**\r\n\r\n   - Open your Supabase project\r\n   - Go to **SQL Editor**\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96;\r\n   - This creates tables for &#96;chat_sessions&#96; and &#96;chat_messages&#96;\r\n   - For Acontext integration, also run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **Run the development server**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# or\r\nyarn dev\r\n# or\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\nVisit &#96;http://localhost:3000&#96; to see your application.\r\n\r\n## 🎨 Customization Guide\r\n\r\n### Customizing the UI\r\n\r\nThe UI is built with **Tailwind CSS** and **shadcn/ui** components, making it easy to customize:\r\n\r\n1. **Theme Colors**: Edit &#96;tailwind.config.ts&#96; to change color schemes\r\n2. **Components**: All UI components are in &#96;components/ui/&#96; - modify as needed\r\n3. **Layout**: Main pages are in &#96;app/&#96; directory\r\n4. **Homepage**: Customize &#96;app/page.tsx&#96; for your landing page\r\n5. **Chat Interface**: Modify &#96;components/chatbot-panel.tsx&#96; for chat UI changes\r\n\r\n### Customizing the Avatar\r\n\r\nThe agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path\r\n2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy\r\n3. **Chat Avatar**: Modify the avatar display in &#96;components/chatbot-panel.tsx&#96; if you also want PPT Girl (or another character) in the chat UI\r\n\r\nExample locations:\r\n- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset\r\n- &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy\r\n\r\n### Adding Custom Tools\r\n\r\nTools are defined as OpenAI function calling schemas. To add your own tool:\r\n\r\n1. **Create a tool file** in &#96;lib/&#96; (e.g., &#96;lib/my-custom-tool.ts&#96;):\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"Description of what your tool does\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"Parameter description\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // Your tool logic here\r\n  return {\r\n    result: \"Tool execution result\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **Register the tool** in &#96;lib/openai-client.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// Add to getAvailableTools function\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// Add to executeToolCall function\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **Wire it into the chat API** in &#96;app/api/chatbot/route.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// The tools are automatically included when calling chatCompletionStream\r\n&#96;&#96;&#96;\r\n\r\n**Existing Tool Examples:**\r\n- &#96;lib/browser-use.ts&#96; - Browser automation\r\n- &#96;lib/acontext-disk-tools.ts&#96; - File system operations\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - Experience search\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo management\r\n\r\n### Customizing Acontext Integration\r\n\r\nThe Acontext integration is modular and can be customized:\r\n\r\n- **Session Management**: &#96;lib/acontext-integration.ts&#96; - Modify session creation and management\r\n- **Client Configuration**: &#96;lib/acontext-client.ts&#96; - Adjust Acontext client settings\r\n- **Tool Integration**: &#96;lib/acontext-disk-tools.ts&#96; - Customize disk tool behavior\r\n- **Experience Search**: &#96;lib/acontext-experience-search-tool.ts&#96; - Modify search logic\r\n\r\n## 📚 Project Structure\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app directory\r\n│   ├── api/               # API routes\r\n│   │   ├── acontext/      # Acontext API endpoints\r\n│   │   ├── chatbot/       # Chat API endpoint\r\n│   │   └── tools/         # Tools API endpoint\r\n│   ├── auth/              # Authentication pages\r\n│   ├── protected/         # Protected chat page\r\n│   └── page.tsx           # Homepage\r\n├── components/             # React components\r\n│   ├── ui/                # shadcn/ui components\r\n│   ├── chatbot-panel.tsx  # Main chat interface\r\n│   └── parallax-character.tsx  # Homepage character\r\n├── lib/                   # Core libraries\r\n│   ├── acontext-*.ts      # Acontext integration\r\n│   ├── openai-client.ts   # OpenAI client wrapper\r\n│   ├── browser-use.ts    # Browser automation\r\n│   └── supabase/          # Supabase utilities\r\n├── specs/                 # Project specifications\r\n└── types/                 # TypeScript types\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 Available Tools\r\n\r\n### Built-in Tools\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - Performs web automation tasks\r\n   - Requires Browser Use Cloud API key\r\n   - Location: &#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk Tools**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - File system operations on Acontext Disk\r\n   - Location: &#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **Experience Search** (&#96;experience_search&#96;)\r\n   - Searches user's learned skills from Acontext Space\r\n   - Location: &#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo Management** (&#96;todo&#96;)\r\n   - Create and manage todos within chat sessions\r\n   - Location: &#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### Adding Your Own Tools\r\n\r\nSee the [Customization Guide](#adding-custom-tools) section above.\r\n\r\n## 🌐 Environment Variables\r\n\r\n| Variable | Description | Required |\r\n|----------|-------------|----------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase project URL | Yes |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon key | Yes |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API key | Yes (for full features) |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API base URL | No (has default) |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI-compatible API endpoint | Yes |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API key | Yes |\r\n| &#96;OPENAI_LLM_MODEL&#96; | Model name (e.g., &#96;gpt-4o-mini&#96;) | Yes |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | Temperature (0-2) | No (default: 0.7) |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | Max tokens in response | No (default: 2000) |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API key | No (optional) |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | Upstream image generation API key (sent as &#96;x-goog-api-key&#96;) | No (optional, required for image_generate) |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | Upstream image generation base URL | No (default: &#96;https://api.openai-next.com&#96;) |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | Image generation model name (server-controlled; not overridable by tool args) | No (default: &#96;gemini-3-pro-image-preview&#96;) |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | Image generation API timeout in milliseconds | No (default: 120000) |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | Bypass HTTP_PROXY/HTTPS_PROXY for Acontext API (local development only) | No (optional) |\r\n\r\n## 🚢 Deployment\r\n\r\n### Deploy to Vercel\r\n\r\nVercel deployment will guide you through creating a Supabase account and project.\r\n\r\nAfter installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.\r\n\r\n[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)\r\n\r\nThe above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.\r\n\r\n#### Vercel Configuration Explained\r\n\r\nWhen deploying to Vercel, you have two options:\r\n\r\n**Option 1: One-Click Deploy (Recommended for First-Time Setup)**\r\n\r\n1. Click the \"Deploy with Vercel\" button above\r\n2. Vercel will prompt you to:\r\n   - Sign in to Vercel (or create an account)\r\n   - Connect your GitHub account (if not already connected)\r\n   - Create a new Supabase project (or connect existing one)\r\n3. During the Supabase integration setup:\r\n   - Vercel will automatically create a Supabase project for you\r\n   - All required Supabase environment variables will be automatically configured:\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. You'll need to manually add the remaining environment variables in Vercel dashboard:\r\n   - &#96;ACONTEXT_API_KEY&#96; - Your Acontext API key\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API endpoint (default: &#96;https://api.openai.com/v1&#96;)\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - Your OpenAI API key\r\n   - &#96;OPENAI_LLM_MODEL&#96; - Model name (e.g., &#96;gpt-4o-mini&#96;)\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - Temperature (default: &#96;0.7&#96;)\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - Max tokens (default: &#96;2000&#96;)\r\n   - &#96;BROWSER_USE_API_KEY&#96; - Optional, for browser automation\r\n   - &#96;ACONTEXT_BASE_URL&#96; - Optional, defaults to &#96;https://api.acontext.com/api/v1&#96;\r\n   - &#96;IMAGE_GEN_API_KEY&#96; - Optional, required for image generation feature\r\n   - &#96;IMAGE_GEN_BASE_URL&#96; - Optional, defaults to &#96;https://api.openai-next.com&#96;\r\n   - &#96;IMAGE_GEN_DEFAULT_MODEL&#96; - Optional, defaults to &#96;gemini-3-pro-image-preview&#96;\r\n   - &#96;IMAGE_GEN_TIMEOUT_MS&#96; - Optional, defaults to &#96;120000&#96; (120 seconds)\r\n   - &#96;ACONTEXT_BYPASS_PROXY&#96; - Optional, for local development only\r\n5. After deployment, run the database migrations:\r\n   - Go to your Supabase project dashboard\r\n   - Navigate to SQL Editor\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n**Option 2: Manual Deployment (If You Already Have a GitHub Repository)**\r\n\r\n1. Push your code to GitHub\r\n2. Go to [Vercel Dashboard](https://vercel.com/dashboard)\r\n3. Click \"Add New Project\"\r\n4. Import your GitHub repository\r\n5. Configure environment variables:\r\n   - **Supabase Integration**: Click \"Add Integration\" → Search \"Supabase\" → Connect your Supabase project\r\n     - This automatically sets &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **Manual Variables**: Add the remaining environment variables listed above\r\n6. Click \"Deploy\"\r\n7. After deployment, run the database migrations in Supabase SQL Editor:\r\n   - Run &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n#### Environment Variables in Vercel\r\n\r\nTo add environment variables in Vercel:\r\n\r\n1. Go to your project in Vercel Dashboard\r\n2. Navigate to **Settings** → **Environment Variables**\r\n3. Add each variable with its value\r\n4. Select which environments to apply to (Production, Preview, Development)\r\n5. Click \"Save\"\r\n6. Redeploy your application for changes to take effect\r\n\r\n**Important Notes:**\r\n- Environment variables starting with &#96;NEXT_PUBLIC_&#96; are exposed to the browser\r\n- Keep sensitive keys (like &#96;OPENAI_LLM_API_KEY&#96;, &#96;ACONTEXT_API_KEY&#96;) secure and never commit them\r\n- Vercel automatically provides &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; when you use the Supabase integration\r\n\r\n#### Local Development After Vercel Deployment\r\n\r\nIf you wish to just develop locally and not deploy to Vercel, follow the steps below:\r\n\r\n1. Clone the repository from GitHub (created during Vercel deployment)\r\n2. Install dependencies: &#96;npm install&#96;\r\n3. Create &#96;.env.local&#96; file with all environment variables (see [Installation](#installation) section)\r\n4. Run database migrations in Supabase SQL Editor\r\n5. Start development server: &#96;npm run dev&#96;\r\n\r\n### Other Platforms\r\n\r\nThis is a standard Next.js application and can be deployed to any platform that supports Next.js:\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- Self-hosted with Node.js\r\n\r\n## 🔌 Acontext Integration Details\r\n\r\n### Implemented Features\r\n\r\n#### 1. Session Persistence ✅\r\n- Each chat session maps to an Acontext Session (reused, not recreated each time)\r\n- Database schema includes &#96;acontext_session_id&#96; field\r\n- Sessions automatically create or reuse Acontext sessions\r\n- All messages are stored in the same Acontext session\r\n\r\n#### 2. Semantic Search ✅\r\n- Retrieves relevant historical context from Acontext before generating responses\r\n- Searches Acontext session for relevant historical messages before calling LLM\r\n- Injects search results into system prompt to enhance context coherence\r\n- Enabled by default, can be disabled with &#96;enableSemanticSearch: false&#96;\r\n\r\n#### 3. File Upload &amp; Artifacts ✅\r\n- Support for uploading files (PDFs, images, documents) for AI analysis\r\n- Chat interface includes file upload button (📎 icon)\r\n- Supports multiple file uploads\r\n- Files are uploaded to Acontext Disk via Artifacts API\r\n- Uploaded files are referenced in messages, AI can read file content\r\n- **Image Support**: Uses OpenAI Vision API, AI can directly view and analyze images\r\n- **File List View**: View all files stored in Acontext Disk\r\n\r\n#### 4. File System Tools (Function Calling) ✅\r\n- LLM can autonomously read/write files on Acontext Disk through tool functions\r\n- Includes official &#96;DISK_TOOLS&#96; exposed via OpenAI Tool Schema: &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n- Chat API automatically provides these tools when Acontext is configured\r\n- Tools automatically select existing disk (or create one if needed), no frontend intervention required\r\n\r\n### File Upload Usage\r\n\r\n#### Frontend (Chat Interface)\r\n\r\n1. **Click attachment button**: 📎 (paperclip) icon button next to input box\r\n2. **Select files**: Opens file picker, supports multiple files\r\n3. **View preview**: Selected files appear above input box with filename\r\n4. **Remove attachment**: Click ❌ button next to file to remove\r\n5. **Send message**: Enter message and send, files upload with message\r\n6. **View file list**: Click \"Files\" button to view all files in Acontext Disk\r\n\r\n#### API Usage\r\n\r\nSend a message with attachments:\r\n\r\n&#96;&#96;&#96;typescript\r\nconst response = await fetch(\"/api/chatbot\", {\r\n  method: \"POST\",\r\n  headers: {\r\n    \"Content-Type\": \"application/json\",\r\n  },\r\n  body: JSON.stringify({\r\n    message: \"Analyze this document\",\r\n    sessionId: \"your-session-id\",\r\n    attachments: [\r\n      {\r\n        filename: \"document.pdf\",\r\n        content: \"base64-encoded-content\", // base64 encoded file content\r\n        mimeType: \"application/pdf\",\r\n      },\r\n      {\r\n        filename: \"image.png\",\r\n        content: \"base64-encoded-image\",\r\n        mimeType: \"image/png\",\r\n      },\r\n    ],\r\n    enableSemanticSearch: true, // optional, default true\r\n  }),\r\n});\r\n&#96;&#96;&#96;\r\n\r\n**Attachment Format:**\r\n- &#96;filename&#96; (string): File name\r\n- &#96;content&#96; (string): Base64 encoded file content (without &#96;data:image/png;base64,&#96; prefix)\r\n- &#96;mimeType&#96; (string): MIME type, e.g., &#96;application/pdf&#96;, &#96;image/png&#96;, &#96;text/plain&#96;\r\n\r\n#### View File List\r\n\r\n&#96;&#96;&#96;typescript\r\n// List all artifacts\r\nconst response = await fetch(\"/api/acontext/artifacts\");\r\nconst data = await response.json();\r\n\r\nif (data.success) {\r\n  console.log(&#96;Found ${data.count} files:&#96;, data.artifacts);\r\n}\r\n\r\n// List files from specific disk\r\nconst response = await fetch(\"/api/acontext/artifacts?diskId=your-disk-id\");\r\n&#96;&#96;&#96;\r\n\r\n### Database Migration\r\n\r\nRun the following SQL to add Acontext-related fields:\r\n\r\n&#96;&#96;&#96;sql\r\n-- Run in Supabase SQL Editor\r\n-- File location: specs/001-chatbot-openai/migration-acontext.sql\r\n&#96;&#96;&#96;\r\n\r\n### Environment Variables\r\n\r\nEnsure Acontext is configured in &#96;.env.local&#96;:\r\n\r\n&#96;&#96;&#96;env\r\nACONTEXT_API_KEY=your_api_key_here\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# Bypass proxy for Acontext API (local development only)\r\n# When set to true or 1, Acontext API requests bypass HTTP_PROXY/HTTPS_PROXY\r\n# Other service requests still use proxy\r\nACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development\r\n&#96;&#96;&#96;\r\n\r\n### Implementation Details\r\n\r\n**Key Files:**\r\n- &#96;lib/acontext-integration.ts&#96; - Acontext integration utility functions\r\n- &#96;lib/acontext-disk-tools.ts&#96; - Acontext disk file system tools (Function Calling)\r\n- &#96;app/api/chatbot/route.ts&#96; - Updated chat API with Acontext integration\r\n- &#96;components/chatbot-panel.tsx&#96; - File upload UI\r\n- &#96;types/chat.ts&#96; - Updated type definitions\r\n\r\n**Key Functions:**\r\n- &#96;getOrCreateAcontextSession()&#96; - Get or create Acontext session\r\n- &#96;searchRelevantContext()&#96; - Semantic search for relevant context\r\n- &#96;uploadFileToAcontext()&#96; - Upload file to Acontext\r\n- &#96;storeMessageInAcontext()&#96; - Store message in Acontext\r\n\r\n**Notes:**\r\n- **Optional Integration**: If &#96;ACONTEXT_API_KEY&#96; is not configured, all Acontext features automatically skip, basic chat functionality remains unaffected\r\n- **Error Handling**: All Acontext operations have error handling, failures don't affect main flow\r\n- **Performance**: Semantic search retrieves recent messages as context, production may need more refined search strategy\r\n\r\n## 📖 Documentation\r\n\r\n- Project docs (context / SOPs):\r\n  - &#96;public/fonts/skills/README.md&#96; - Skills folder purpose (project experience / context entry)\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - How to add a new character (frontend)\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext Documentation](https://docs.acontext.io)\r\n- [Next.js Documentation](https://nextjs.org/docs)\r\n- [Supabase Documentation](https://supabase.com/docs)\r\n- [shadcn/ui Documentation](https://ui.shadcn.com)\r\n\r\n## 🤝 Contributing\r\n\r\nThis is a starter template - feel free to fork and customize it for your needs!\r\n\r\n## 📄 License\r\n\r\nCheck the LICENSE file in the repository.\r\n\r\n## 🆘 Support\r\n\r\n- **Acontext**: [Documentation](https://docs.acontext.io) | [Support](https://acontext.io)\r\n- **Issues**: Open an issue in the repository\r\n\r\n---\r\n\r\n**Built with ❤️ using Acontext Platform**\r\n",
+    "languageId": "markdown"
+  }
+}
+```
+Result:
+
+```json
+{
+  "diff": {
+    "chunks": [
+      {
+        "diffString": "    \r\n    &lt;p align=\"center\"&gt;\r\n-     &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n+     &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n      &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n      &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r",
+        "oldStart": 23,
+        "newStart": 23,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      },
+      {
+        "diffString": "  \r\n  &lt;div align=\"center\"&gt;\r\n-   &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n+   &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r",
+        "oldStart": 345,
+        "newStart": 345,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      }
+    ],
+    "editor": "EDITOR_AI"
+  },
+  "shouldAutoFixLints": true,
+  "resultForModel": "Success. Updated the following files:\nM README.md",
+  "contentsAfterEdit": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;A PPT-style slide generator experience built on the Acontext Agent Playground template&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    Powered by &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#features\"&gt;&lt;strong&gt;Features&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#getting-started\"&gt;&lt;strong&gt;Getting Started&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#deployment\"&gt;&lt;strong&gt;Deployment&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#documentation\"&gt;&lt;strong&gt;Documentation&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** is an intelligent PPT slide generation system powered by [Acontext](https://acontext.io). Simply chat with **\"PPT Girl\"** (an AI assistant) about your presentation topic, and she will automatically create a series of beautiful, cyberpunk-style slide images ready for your presentation.\r\n\r\n## 🎯 Core Functionality\r\n\r\n### What Does It Do?\r\n\r\n**Transform text into professional PPT slides** through natural conversation:\r\n\r\n1. **📝 Input**: You provide presentation content (text, paragraphs, topics, or outlines)\r\n2. **🧠 Planning**: PPT Girl analyzes your content and proposes a slide-by-slide outline (titles + bullet points)\r\n3. **✏️ Review**: You review and confirm the outline\r\n4. **🎨 Generation**: PPT Girl generates 16:9 cyberpunk-style slide images using AI image generation\r\n5. **📦 Delivery**: Each slide image is automatically stored and accessible via URLs\r\n\r\n### Key Features of PPT Generation\r\n\r\n- **🎨 Consistent Visual Style**: All slides share a unified cyberpunk aesthetic (neon lights, holographic effects, futuristic backgrounds)\r\n- **📐 Smart Layout**: Clean, professional layouts with ample space for text overlays\r\n- **🔄 Interactive Workflow**: Confirm outlines before generation, iterate on specific slides\r\n- **💾 Automatic Storage**: All generated slides are stored in Acontext Disk for easy access\r\n- **🧠 Context Awareness**: Remembers your previous slides and maintains visual consistency across sessions\r\n\r\n## 🤔 Why Acontext? The Key Integration Benefits\r\n\r\n**Acontext is not optional** - it's what makes this PPT generator intelligent and practical. Here's why:\r\n\r\n### 1. **Persistent Memory for Multi-Slide Presentations** 🧠\r\n**Problem**: Generating a full presentation requires multiple rounds of conversation. Without memory, the AI would forget:\r\n- What slides were already created\r\n- The visual style and theme you agreed upon\r\n- The overall structure of your presentation\r\n\r\n**Solution with Acontext**: Every chat session persists to an Acontext Session. PPT Girl remembers:\r\n- All previously generated slides in your current presentation\r\n- Your preferences (e.g., \"use more purple tones\", \"make slides simpler\")\r\n- The presentation structure and context\r\n\r\n**Real Impact**: You can say \"add one more slide about pricing\" or \"make slide 3 more detailed\" - and PPT Girl knows exactly which slide you're referring to.\r\n\r\n### 2. **Semantic Search for Style Consistency** 🔍\r\n**Problem**: When generating multiple slides, maintaining visual consistency is challenging. You might want:\r\n- All slides to share similar color schemes\r\n- Consistent background elements\r\n- Similar layouts across related slides\r\n\r\n**Solution with Acontext**: Before generating each new slide, Acontext performs semantic search to retrieve:\r\n- Previous slide generation prompts\r\n- Your feedback and style preferences\r\n- Related slides from the same presentation\r\n\r\n**Real Impact**: When you say \"make this slide match the style of the intro slide,\" PPT Girl can find and reference your earlier slides automatically.\r\n\r\n### 3. **Skill Learning for Better Results Over Time** 📈\r\n**Problem**: Every user has different preferences. Some like minimal designs, others prefer detailed backgrounds. Without learning, the AI starts from scratch each time.\r\n\r\n**Solution with Acontext**: Acontext Space learns from completed presentations:\r\n- Your preferred slide styles\r\n- Common patterns in your presentations (e.g., \"you always include a conclusion slide\")\r\n- Successful slide structures that worked well before\r\n\r\n**Real Impact**: The more presentations you create, the better PPT Girl understands your style. Your 10th presentation will be much more aligned with your preferences than your first.\r\n\r\n### 4. **Automatic File Management for Generated Slides** 📁\r\n**Problem**: Generated slide images need to be stored, organized, and easily accessible. Managing files manually is tedious and error-prone.\r\n\r\n**Solution with Acontext Disk**:\r\n- All generated slides are automatically stored in Acontext Disk\r\n- Each slide has a unique URL for easy sharing and embedding\r\n- Files are organized by session and date\r\n- No need to manually download or manage files\r\n\r\n**Real Impact**: You can view all your generated slides in one place, download them in bulk, or share individual slides instantly.\r\n\r\n### 5. **Context Compression for Long Presentations** 💾\r\n**Problem**: Creating a 20-slide presentation involves many messages, tool calls, and generated images. Without compression, the conversation context becomes too large for the LLM to process efficiently.\r\n\r\n**Solution with Acontext**: \r\n- Automatic context compression when conversations get long\r\n- Important information (slide structures, confirmed outlines) is preserved\r\n- Less relevant intermediate messages are compressed or summarized\r\n\r\n**Real Impact**: You can create presentations of any length without hitting token limits or losing important context.\r\n\r\n### 6. **Cross-Session Intelligence** 🔄\r\n**Problem**: Without memory, each new conversation starts from zero. You can't reference slides from previous presentations or build upon past work.\r\n\r\n**Solution with Acontext**:\r\n- Search across all your previous presentations\r\n- Reference slides from past sessions\r\n- Build upon existing slide libraries\r\n\r\n**Real Impact**: \"Create a presentation similar to the one I made last week\" becomes possible. PPT Girl can find and reference your previous work.\r\n\r\n---\r\n\r\n**Bottom Line**: Acontext transforms PPT Girl from a \"one-shot slide generator\" into an **intelligent presentation assistant** that learns your preferences, maintains context across sessions, and delivers increasingly better results over time.\r\n\r\n## ✨ Features\r\n\r\n### 🎨 PPT Slide Generation (Core Feature)\r\n\r\n- **🤖 AI-Powered Generation**: Natural language conversation with PPT Girl to create professional slides\r\n- **📋 Smart Outline Planning**: Automatically breaks down content into logical slide structure (titles + bullets)\r\n- **🎨 Cyberpunk Visual Style**: Consistent, futuristic aesthetic with neon lights and holographic effects\r\n- **📐 Professional Layouts**: Clean, 16:9 layouts optimized for text overlays and content\r\n- **🔄 Interactive Workflow**: Review and confirm outlines before generation; iterate on individual slides\r\n- **🖼️ Image Generation Tool**: Seamless integration with AI image generation APIs\r\n- **💾 Automatic Storage**: Generated slides stored in Acontext Disk with shareable URLs\r\n- **📊 Multi-Slide Support**: Generate entire presentations with consistent style across all slides\r\n\r\n### 💬 Chat &amp; Interface\r\n\r\n- **🔐 Authentication**: Email/password authentication with Supabase\r\n- **💬 Rich Chat UI**: Full-featured chat interface with message history, streaming responses, and tool call visualization\r\n- **🎨 Customizable UI**: Built with Tailwind CSS and shadcn/ui components - fully customizable\r\n- **🤖 Avatar Support**: Customizable agent avatar (PPT Girl character included)\r\n- **📁 File Upload**: Support for uploading PDFs, images, and documents for context\r\n- **🌐 Browser Automation**: Integrated Browser Use SDK for web automation tasks (optional)\r\n- **🌓 Theme Support**: Dark/light mode with next-themes\r\n\r\n### 🧠 Acontext-Powered Intelligence\r\n\r\n- **💾 Session Persistence**: Every chat session persists to Acontext Session - PPT Girl remembers your presentations\r\n- **🔍 Semantic Context Search**: Automatically retrieves relevant historical context (previous slides, style preferences) before generating responses\r\n- **📦 Disk Storage**: All generated slides automatically stored in Acontext Disk with organized access\r\n- **📈 Experience Learning**: Learns from your Space to understand your preferred slide styles and improve over time\r\n- **🗜️ Context Compression**: Automatic token management for long presentations with manual compression option\r\n- **🔄 Cross-Session Intelligence**: Reference slides from previous presentations and build upon past work\r\n\r\n## 🛠️ Tech Stack\r\n\r\n- **Framework**: Next.js 15+ (App Router)\r\n- **Authentication &amp; Database**: Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI Platform**: Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**: OpenAI (&#96;openai&#96; SDK) - compatible with OpenAI API\r\n- **Browser Agent**: Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI Components**: Tailwind CSS, shadcn/ui, Lucide icons\r\n- **Language**: TypeScript\r\n- **Theming**: next-themes\r\n\r\n## 📖 Usage Example\r\n\r\nHere's a real conversation flow with PPT Girl:\r\n\r\n### Example 1: Creating a Product Launch Presentation\r\n\r\n**You**: \"I need a presentation about our new AI chatbot product launch. It should cover: introduction, features, pricing, and next steps.\"\r\n\r\n**PPT Girl**: \r\n&gt; I'll help you create a presentation about your AI chatbot product launch. Let me propose a slide outline:\r\n&gt; \r\n&gt; **Slide 1: Introduction**\r\n&gt; - Welcome to the AI Chatbot Launch\r\n&gt; - Revolutionizing customer support\r\n&gt; \r\n&gt; **Slide 2: Key Features**\r\n&gt; - 24/7 intelligent support\r\n&gt; - Natural language understanding\r\n&gt; - Multi-platform integration\r\n&gt; \r\n&gt; **Slide 3: Pricing**\r\n&gt; - Flexible pricing tiers\r\n&gt; - Enterprise solutions available\r\n&gt; \r\n&gt; **Slide 4: Next Steps**\r\n&gt; - Sign up for early access\r\n&gt; - Schedule a demo\r\n&gt; \r\n&gt; Does this outline work for you? Should I proceed with generating the slide images?\r\n\r\n**You**: \"Yes, looks good! Make the introduction slide more dramatic.\"\r\n\r\n**PPT Girl**: \r\n&gt; [Generates 4 slide images using image_generate tool]\r\n&gt; \r\n&gt; ✅ **Slide 1: Introduction** (updated with more dramatic visuals)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 2: Key Features**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 3: Pricing**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 4: Next Steps**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Your presentation is ready! All slides have been saved and are accessible via the URLs above. You can download them or use them directly in your presentation software.\r\n\r\n### Example 2: Iterating on Slides\r\n\r\n**You** (in a later conversation): \"I want to add one more slide about customer testimonials before the pricing slide.\"\r\n\r\n**PPT Girl** (remembers your previous presentation):\r\n&gt; I'll add a testimonials slide between the features and pricing slides. Let me propose:\r\n&gt; \r\n&gt; **Slide 3: Customer Testimonials**\r\n&gt; - \"Best chatbot we've ever used\" - Company A\r\n&gt; - \"Reduced support tickets by 60%\" - Company B\r\n&gt; - \"Easy to integrate\" - Company C\r\n&gt; \r\n&gt; Should I generate this slide with the same cyberpunk style to match your previous slides?\r\n\r\n**You**: \"Yes, but use more purple tones to differentiate it slightly.\"\r\n\r\n**PPT Girl**:\r\n&gt; [Generates the slide with purple-toned cyberpunk style]\r\n&gt; \r\n&gt; ✅ **Slide 3: Customer Testimonials** (purple-toned, matching your previous style)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Done! This slide will fit perfectly with your existing presentation.\r\n\r\n**Key Takeaway**: Notice how PPT Girl remembers:\r\n- Your previous presentation structure\r\n- The visual style you used\r\n- How to maintain consistency while allowing variations\r\n\r\nThis intelligence comes from **Acontext's persistent memory and semantic search** - without it, PPT Girl would have no memory of your previous slides and couldn't maintain consistency.\r\n\r\n## 📦 Getting Started\r\n\r\n### Prerequisites\r\n\r\n- Node.js 18+ and npm/yarn/pnpm\r\n- A Supabase account ([create one here](https://database.new))\r\n- An Acontext account ([sign up here](https://acontext.io))\r\n- An OpenAI API key (or compatible API endpoint)\r\n\r\n### Installation\r\n\r\n1. **Clone the repository**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **Install dependencies**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# or\r\nyarn install\r\n# or\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **Set up Supabase**\r\n\r\n   - Create a new project at [Supabase Dashboard](https://database.new)\r\n   - Note your &#96;Project URL&#96; and &#96;Anon (publishable) key&#96;\r\n\r\n4. **Configure environment variables**\r\n\r\n   Create a &#96;.env.local&#96; file in the root directory:\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (required)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (required for full functionality)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# OpenAI LLM (required)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # or gpt-3.5-turbo, gpt-4, etc.\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (optional, for browser automation)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **Set up database schema**\r\n\r\n   - Open your Supabase project\r\n   - Go to **SQL Editor**\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96;\r\n   - This creates tables for &#96;chat_sessions&#96; and &#96;chat_messages&#96;\r\n   - For Acontext integration, also run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **Run the development server**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# or\r\nyarn dev\r\n# or\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\nVisit &#96;http://localhost:3000&#96; to see your application.\r\n\r\n## 🎨 Customization Guide\r\n\r\n### Customizing the UI\r\n\r\nThe UI is built with **Tailwind CSS** and **shadcn/ui** components, making it easy to customize:\r\n\r\n1. **Theme Colors**: Edit &#96;tailwind.config.ts&#96; to change color schemes\r\n2. **Components**: All UI components are in &#96;components/ui/&#96; - modify as needed\r\n3. **Layout**: Main pages are in &#96;app/&#96; directory\r\n4. **Homepage**: Customize &#96;app/page.tsx&#96; for your landing page\r\n5. **Chat Interface**: Modify &#96;components/chatbot-panel.tsx&#96; for chat UI changes\r\n\r\n### Customizing the Avatar\r\n\r\nThe agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path\r\n2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy\r\n3. **Chat Avatar**: Modify the avatar display in &#96;components/chatbot-panel.tsx&#96; if you also want PPT Girl (or another character) in the chat UI\r\n\r\nExample locations:\r\n- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset\r\n- &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy\r\n\r\n### Adding Custom Tools\r\n\r\nTools are defined as OpenAI function calling schemas. To add your own tool:\r\n\r\n1. **Create a tool file** in &#96;lib/&#96; (e.g., &#96;lib/my-custom-tool.ts&#96;):\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"Description of what your tool does\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"Parameter description\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // Your tool logic here\r\n  return {\r\n    result: \"Tool execution result\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **Register the tool** in &#96;lib/openai-client.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// Add to getAvailableTools function\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// Add to executeToolCall function\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **Wire it into the chat API** in &#96;app/api/chatbot/route.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// The tools are automatically included when calling chatCompletionStream\r\n&#96;&#96;&#96;\r\n\r\n**Existing Tool Examples:**\r\n- &#96;lib/browser-use.ts&#96; - Browser automation\r\n- &#96;lib/acontext-disk-tools.ts&#96; - File system operations\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - Experience search\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo management\r\n\r\n### Customizing Acontext Integration\r\n\r\nThe Acontext integration is modular and can be customized:\r\n\r\n- **Session Management**: &#96;lib/acontext-integration.ts&#96; - Modify session creation and management\r\n- **Client Configuration**: &#96;lib/acontext-client.ts&#96; - Adjust Acontext client settings\r\n- **Tool Integration**: &#96;lib/acontext-disk-tools.ts&#96; - Customize disk tool behavior\r\n- **Experience Search**: &#96;lib/acontext-experience-search-tool.ts&#96; - Modify search logic\r\n\r\n## 📚 Project Structure\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app directory\r\n│   ├── api/               # API routes\r\n│   │   ├── acontext/      # Acontext API endpoints\r\n│   │   ├── chatbot/       # Chat API endpoint\r\n│   │   └── tools/         # Tools API endpoint\r\n│   ├── auth/              # Authentication pages\r\n│   ├── protected/         # Protected chat page\r\n│   └── page.tsx           # Homepage\r\n├── components/             # React components\r\n│   ├── ui/                # shadcn/ui components\r\n│   ├── chatbot-panel.tsx  # Main chat interface\r\n│   └── parallax-character.tsx  # Homepage character\r\n├── lib/                   # Core libraries\r\n│   ├── acontext-*.ts      # Acontext integration\r\n│   ├── openai-client.ts   # OpenAI client wrapper\r\n│   ├── browser-use.ts    # Browser automation\r\n│   └── supabase/          # Supabase utilities\r\n├── specs/                 # Project specifications\r\n└── types/                 # TypeScript types\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 Available Tools\r\n\r\n### Built-in Tools\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - Performs web automation tasks\r\n   - Requires Browser Use Cloud API key\r\n   - Location: &#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk Tools**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - File system operations on Acontext Disk\r\n   - Location: &#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **Experience Search** (&#96;experience_search&#96;)\r\n   - Searches user's learned skills from Acontext Space\r\n   - Location: &#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo Management** (&#96;todo&#96;)\r\n   - Create and manage todos within chat sessions\r\n   - Location: &#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### Adding Your Own Tools\r\n\r\nSee the [Customization Guide](#adding-custom-tools) section above.\r\n\r\n## 🌐 Environment Variables\r\n\r\n| Variable | Description | Required |\r\n|----------|-------------|----------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase project URL | Yes |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon key | Yes |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API key | Yes (for full features) |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API base URL | No (has default) |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI-compatible API endpoint | Yes |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API key | Yes |\r\n| &#96;OPENAI_LLM_MODEL&#96; | Model name (e.g., &#96;gpt-4o-mini&#96;) | Yes |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | Temperature (0-2) | No (default: 0.7) |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | Max tokens in response | No (default: 2000) |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API key | No (optional) |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | Upstream image generation API key (sent as &#96;x-goog-api-key&#96;) | No (optional, required for image_generate) |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | Upstream image generation base URL | No (default: &#96;https://api.openai-next.com&#96;) |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | Image generation model name (server-controlled; not overridable by tool args) | No (default: &#96;gemini-3-pro-image-preview&#96;) |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | Image generation API timeout in milliseconds | No (default: 120000) |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | Bypass HTTP_PROXY/HTTPS_PROXY for Acontext API (local development only) | No (optional) |\r\n\r\n## 🚢 Deployment\r\n\r\n### Deploy to Vercel\r\n\r\nVercel deployment will guide you through creating a Supabase account and project.\r\n\r\nAfter installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.\r\n\r\n[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)\r\n\r\nThe above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.\r\n\r\n#### Vercel Configuration Explained\r\n\r\nWhen deploying to Vercel, you have two options:\r\n\r\n**Option 1: One-Click Deploy (Recommended for First-Time Setup)**\r\n\r\n1. Click the \"Deploy with Vercel\" button above\r\n2. Vercel will prompt you to:\r\n   - Sign in to Vercel (or create an account)\r\n   - Connect your GitHub account (if not already connected)\r\n   - Create a new Supabase project (or connect existing one)\r\n3. During the Supabase integration setup:\r\n   - Vercel will automatically create a Supabase project for you\r\n   - All required Supabase environment variables will be automatically configured:\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. You'll need to manually add the remaining environment variables in Vercel dashboard:\r\n   - &#96;ACONTEXT_API_KEY&#96; - Your Acontext API key\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API endpoint (default: &#96;https://api.openai.com/v1&#96;)\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - Your OpenAI API key\r\n   - &#96;OPENAI_LLM_MODEL&#96; - Model name (e.g., &#96;gpt-4o-mini&#96;)\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - Temperature (default: &#96;0.7&#96;)\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - Max tokens (default: &#96;2000&#96;)\r\n   - &#96;BROWSER_USE_API_KEY&#96; - Optional, for browser automation\r\n   - &#96;ACONTEXT_BASE_URL&#96; - Optional, defaults to &#96;https://api.acontext.com/api/v1&#96;\r\n   - &#96;IMAGE_GEN_API_KEY&#96; - Optional, required for image generation feature\r\n   - &#96;IMAGE_GEN_BASE_URL&#96; - Optional, defaults to &#96;https://api.openai-next.com&#96;\r\n   - &#96;IMAGE_GEN_DEFAULT_MODEL&#96; - Optional, defaults to &#96;gemini-3-pro-image-preview&#96;\r\n   - &#96;IMAGE_GEN_TIMEOUT_MS&#96; - Optional, defaults to &#96;120000&#96; (120 seconds)\r\n   - &#96;ACONTEXT_BYPASS_PROXY&#96; - Optional, for local development only\r\n5. After deployment, run the database migrations:\r\n   - Go to your Supabase project dashboard\r\n   - Navigate to SQL Editor\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n**Option 2: Manual Deployment (If You Already Have a GitHub Repository)**\r\n\r\n1. Push your code to GitHub\r\n2. Go to [Vercel Dashboard](https://vercel.com/dashboard)\r\n3. Click \"Add New Project\"\r\n4. Import your GitHub repository\r\n5. Configure environment variables:\r\n   - **Supabase Integration**: Click \"Add Integration\" → Search \"Supabase\" → Connect your Supabase project\r\n     - This automatically sets &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **Manual Variables**: Add the remaining environment variables listed above\r\n6. Click \"Deploy\"\r\n7. After deployment, run the database migrations in Supabase SQL Editor:\r\n   - Run &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n#### Environment Variables in Vercel\r\n\r\nTo add environment variables in Vercel:\r\n\r\n1. Go to your project in Vercel Dashboard\r\n2. Navigate to **Settings** → **Environment Variables**\r\n3. Add each variable with its value\r\n4. Select which environments to apply to (Production, Preview, Development)\r\n5. Click \"Save\"\r\n6. Redeploy your application for changes to take effect\r\n\r\n**Important Notes:**\r\n- Environment variables starting with &#96;NEXT_PUBLIC_&#96; are exposed to the browser\r\n- Keep sensitive keys (like &#96;OPENAI_LLM_API_KEY&#96;, &#96;ACONTEXT_API_KEY&#96;) secure and never commit them\r\n- Vercel automatically provides &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; when you use the Supabase integration\r\n\r\n#### Local Development After Vercel Deployment\r\n\r\nIf you wish to just develop locally and not deploy to Vercel, follow the steps below:\r\n\r\n1. Clone the repository from GitHub (created during Vercel deployment)\r\n2. Install dependencies: &#96;npm install&#96;\r\n3. Create &#96;.env.local&#96; file with all environment variables (see [Installation](#installation) section)\r\n4. Run database migrations in Supabase SQL Editor\r\n5. Start development server: &#96;npm run dev&#96;\r\n\r\n### Other Platforms\r\n\r\nThis is a standard Next.js application and can be deployed to any platform that supports Next.js:\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- Self-hosted with Node.js\r\n\r\n## 🔌 Acontext Integration Details\r\n\r\n### Implemented Features\r\n\r\n#### 1. Session Persistence ✅\r\n- Each chat session maps to an Acontext Session (reused, not recreated each time)\r\n- Database schema includes &#96;acontext_session_id&#96; field\r\n- Sessions automatically create or reuse Acontext sessions\r\n- All messages are stored in the same Acontext session\r\n\r\n#### 2. Semantic Search ✅\r\n- Retrieves relevant historical context from Acontext before generating responses\r\n- Searches Acontext session for relevant historical messages before calling LLM\r\n- Injects search results into system prompt to enhance context coherence\r\n- Enabled by default, can be disabled with &#96;enableSemanticSearch: false&#96;\r\n\r\n#### 3. File Upload &amp; Artifacts ✅\r\n- Support for uploading files (PDFs, images, documents) for AI analysis\r\n- Chat interface includes file upload button (📎 icon)\r\n- Supports multiple file uploads\r\n- Files are uploaded to Acontext Disk via Artifacts API\r\n- Uploaded files are referenced in messages, AI can read file content\r\n- **Image Support**: Uses OpenAI Vision API, AI can directly view and analyze images\r\n- **File List View**: View all files stored in Acontext Disk\r\n\r\n#### 4. File System Tools (Function Calling) ✅\r\n- LLM can autonomously read/write files on Acontext Disk through tool functions\r\n- Includes official &#96;DISK_TOOLS&#96; exposed via OpenAI Tool Schema: &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n- Chat API automatically provides these tools when Acontext is configured\r\n- Tools automatically select existing disk (or create one if needed), no frontend intervention required\r\n\r\n### File Upload Usage\r\n\r\n#### Frontend (Chat Interface)\r\n\r\n1. **Click attachment button**: 📎 (paperclip) icon button next to input box\r\n2. **Select files**: Opens file picker, supports multiple files\r\n3. **View preview**: Selected files appear above input box with filename\r\n4. **Remove attachment**: Click ❌ button next to file to remove\r\n5. **Send message**: Enter message and send, files upload with message\r\n6. **View file list**: Click \"Files\" button to view all files in Acontext Disk\r\n\r\n#### API Usage\r\n\r\nSend a message with attachments:\r\n\r\n&#96;&#96;&#96;typescript\r\nconst response = await fetch(\"/api/chatbot\", {\r\n  method: \"POST\",\r\n  headers: {\r\n    \"Content-Type\": \"application/json\",\r\n  },\r\n  body: JSON.stringify({\r\n    message: \"Analyze this document\",\r\n    sessionId: \"your-session-id\",\r\n    attachments: [\r\n      {\r\n        filename: \"document.pdf\",\r\n        content: \"base64-encoded-content\", // base64 encoded file content\r\n        mimeType: \"application/pdf\",\r\n      },\r\n      {\r\n        filename: \"image.png\",\r\n        content: \"base64-encoded-image\",\r\n        mimeType: \"image/png\",\r\n      },\r\n    ],\r\n    enableSemanticSearch: true, // optional, default true\r\n  }),\r\n});\r\n&#96;&#96;&#96;\r\n\r\n**Attachment Format:**\r\n- &#96;filename&#96; (string): File name\r\n- &#96;content&#96; (string): Base64 encoded file content (without &#96;data:image/png;base64,&#96; prefix)\r\n- &#96;mimeType&#96; (string): MIME type, e.g., &#96;application/pdf&#96;, &#96;image/png&#96;, &#96;text/plain&#96;\r\n\r\n#### View File List\r\n\r\n&#96;&#96;&#96;typescript\r\n// List all artifacts\r\nconst response = await fetch(\"/api/acontext/artifacts\");\r\nconst data = await response.json();\r\n\r\nif (data.success) {\r\n  console.log(&#96;Found ${data.count} files:&#96;, data.artifacts);\r\n}\r\n\r\n// List files from specific disk\r\nconst response = await fetch(\"/api/acontext/artifacts?diskId=your-disk-id\");\r\n&#96;&#96;&#96;\r\n\r\n### Database Migration\r\n\r\nRun the following SQL to add Acontext-related fields:\r\n\r\n&#96;&#96;&#96;sql\r\n-- Run in Supabase SQL Editor\r\n-- File location: specs/001-chatbot-openai/migration-acontext.sql\r\n&#96;&#96;&#96;\r\n\r\n### Environment Variables\r\n\r\nEnsure Acontext is configured in &#96;.env.local&#96;:\r\n\r\n&#96;&#96;&#96;env\r\nACONTEXT_API_KEY=your_api_key_here\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# Bypass proxy for Acontext API (local development only)\r\n# When set to true or 1, Acontext API requests bypass HTTP_PROXY/HTTPS_PROXY\r\n# Other service requests still use proxy\r\nACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development\r\n&#96;&#96;&#96;\r\n\r\n### Implementation Details\r\n\r\n**Key Files:**\r\n- &#96;lib/acontext-integration.ts&#96; - Acontext integration utility functions\r\n- &#96;lib/acontext-disk-tools.ts&#96; - Acontext disk file system tools (Function Calling)\r\n- &#96;app/api/chatbot/route.ts&#96; - Updated chat API with Acontext integration\r\n- &#96;components/chatbot-panel.tsx&#96; - File upload UI\r\n- &#96;types/chat.ts&#96; - Updated type definitions\r\n\r\n**Key Functions:**\r\n- &#96;getOrCreateAcontextSession()&#96; - Get or create Acontext session\r\n- &#96;searchRelevantContext()&#96; - Semantic search for relevant context\r\n- &#96;uploadFileToAcontext()&#96; - Upload file to Acontext\r\n- &#96;storeMessageInAcontext()&#96; - Store message in Acontext\r\n\r\n**Notes:**\r\n- **Optional Integration**: If &#96;ACONTEXT_API_KEY&#96; is not configured, all Acontext features automatically skip, basic chat functionality remains unaffected\r\n- **Error Handling**: All Acontext operations have error handling, failures don't affect main flow\r\n- **Performance**: Semantic search retrieves recent messages as context, production may need more refined search strategy\r\n\r\n## 📖 Documentation\r\n\r\n- Project docs (context / SOPs):\r\n  - &#96;public/fonts/skills/README.md&#96; - Skills folder purpose (project experience / context entry)\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - How to add a new character (frontend)\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext Documentation](https://docs.acontext.io)\r\n- [Next.js Documentation](https://nextjs.org/docs)\r\n- [Supabase Documentation](https://supabase.com/docs)\r\n- [shadcn/ui Documentation](https://ui.shadcn.com)\r\n\r\n## 🤝 Contributing\r\n\r\nThis is a starter template - feel free to fork and customize it for your needs!\r\n\r\n## 📄 License\r\n\r\nCheck the LICENSE file in the repository.\r\n\r\n## 🆘 Support\r\n\r\n- **Acontext**: [Documentation](https://docs.acontext.io) | [Support](https://acontext.io)\r\n- **Issues**: Open an issue in the repository\r\n\r\n---\r\n\r\n**Built with ❤️ using Acontext Platform**\r\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Adjusting Vercel button URL**
+
+I'm updating the Vercel button link with a new repository URL, project name, demo title, description, and demo URL in both README files using a patch to ensure consistency.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="apply_patch">
+<details>
+<summary>Tool use: **apply_patch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "relativeWorkspacePath": "README.md"
+}
+```
+Additional data:
+
+```json
+{
+  "codeblockId": "46786817-bb34-4e6d-9a1c-85d3c78cd080",
+  "codeblock": {
+    "uri": {
+      "scheme": "file",
+      "authority": "",
+      "path": "/c:/acontext-agent-playground-ppt/README.md",
+      "query": "",
+      "fragment": "",
+      "_formatted": "file:///c%3A/acontext-agent-playground-ppt/README.md",
+      "_fsPath": null
+    },
+    "codeblockId": "46786817-bb34-4e6d-9a1c-85d3c78cd080",
+    "codeBlockIdx": 0,
+    "content": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;A PPT-style slide generator experience built on the Acontext Agent Playground template&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    Powered by &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#features\"&gt;&lt;strong&gt;Features&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#getting-started\"&gt;&lt;strong&gt;Getting Started&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#deployment\"&gt;&lt;strong&gt;Deployment&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#documentation\"&gt;&lt;strong&gt;Documentation&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** is an intelligent PPT slide generation system powered by [Acontext](https://acontext.io). Simply chat with **\"PPT Girl\"** (an AI assistant) about your presentation topic, and she will automatically create a series of beautiful, cyberpunk-style slide images ready for your presentation.\r\n\r\n## 🎯 Core Functionality\r\n\r\n### What Does It Do?\r\n\r\n**Transform text into professional PPT slides** through natural conversation:\r\n\r\n1. **📝 Input**: You provide presentation content (text, paragraphs, topics, or outlines)\r\n2. **🧠 Planning**: PPT Girl analyzes your content and proposes a slide-by-slide outline (titles + bullet points)\r\n3. **✏️ Review**: You review and confirm the outline\r\n4. **🎨 Generation**: PPT Girl generates 16:9 cyberpunk-style slide images using AI image generation\r\n5. **📦 Delivery**: Each slide image is automatically stored and accessible via URLs\r\n\r\n### Key Features of PPT Generation\r\n\r\n- **🎨 Consistent Visual Style**: All slides share a unified cyberpunk aesthetic (neon lights, holographic effects, futuristic backgrounds)\r\n- **📐 Smart Layout**: Clean, professional layouts with ample space for text overlays\r\n- **🔄 Interactive Workflow**: Confirm outlines before generation, iterate on specific slides\r\n- **💾 Automatic Storage**: All generated slides are stored in Acontext Disk for easy access\r\n- **🧠 Context Awareness**: Remembers your previous slides and maintains visual consistency across sessions\r\n\r\n## 🤔 Why Acontext? The Key Integration Benefits\r\n\r\n**Acontext is not optional** - it's what makes this PPT generator intelligent and practical. Here's why:\r\n\r\n### 1. **Persistent Memory for Multi-Slide Presentations** 🧠\r\n**Problem**: Generating a full presentation requires multiple rounds of conversation. Without memory, the AI would forget:\r\n- What slides were already created\r\n- The visual style and theme you agreed upon\r\n- The overall structure of your presentation\r\n\r\n**Solution with Acontext**: Every chat session persists to an Acontext Session. PPT Girl remembers:\r\n- All previously generated slides in your current presentation\r\n- Your preferences (e.g., \"use more purple tones\", \"make slides simpler\")\r\n- The presentation structure and context\r\n\r\n**Real Impact**: You can say \"add one more slide about pricing\" or \"make slide 3 more detailed\" - and PPT Girl knows exactly which slide you're referring to.\r\n\r\n### 2. **Semantic Search for Style Consistency** 🔍\r\n**Problem**: When generating multiple slides, maintaining visual consistency is challenging. You might want:\r\n- All slides to share similar color schemes\r\n- Consistent background elements\r\n- Similar layouts across related slides\r\n\r\n**Solution with Acontext**: Before generating each new slide, Acontext performs semantic search to retrieve:\r\n- Previous slide generation prompts\r\n- Your feedback and style preferences\r\n- Related slides from the same presentation\r\n\r\n**Real Impact**: When you say \"make this slide match the style of the intro slide,\" PPT Girl can find and reference your earlier slides automatically.\r\n\r\n### 3. **Skill Learning for Better Results Over Time** 📈\r\n**Problem**: Every user has different preferences. Some like minimal designs, others prefer detailed backgrounds. Without learning, the AI starts from scratch each time.\r\n\r\n**Solution with Acontext**: Acontext Space learns from completed presentations:\r\n- Your preferred slide styles\r\n- Common patterns in your presentations (e.g., \"you always include a conclusion slide\")\r\n- Successful slide structures that worked well before\r\n\r\n**Real Impact**: The more presentations you create, the better PPT Girl understands your style. Your 10th presentation will be much more aligned with your preferences than your first.\r\n\r\n### 4. **Automatic File Management for Generated Slides** 📁\r\n**Problem**: Generated slide images need to be stored, organized, and easily accessible. Managing files manually is tedious and error-prone.\r\n\r\n**Solution with Acontext Disk**:\r\n- All generated slides are automatically stored in Acontext Disk\r\n- Each slide has a unique URL for easy sharing and embedding\r\n- Files are organized by session and date\r\n- No need to manually download or manage files\r\n\r\n**Real Impact**: You can view all your generated slides in one place, download them in bulk, or share individual slides instantly.\r\n\r\n### 5. **Context Compression for Long Presentations** 💾\r\n**Problem**: Creating a 20-slide presentation involves many messages, tool calls, and generated images. Without compression, the conversation context becomes too large for the LLM to process efficiently.\r\n\r\n**Solution with Acontext**: \r\n- Automatic context compression when conversations get long\r\n- Important information (slide structures, confirmed outlines) is preserved\r\n- Less relevant intermediate messages are compressed or summarized\r\n\r\n**Real Impact**: You can create presentations of any length without hitting token limits or losing important context.\r\n\r\n### 6. **Cross-Session Intelligence** 🔄\r\n**Problem**: Without memory, each new conversation starts from zero. You can't reference slides from previous presentations or build upon past work.\r\n\r\n**Solution with Acontext**:\r\n- Search across all your previous presentations\r\n- Reference slides from past sessions\r\n- Build upon existing slide libraries\r\n\r\n**Real Impact**: \"Create a presentation similar to the one I made last week\" becomes possible. PPT Girl can find and reference your previous work.\r\n\r\n---\r\n\r\n**Bottom Line**: Acontext transforms PPT Girl from a \"one-shot slide generator\" into an **intelligent presentation assistant** that learns your preferences, maintains context across sessions, and delivers increasingly better results over time.\r\n\r\n## ✨ Features\r\n\r\n### 🎨 PPT Slide Generation (Core Feature)\r\n\r\n- **🤖 AI-Powered Generation**: Natural language conversation with PPT Girl to create professional slides\r\n- **📋 Smart Outline Planning**: Automatically breaks down content into logical slide structure (titles + bullets)\r\n- **🎨 Cyberpunk Visual Style**: Consistent, futuristic aesthetic with neon lights and holographic effects\r\n- **📐 Professional Layouts**: Clean, 16:9 layouts optimized for text overlays and content\r\n- **🔄 Interactive Workflow**: Review and confirm outlines before generation; iterate on individual slides\r\n- **🖼️ Image Generation Tool**: Seamless integration with AI image generation APIs\r\n- **💾 Automatic Storage**: Generated slides stored in Acontext Disk with shareable URLs\r\n- **📊 Multi-Slide Support**: Generate entire presentations with consistent style across all slides\r\n\r\n### 💬 Chat &amp; Interface\r\n\r\n- **🔐 Authentication**: Email/password authentication with Supabase\r\n- **💬 Rich Chat UI**: Full-featured chat interface with message history, streaming responses, and tool call visualization\r\n- **🎨 Customizable UI**: Built with Tailwind CSS and shadcn/ui components - fully customizable\r\n- **🤖 Avatar Support**: Customizable agent avatar (PPT Girl character included)\r\n- **📁 File Upload**: Support for uploading PDFs, images, and documents for context\r\n- **🌐 Browser Automation**: Integrated Browser Use SDK for web automation tasks (optional)\r\n- **🌓 Theme Support**: Dark/light mode with next-themes\r\n\r\n### 🧠 Acontext-Powered Intelligence\r\n\r\n- **💾 Session Persistence**: Every chat session persists to Acontext Session - PPT Girl remembers your presentations\r\n- **🔍 Semantic Context Search**: Automatically retrieves relevant historical context (previous slides, style preferences) before generating responses\r\n- **📦 Disk Storage**: All generated slides automatically stored in Acontext Disk with organized access\r\n- **📈 Experience Learning**: Learns from your Space to understand your preferred slide styles and improve over time\r\n- **🗜️ Context Compression**: Automatic token management for long presentations with manual compression option\r\n- **🔄 Cross-Session Intelligence**: Reference slides from previous presentations and build upon past work\r\n\r\n## 🛠️ Tech Stack\r\n\r\n- **Framework**: Next.js 15+ (App Router)\r\n- **Authentication &amp; Database**: Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI Platform**: Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**: OpenAI (&#96;openai&#96; SDK) - compatible with OpenAI API\r\n- **Browser Agent**: Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI Components**: Tailwind CSS, shadcn/ui, Lucide icons\r\n- **Language**: TypeScript\r\n- **Theming**: next-themes\r\n\r\n## 📖 Usage Example\r\n\r\nHere's a real conversation flow with PPT Girl:\r\n\r\n### Example 1: Creating a Product Launch Presentation\r\n\r\n**You**: \"I need a presentation about our new AI chatbot product launch. It should cover: introduction, features, pricing, and next steps.\"\r\n\r\n**PPT Girl**: \r\n&gt; I'll help you create a presentation about your AI chatbot product launch. Let me propose a slide outline:\r\n&gt; \r\n&gt; **Slide 1: Introduction**\r\n&gt; - Welcome to the AI Chatbot Launch\r\n&gt; - Revolutionizing customer support\r\n&gt; \r\n&gt; **Slide 2: Key Features**\r\n&gt; - 24/7 intelligent support\r\n&gt; - Natural language understanding\r\n&gt; - Multi-platform integration\r\n&gt; \r\n&gt; **Slide 3: Pricing**\r\n&gt; - Flexible pricing tiers\r\n&gt; - Enterprise solutions available\r\n&gt; \r\n&gt; **Slide 4: Next Steps**\r\n&gt; - Sign up for early access\r\n&gt; - Schedule a demo\r\n&gt; \r\n&gt; Does this outline work for you? Should I proceed with generating the slide images?\r\n\r\n**You**: \"Yes, looks good! Make the introduction slide more dramatic.\"\r\n\r\n**PPT Girl**: \r\n&gt; [Generates 4 slide images using image_generate tool]\r\n&gt; \r\n&gt; ✅ **Slide 1: Introduction** (updated with more dramatic visuals)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 2: Key Features**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 3: Pricing**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 4: Next Steps**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Your presentation is ready! All slides have been saved and are accessible via the URLs above. You can download them or use them directly in your presentation software.\r\n\r\n### Example 2: Iterating on Slides\r\n\r\n**You** (in a later conversation): \"I want to add one more slide about customer testimonials before the pricing slide.\"\r\n\r\n**PPT Girl** (remembers your previous presentation):\r\n&gt; I'll add a testimonials slide between the features and pricing slides. Let me propose:\r\n&gt; \r\n&gt; **Slide 3: Customer Testimonials**\r\n&gt; - \"Best chatbot we've ever used\" - Company A\r\n&gt; - \"Reduced support tickets by 60%\" - Company B\r\n&gt; - \"Easy to integrate\" - Company C\r\n&gt; \r\n&gt; Should I generate this slide with the same cyberpunk style to match your previous slides?\r\n\r\n**You**: \"Yes, but use more purple tones to differentiate it slightly.\"\r\n\r\n**PPT Girl**:\r\n&gt; [Generates the slide with purple-toned cyberpunk style]\r\n&gt; \r\n&gt; ✅ **Slide 3: Customer Testimonials** (purple-toned, matching your previous style)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Done! This slide will fit perfectly with your existing presentation.\r\n\r\n**Key Takeaway**: Notice how PPT Girl remembers:\r\n- Your previous presentation structure\r\n- The visual style you used\r\n- How to maintain consistency while allowing variations\r\n\r\nThis intelligence comes from **Acontext's persistent memory and semantic search** - without it, PPT Girl would have no memory of your previous slides and couldn't maintain consistency.\r\n\r\n## 📦 Getting Started\r\n\r\n### Prerequisites\r\n\r\n- Node.js 18+ and npm/yarn/pnpm\r\n- A Supabase account ([create one here](https://database.new))\r\n- An Acontext account ([sign up here](https://acontext.io))\r\n- An OpenAI API key (or compatible API endpoint)\r\n\r\n### Installation\r\n\r\n1. **Clone the repository**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **Install dependencies**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# or\r\nyarn install\r\n# or\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **Set up Supabase**\r\n\r\n   - Create a new project at [Supabase Dashboard](https://database.new)\r\n   - Note your &#96;Project URL&#96; and &#96;Anon (publishable) key&#96;\r\n\r\n4. **Configure environment variables**\r\n\r\n   Create a &#96;.env.local&#96; file in the root directory:\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (required)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (required for full functionality)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# OpenAI LLM (required)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # or gpt-3.5-turbo, gpt-4, etc.\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (optional, for browser automation)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **Set up database schema**\r\n\r\n   - Open your Supabase project\r\n   - Go to **SQL Editor**\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96;\r\n   - This creates tables for &#96;chat_sessions&#96; and &#96;chat_messages&#96;\r\n   - For Acontext integration, also run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **Run the development server**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# or\r\nyarn dev\r\n# or\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\nVisit &#96;http://localhost:3000&#96; to see your application.\r\n\r\n## 🎨 Customization Guide\r\n\r\n### Customizing the UI\r\n\r\nThe UI is built with **Tailwind CSS** and **shadcn/ui** components, making it easy to customize:\r\n\r\n1. **Theme Colors**: Edit &#96;tailwind.config.ts&#96; to change color schemes\r\n2. **Components**: All UI components are in &#96;components/ui/&#96; - modify as needed\r\n3. **Layout**: Main pages are in &#96;app/&#96; directory\r\n4. **Homepage**: Customize &#96;app/page.tsx&#96; for your landing page\r\n5. **Chat Interface**: Modify &#96;components/chatbot-panel.tsx&#96; for chat UI changes\r\n\r\n### Customizing the Avatar\r\n\r\nThe agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path\r\n2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy\r\n3. **Chat Avatar**: Modify the avatar display in &#96;components/chatbot-panel.tsx&#96; if you also want PPT Girl (or another character) in the chat UI\r\n\r\nExample locations:\r\n- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset\r\n- &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy\r\n\r\n### Adding Custom Tools\r\n\r\nTools are defined as OpenAI function calling schemas. To add your own tool:\r\n\r\n1. **Create a tool file** in &#96;lib/&#96; (e.g., &#96;lib/my-custom-tool.ts&#96;):\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"Description of what your tool does\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"Parameter description\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // Your tool logic here\r\n  return {\r\n    result: \"Tool execution result\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **Register the tool** in &#96;lib/openai-client.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// Add to getAvailableTools function\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// Add to executeToolCall function\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **Wire it into the chat API** in &#96;app/api/chatbot/route.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// The tools are automatically included when calling chatCompletionStream\r\n&#96;&#96;&#96;\r\n\r\n**Existing Tool Examples:**\r\n- &#96;lib/browser-use.ts&#96; - Browser automation\r\n- &#96;lib/acontext-disk-tools.ts&#96; - File system operations\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - Experience search\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo management\r\n\r\n### Customizing Acontext Integration\r\n\r\nThe Acontext integration is modular and can be customized:\r\n\r\n- **Session Management**: &#96;lib/acontext-integration.ts&#96; - Modify session creation and management\r\n- **Client Configuration**: &#96;lib/acontext-client.ts&#96; - Adjust Acontext client settings\r\n- **Tool Integration**: &#96;lib/acontext-disk-tools.ts&#96; - Customize disk tool behavior\r\n- **Experience Search**: &#96;lib/acontext-experience-search-tool.ts&#96; - Modify search logic\r\n\r\n## 📚 Project Structure\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app directory\r\n│   ├── api/               # API routes\r\n│   │   ├── acontext/      # Acontext API endpoints\r\n│   │   ├── chatbot/       # Chat API endpoint\r\n│   │   └── tools/         # Tools API endpoint\r\n│   ├── auth/              # Authentication pages\r\n│   ├── protected/         # Protected chat page\r\n│   └── page.tsx           # Homepage\r\n├── components/             # React components\r\n│   ├── ui/                # shadcn/ui components\r\n│   ├── chatbot-panel.tsx  # Main chat interface\r\n│   └── parallax-character.tsx  # Homepage character\r\n├── lib/                   # Core libraries\r\n│   ├── acontext-*.ts      # Acontext integration\r\n│   ├── openai-client.ts   # OpenAI client wrapper\r\n│   ├── browser-use.ts    # Browser automation\r\n│   └── supabase/          # Supabase utilities\r\n├── specs/                 # Project specifications\r\n└── types/                 # TypeScript types\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 Available Tools\r\n\r\n### Built-in Tools\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - Performs web automation tasks\r\n   - Requires Browser Use Cloud API key\r\n   - Location: &#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk Tools**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - File system operations on Acontext Disk\r\n   - Location: &#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **Experience Search** (&#96;experience_search&#96;)\r\n   - Searches user's learned skills from Acontext Space\r\n   - Location: &#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo Management** (&#96;todo&#96;)\r\n   - Create and manage todos within chat sessions\r\n   - Location: &#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### Adding Your Own Tools\r\n\r\nSee the [Customization Guide](#adding-custom-tools) section above.\r\n\r\n## 🌐 Environment Variables\r\n\r\n| Variable | Description | Required |\r\n|----------|-------------|----------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase project URL | Yes |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon key | Yes |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API key | Yes (for full features) |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API base URL | No (has default) |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI-compatible API endpoint | Yes |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API key | Yes |\r\n| &#96;OPENAI_LLM_MODEL&#96; | Model name (e.g., &#96;gpt-4o-mini&#96;) | Yes |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | Temperature (0-2) | No (default: 0.7) |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | Max tokens in response | No (default: 2000) |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API key | No (optional) |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | Upstream image generation API key (sent as &#96;x-goog-api-key&#96;) | No (optional, required for image_generate) |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | Upstream image generation base URL | No (default: &#96;https://api.openai-next.com&#96;) |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | Image generation model name (server-controlled; not overridable by tool args) | No (default: &#96;gemini-3-pro-image-preview&#96;) |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | Image generation API timeout in milliseconds | No (default: 120000) |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | Bypass HTTP_PROXY/HTTPS_PROXY for Acontext API (local development only) | No (optional) |\r\n\r\n## 🚢 Deployment\r\n\r\n### Deploy to Vercel\r\n\r\nVercel deployment will guide you through creating a Supabase account and project.\r\n\r\nAfter installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.\r\n\r\n[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=PPT-style%20slide%20generator%20powered%20by%20Acontext%2C%20with%20chat-driven%20workflow%20and%20semantic%20memory.&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n\r\nThe above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.\r\n\r\n#### Vercel Configuration Explained\r\n\r\nWhen deploying to Vercel, you have two options:\r\n\r\n**Option 1: One-Click Deploy (Recommended for First-Time Setup)**\r\n\r\n1. Click the \"Deploy with Vercel\" button above\r\n2. Vercel will prompt you to:\r\n   - Sign in to Vercel (or create an account)\r\n   - Connect your GitHub account (if not already connected)\r\n   - Create a new Supabase project (or connect existing one)\r\n3. During the Supabase integration setup:\r\n   - Vercel will automatically create a Supabase project for you\r\n   - All required Supabase environment variables will be automatically configured:\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. You'll need to manually add the remaining environment variables in Vercel dashboard:\r\n   - &#96;ACONTEXT_API_KEY&#96; - Your Acontext API key\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API endpoint (default: &#96;https://api.openai.com/v1&#96;)\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - Your OpenAI API key\r\n   - &#96;OPENAI_LLM_MODEL&#96; - Model name (e.g., &#96;gpt-4o-mini&#96;)\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - Temperature (default: &#96;0.7&#96;)\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - Max tokens (default: &#96;2000&#96;)\r\n   - &#96;BROWSER_USE_API_KEY&#96; - Optional, for browser automation\r\n   - &#96;ACONTEXT_BASE_URL&#96; - Optional, defaults to &#96;https://api.acontext.com/api/v1&#96;\r\n   - &#96;IMAGE_GEN_API_KEY&#96; - Optional, required for image generation feature\r\n   - &#96;IMAGE_GEN_BASE_URL&#96; - Optional, defaults to &#96;https://api.openai-next.com&#96;\r\n   - &#96;IMAGE_GEN_DEFAULT_MODEL&#96; - Optional, defaults to &#96;gemini-3-pro-image-preview&#96;\r\n   - &#96;IMAGE_GEN_TIMEOUT_MS&#96; - Optional, defaults to &#96;120000&#96; (120 seconds)\r\n   - &#96;ACONTEXT_BYPASS_PROXY&#96; - Optional, for local development only\r\n5. After deployment, run the database migrations:\r\n   - Go to your Supabase project dashboard\r\n   - Navigate to SQL Editor\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n**Option 2: Manual Deployment (If You Already Have a GitHub Repository)**\r\n\r\n1. Push your code to GitHub\r\n2. Go to [Vercel Dashboard](https://vercel.com/dashboard)\r\n3. Click \"Add New Project\"\r\n4. Import your GitHub repository\r\n5. Configure environment variables:\r\n   - **Supabase Integration**: Click \"Add Integration\" → Search \"Supabase\" → Connect your Supabase project\r\n     - This automatically sets &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **Manual Variables**: Add the remaining environment variables listed above\r\n6. Click \"Deploy\"\r\n7. After deployment, run the database migrations in Supabase SQL Editor:\r\n   - Run &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n#### Environment Variables in Vercel\r\n\r\nTo add environment variables in Vercel:\r\n\r\n1. Go to your project in Vercel Dashboard\r\n2. Navigate to **Settings** → **Environment Variables**\r\n3. Add each variable with its value\r\n4. Select which environments to apply to (Production, Preview, Development)\r\n5. Click \"Save\"\r\n6. Redeploy your application for changes to take effect\r\n\r\n**Important Notes:**\r\n- Environment variables starting with &#96;NEXT_PUBLIC_&#96; are exposed to the browser\r\n- Keep sensitive keys (like &#96;OPENAI_LLM_API_KEY&#96;, &#96;ACONTEXT_API_KEY&#96;) secure and never commit them\r\n- Vercel automatically provides &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; when you use the Supabase integration\r\n\r\n#### Local Development After Vercel Deployment\r\n\r\nIf you wish to just develop locally and not deploy to Vercel, follow the steps below:\r\n\r\n1. Clone the repository from GitHub (created during Vercel deployment)\r\n2. Install dependencies: &#96;npm install&#96;\r\n3. Create &#96;.env.local&#96; file with all environment variables (see [Installation](#installation) section)\r\n4. Run database migrations in Supabase SQL Editor\r\n5. Start development server: &#96;npm run dev&#96;\r\n\r\n### Other Platforms\r\n\r\nThis is a standard Next.js application and can be deployed to any platform that supports Next.js:\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- Self-hosted with Node.js\r\n\r\n## 🔌 Acontext Integration Details\r\n\r\n### Implemented Features\r\n\r\n#### 1. Session Persistence ✅\r\n- Each chat session maps to an Acontext Session (reused, not recreated each time)\r\n- Database schema includes &#96;acontext_session_id&#96; field\r\n- Sessions automatically create or reuse Acontext sessions\r\n- All messages are stored in the same Acontext session\r\n\r\n#### 2. Semantic Search ✅\r\n- Retrieves relevant historical context from Acontext before generating responses\r\n- Searches Acontext session for relevant historical messages before calling LLM\r\n- Injects search results into system prompt to enhance context coherence\r\n- Enabled by default, can be disabled with &#96;enableSemanticSearch: false&#96;\r\n\r\n#### 3. File Upload &amp; Artifacts ✅\r\n- Support for uploading files (PDFs, images, documents) for AI analysis\r\n- Chat interface includes file upload button (📎 icon)\r\n- Supports multiple file uploads\r\n- Files are uploaded to Acontext Disk via Artifacts API\r\n- Uploaded files are referenced in messages, AI can read file content\r\n- **Image Support**: Uses OpenAI Vision API, AI can directly view and analyze images\r\n- **File List View**: View all files stored in Acontext Disk\r\n\r\n#### 4. File System Tools (Function Calling) ✅\r\n- LLM can autonomously read/write files on Acontext Disk through tool functions\r\n- Includes official &#96;DISK_TOOLS&#96; exposed via OpenAI Tool Schema: &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n- Chat API automatically provides these tools when Acontext is configured\r\n- Tools automatically select existing disk (or create one if needed), no frontend intervention required\r\n\r\n### File Upload Usage\r\n\r\n#### Frontend (Chat Interface)\r\n\r\n1. **Click attachment button**: 📎 (paperclip) icon button next to input box\r\n2. **Select files**: Opens file picker, supports multiple files\r\n3. **View preview**: Selected files appear above input box with filename\r\n4. **Remove attachment**: Click ❌ button next to file to remove\r\n5. **Send message**: Enter message and send, files upload with message\r\n6. **View file list**: Click \"Files\" button to view all files in Acontext Disk\r\n\r\n#### API Usage\r\n\r\nSend a message with attachments:\r\n\r\n&#96;&#96;&#96;typescript\r\nconst response = await fetch(\"/api/chatbot\", {\r\n  method: \"POST\",\r\n  headers: {\r\n    \"Content-Type\": \"application/json\",\r\n  },\r\n  body: JSON.stringify({\r\n    message: \"Analyze this document\",\r\n    sessionId: \"your-session-id\",\r\n    attachments: [\r\n      {\r\n        filename: \"document.pdf\",\r\n        content: \"base64-encoded-content\", // base64 encoded file content\r\n        mimeType: \"application/pdf\",\r\n      },\r\n      {\r\n        filename: \"image.png\",\r\n        content: \"base64-encoded-image\",\r\n        mimeType: \"image/png\",\r\n      },\r\n    ],\r\n    enableSemanticSearch: true, // optional, default true\r\n  }),\r\n});\r\n&#96;&#96;&#96;\r\n\r\n**Attachment Format:**\r\n- &#96;filename&#96; (string): File name\r\n- &#96;content&#96; (string): Base64 encoded file content (without &#96;data:image/png;base64,&#96; prefix)\r\n- &#96;mimeType&#96; (string): MIME type, e.g., &#96;application/pdf&#96;, &#96;image/png&#96;, &#96;text/plain&#96;\r\n\r\n#### View File List\r\n\r\n&#96;&#96;&#96;typescript\r\n// List all artifacts\r\nconst response = await fetch(\"/api/acontext/artifacts\");\r\nconst data = await response.json();\r\n\r\nif (data.success) {\r\n  console.log(&#96;Found ${data.count} files:&#96;, data.artifacts);\r\n}\r\n\r\n// List files from specific disk\r\nconst response = await fetch(\"/api/acontext/artifacts?diskId=your-disk-id\");\r\n&#96;&#96;&#96;\r\n\r\n### Database Migration\r\n\r\nRun the following SQL to add Acontext-related fields:\r\n\r\n&#96;&#96;&#96;sql\r\n-- Run in Supabase SQL Editor\r\n-- File location: specs/001-chatbot-openai/migration-acontext.sql\r\n&#96;&#96;&#96;\r\n\r\n### Environment Variables\r\n\r\nEnsure Acontext is configured in &#96;.env.local&#96;:\r\n\r\n&#96;&#96;&#96;env\r\nACONTEXT_API_KEY=your_api_key_here\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# Bypass proxy for Acontext API (local development only)\r\n# When set to true or 1, Acontext API requests bypass HTTP_PROXY/HTTPS_PROXY\r\n# Other service requests still use proxy\r\nACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development\r\n&#96;&#96;&#96;\r\n\r\n### Implementation Details\r\n\r\n**Key Files:**\r\n- &#96;lib/acontext-integration.ts&#96; - Acontext integration utility functions\r\n- &#96;lib/acontext-disk-tools.ts&#96; - Acontext disk file system tools (Function Calling)\r\n- &#96;app/api/chatbot/route.ts&#96; - Updated chat API with Acontext integration\r\n- &#96;components/chatbot-panel.tsx&#96; - File upload UI\r\n- &#96;types/chat.ts&#96; - Updated type definitions\r\n\r\n**Key Functions:**\r\n- &#96;getOrCreateAcontextSession()&#96; - Get or create Acontext session\r\n- &#96;searchRelevantContext()&#96; - Semantic search for relevant context\r\n- &#96;uploadFileToAcontext()&#96; - Upload file to Acontext\r\n- &#96;storeMessageInAcontext()&#96; - Store message in Acontext\r\n\r\n**Notes:**\r\n- **Optional Integration**: If &#96;ACONTEXT_API_KEY&#96; is not configured, all Acontext features automatically skip, basic chat functionality remains unaffected\r\n- **Error Handling**: All Acontext operations have error handling, failures don't affect main flow\r\n- **Performance**: Semantic search retrieves recent messages as context, production may need more refined search strategy\r\n\r\n## 📖 Documentation\r\n\r\n- Project docs (context / SOPs):\r\n  - &#96;public/fonts/skills/README.md&#96; - Skills folder purpose (project experience / context entry)\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - How to add a new character (frontend)\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext Documentation](https://docs.acontext.io)\r\n- [Next.js Documentation](https://nextjs.org/docs)\r\n- [Supabase Documentation](https://supabase.com/docs)\r\n- [shadcn/ui Documentation](https://ui.shadcn.com)\r\n\r\n## 🤝 Contributing\r\n\r\nThis is a starter template - feel free to fork and customize it for your needs!\r\n\r\n## 📄 License\r\n\r\nCheck the LICENSE file in the repository.\r\n\r\n## 🆘 Support\r\n\r\n- **Acontext**: [Documentation](https://docs.acontext.io) | [Support](https://acontext.io)\r\n- **Issues**: Open an issue in the repository\r\n\r\n---\r\n\r\n**Built with ❤️ using Acontext Platform**\r\n",
+    "languageId": "markdown"
+  }
+}
+```
+Result:
+
+```json
+{
+  "diff": {
+    "chunks": [
+      {
+        "diffString": "  After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.\r\n  \r\n- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=A%20production-ready%20starter%20template%20for%20building%20context-aware%2C%20autonomous%20AI%20agents%20powered%20by%20Acontext.&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)\r\n+ [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=PPT-style%20slide%20generator%20powered%20by%20Acontext%2C%20with%20chat-driven%20workflow%20and%20semantic%20memory.&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n  \r\n  The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.\r",
+        "oldStart": 510,
+        "newStart": 510,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      }
+    ],
+    "editor": "EDITOR_AI"
+  },
+  "shouldAutoFixLints": true,
+  "resultForModel": "Success. Updated the following files:\nM README.md",
+  "contentsAfterEdit": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;A PPT-style slide generator experience built on the Acontext Agent Playground template&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    Powered by &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#features\"&gt;&lt;strong&gt;Features&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#getting-started\"&gt;&lt;strong&gt;Getting Started&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#deployment\"&gt;&lt;strong&gt;Deployment&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#documentation\"&gt;&lt;strong&gt;Documentation&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** is an intelligent PPT slide generation system powered by [Acontext](https://acontext.io). Simply chat with **\"PPT Girl\"** (an AI assistant) about your presentation topic, and she will automatically create a series of beautiful, cyberpunk-style slide images ready for your presentation.\r\n\r\n## 🎯 Core Functionality\r\n\r\n### What Does It Do?\r\n\r\n**Transform text into professional PPT slides** through natural conversation:\r\n\r\n1. **📝 Input**: You provide presentation content (text, paragraphs, topics, or outlines)\r\n2. **🧠 Planning**: PPT Girl analyzes your content and proposes a slide-by-slide outline (titles + bullet points)\r\n3. **✏️ Review**: You review and confirm the outline\r\n4. **🎨 Generation**: PPT Girl generates 16:9 cyberpunk-style slide images using AI image generation\r\n5. **📦 Delivery**: Each slide image is automatically stored and accessible via URLs\r\n\r\n### Key Features of PPT Generation\r\n\r\n- **🎨 Consistent Visual Style**: All slides share a unified cyberpunk aesthetic (neon lights, holographic effects, futuristic backgrounds)\r\n- **📐 Smart Layout**: Clean, professional layouts with ample space for text overlays\r\n- **🔄 Interactive Workflow**: Confirm outlines before generation, iterate on specific slides\r\n- **💾 Automatic Storage**: All generated slides are stored in Acontext Disk for easy access\r\n- **🧠 Context Awareness**: Remembers your previous slides and maintains visual consistency across sessions\r\n\r\n## 🤔 Why Acontext? The Key Integration Benefits\r\n\r\n**Acontext is not optional** - it's what makes this PPT generator intelligent and practical. Here's why:\r\n\r\n### 1. **Persistent Memory for Multi-Slide Presentations** 🧠\r\n**Problem**: Generating a full presentation requires multiple rounds of conversation. Without memory, the AI would forget:\r\n- What slides were already created\r\n- The visual style and theme you agreed upon\r\n- The overall structure of your presentation\r\n\r\n**Solution with Acontext**: Every chat session persists to an Acontext Session. PPT Girl remembers:\r\n- All previously generated slides in your current presentation\r\n- Your preferences (e.g., \"use more purple tones\", \"make slides simpler\")\r\n- The presentation structure and context\r\n\r\n**Real Impact**: You can say \"add one more slide about pricing\" or \"make slide 3 more detailed\" - and PPT Girl knows exactly which slide you're referring to.\r\n\r\n### 2. **Semantic Search for Style Consistency** 🔍\r\n**Problem**: When generating multiple slides, maintaining visual consistency is challenging. You might want:\r\n- All slides to share similar color schemes\r\n- Consistent background elements\r\n- Similar layouts across related slides\r\n\r\n**Solution with Acontext**: Before generating each new slide, Acontext performs semantic search to retrieve:\r\n- Previous slide generation prompts\r\n- Your feedback and style preferences\r\n- Related slides from the same presentation\r\n\r\n**Real Impact**: When you say \"make this slide match the style of the intro slide,\" PPT Girl can find and reference your earlier slides automatically.\r\n\r\n### 3. **Skill Learning for Better Results Over Time** 📈\r\n**Problem**: Every user has different preferences. Some like minimal designs, others prefer detailed backgrounds. Without learning, the AI starts from scratch each time.\r\n\r\n**Solution with Acontext**: Acontext Space learns from completed presentations:\r\n- Your preferred slide styles\r\n- Common patterns in your presentations (e.g., \"you always include a conclusion slide\")\r\n- Successful slide structures that worked well before\r\n\r\n**Real Impact**: The more presentations you create, the better PPT Girl understands your style. Your 10th presentation will be much more aligned with your preferences than your first.\r\n\r\n### 4. **Automatic File Management for Generated Slides** 📁\r\n**Problem**: Generated slide images need to be stored, organized, and easily accessible. Managing files manually is tedious and error-prone.\r\n\r\n**Solution with Acontext Disk**:\r\n- All generated slides are automatically stored in Acontext Disk\r\n- Each slide has a unique URL for easy sharing and embedding\r\n- Files are organized by session and date\r\n- No need to manually download or manage files\r\n\r\n**Real Impact**: You can view all your generated slides in one place, download them in bulk, or share individual slides instantly.\r\n\r\n### 5. **Context Compression for Long Presentations** 💾\r\n**Problem**: Creating a 20-slide presentation involves many messages, tool calls, and generated images. Without compression, the conversation context becomes too large for the LLM to process efficiently.\r\n\r\n**Solution with Acontext**: \r\n- Automatic context compression when conversations get long\r\n- Important information (slide structures, confirmed outlines) is preserved\r\n- Less relevant intermediate messages are compressed or summarized\r\n\r\n**Real Impact**: You can create presentations of any length without hitting token limits or losing important context.\r\n\r\n### 6. **Cross-Session Intelligence** 🔄\r\n**Problem**: Without memory, each new conversation starts from zero. You can't reference slides from previous presentations or build upon past work.\r\n\r\n**Solution with Acontext**:\r\n- Search across all your previous presentations\r\n- Reference slides from past sessions\r\n- Build upon existing slide libraries\r\n\r\n**Real Impact**: \"Create a presentation similar to the one I made last week\" becomes possible. PPT Girl can find and reference your previous work.\r\n\r\n---\r\n\r\n**Bottom Line**: Acontext transforms PPT Girl from a \"one-shot slide generator\" into an **intelligent presentation assistant** that learns your preferences, maintains context across sessions, and delivers increasingly better results over time.\r\n\r\n## ✨ Features\r\n\r\n### 🎨 PPT Slide Generation (Core Feature)\r\n\r\n- **🤖 AI-Powered Generation**: Natural language conversation with PPT Girl to create professional slides\r\n- **📋 Smart Outline Planning**: Automatically breaks down content into logical slide structure (titles + bullets)\r\n- **🎨 Cyberpunk Visual Style**: Consistent, futuristic aesthetic with neon lights and holographic effects\r\n- **📐 Professional Layouts**: Clean, 16:9 layouts optimized for text overlays and content\r\n- **🔄 Interactive Workflow**: Review and confirm outlines before generation; iterate on individual slides\r\n- **🖼️ Image Generation Tool**: Seamless integration with AI image generation APIs\r\n- **💾 Automatic Storage**: Generated slides stored in Acontext Disk with shareable URLs\r\n- **📊 Multi-Slide Support**: Generate entire presentations with consistent style across all slides\r\n\r\n### 💬 Chat &amp; Interface\r\n\r\n- **🔐 Authentication**: Email/password authentication with Supabase\r\n- **💬 Rich Chat UI**: Full-featured chat interface with message history, streaming responses, and tool call visualization\r\n- **🎨 Customizable UI**: Built with Tailwind CSS and shadcn/ui components - fully customizable\r\n- **🤖 Avatar Support**: Customizable agent avatar (PPT Girl character included)\r\n- **📁 File Upload**: Support for uploading PDFs, images, and documents for context\r\n- **🌐 Browser Automation**: Integrated Browser Use SDK for web automation tasks (optional)\r\n- **🌓 Theme Support**: Dark/light mode with next-themes\r\n\r\n### 🧠 Acontext-Powered Intelligence\r\n\r\n- **💾 Session Persistence**: Every chat session persists to Acontext Session - PPT Girl remembers your presentations\r\n- **🔍 Semantic Context Search**: Automatically retrieves relevant historical context (previous slides, style preferences) before generating responses\r\n- **📦 Disk Storage**: All generated slides automatically stored in Acontext Disk with organized access\r\n- **📈 Experience Learning**: Learns from your Space to understand your preferred slide styles and improve over time\r\n- **🗜️ Context Compression**: Automatic token management for long presentations with manual compression option\r\n- **🔄 Cross-Session Intelligence**: Reference slides from previous presentations and build upon past work\r\n\r\n## 🛠️ Tech Stack\r\n\r\n- **Framework**: Next.js 15+ (App Router)\r\n- **Authentication &amp; Database**: Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI Platform**: Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**: OpenAI (&#96;openai&#96; SDK) - compatible with OpenAI API\r\n- **Browser Agent**: Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI Components**: Tailwind CSS, shadcn/ui, Lucide icons\r\n- **Language**: TypeScript\r\n- **Theming**: next-themes\r\n\r\n## 📖 Usage Example\r\n\r\nHere's a real conversation flow with PPT Girl:\r\n\r\n### Example 1: Creating a Product Launch Presentation\r\n\r\n**You**: \"I need a presentation about our new AI chatbot product launch. It should cover: introduction, features, pricing, and next steps.\"\r\n\r\n**PPT Girl**: \r\n&gt; I'll help you create a presentation about your AI chatbot product launch. Let me propose a slide outline:\r\n&gt; \r\n&gt; **Slide 1: Introduction**\r\n&gt; - Welcome to the AI Chatbot Launch\r\n&gt; - Revolutionizing customer support\r\n&gt; \r\n&gt; **Slide 2: Key Features**\r\n&gt; - 24/7 intelligent support\r\n&gt; - Natural language understanding\r\n&gt; - Multi-platform integration\r\n&gt; \r\n&gt; **Slide 3: Pricing**\r\n&gt; - Flexible pricing tiers\r\n&gt; - Enterprise solutions available\r\n&gt; \r\n&gt; **Slide 4: Next Steps**\r\n&gt; - Sign up for early access\r\n&gt; - Schedule a demo\r\n&gt; \r\n&gt; Does this outline work for you? Should I proceed with generating the slide images?\r\n\r\n**You**: \"Yes, looks good! Make the introduction slide more dramatic.\"\r\n\r\n**PPT Girl**: \r\n&gt; [Generates 4 slide images using image_generate tool]\r\n&gt; \r\n&gt; ✅ **Slide 1: Introduction** (updated with more dramatic visuals)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 2: Key Features**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 3: Pricing**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; ✅ **Slide 4: Next Steps**\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Your presentation is ready! All slides have been saved and are accessible via the URLs above. You can download them or use them directly in your presentation software.\r\n\r\n### Example 2: Iterating on Slides\r\n\r\n**You** (in a later conversation): \"I want to add one more slide about customer testimonials before the pricing slide.\"\r\n\r\n**PPT Girl** (remembers your previous presentation):\r\n&gt; I'll add a testimonials slide between the features and pricing slides. Let me propose:\r\n&gt; \r\n&gt; **Slide 3: Customer Testimonials**\r\n&gt; - \"Best chatbot we've ever used\" - Company A\r\n&gt; - \"Reduced support tickets by 60%\" - Company B\r\n&gt; - \"Easy to integrate\" - Company C\r\n&gt; \r\n&gt; Should I generate this slide with the same cyberpunk style to match your previous slides?\r\n\r\n**You**: \"Yes, but use more purple tones to differentiate it slightly.\"\r\n\r\n**PPT Girl**:\r\n&gt; [Generates the slide with purple-toned cyberpunk style]\r\n&gt; \r\n&gt; ✅ **Slide 3: Customer Testimonials** (purple-toned, matching your previous style)\r\n&gt; 🖼️ Image: [URL to generated slide]\r\n&gt; \r\n&gt; Done! This slide will fit perfectly with your existing presentation.\r\n\r\n**Key Takeaway**: Notice how PPT Girl remembers:\r\n- Your previous presentation structure\r\n- The visual style you used\r\n- How to maintain consistency while allowing variations\r\n\r\nThis intelligence comes from **Acontext's persistent memory and semantic search** - without it, PPT Girl would have no memory of your previous slides and couldn't maintain consistency.\r\n\r\n## 📦 Getting Started\r\n\r\n### Prerequisites\r\n\r\n- Node.js 18+ and npm/yarn/pnpm\r\n- A Supabase account ([create one here](https://database.new))\r\n- An Acontext account ([sign up here](https://acontext.io))\r\n- An OpenAI API key (or compatible API endpoint)\r\n\r\n### Installation\r\n\r\n1. **Clone the repository**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **Install dependencies**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# or\r\nyarn install\r\n# or\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **Set up Supabase**\r\n\r\n   - Create a new project at [Supabase Dashboard](https://database.new)\r\n   - Note your &#96;Project URL&#96; and &#96;Anon (publishable) key&#96;\r\n\r\n4. **Configure environment variables**\r\n\r\n   Create a &#96;.env.local&#96; file in the root directory:\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (required)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (required for full functionality)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# OpenAI LLM (required)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # or gpt-3.5-turbo, gpt-4, etc.\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (optional, for browser automation)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **Set up database schema**\r\n\r\n   - Open your Supabase project\r\n   - Go to **SQL Editor**\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96;\r\n   - This creates tables for &#96;chat_sessions&#96; and &#96;chat_messages&#96;\r\n   - For Acontext integration, also run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **Run the development server**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# or\r\nyarn dev\r\n# or\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\nVisit &#96;http://localhost:3000&#96; to see your application.\r\n\r\n## 🎨 Customization Guide\r\n\r\n### Customizing the UI\r\n\r\nThe UI is built with **Tailwind CSS** and **shadcn/ui** components, making it easy to customize:\r\n\r\n1. **Theme Colors**: Edit &#96;tailwind.config.ts&#96; to change color schemes\r\n2. **Components**: All UI components are in &#96;components/ui/&#96; - modify as needed\r\n3. **Layout**: Main pages are in &#96;app/&#96; directory\r\n4. **Homepage**: Customize &#96;app/page.tsx&#96; for your landing page\r\n5. **Chat Interface**: Modify &#96;components/chatbot-panel.tsx&#96; for chat UI changes\r\n\r\n### Customizing the Avatar\r\n\r\nThe agent avatar can be customized in several ways. In this PPT Girl branch, a nurse-style anime character is already wired up as the default avatar.\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - Homepage Character\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - Chatbot Avatar\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **Character Image**: Replace the image at &#96;/public/fonts/ppt girl.png&#96; with your own character/logo (keep the same filename to avoid code changes), or update &#96;components/parallax-character.tsx&#96; to point to a different path\r\n2. **Homepage Avatar**: The homepage hero section uses the parallax character component to display &#96;ppt girl.png&#96; floating beside the copy\r\n3. **Chat Avatar**: Modify the avatar display in &#96;components/chatbot-panel.tsx&#96; if you also want PPT Girl (or another character) in the chat UI\r\n\r\nExample locations:\r\n- &#96;components/parallax-character.tsx&#96; - Homepage parallax character (uses &#96;/fonts/ppt girl.png&#96;)\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - Default character asset used on the homepage\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - Default chat avatar asset\r\n- &#96;app/page.tsx&#96; - Homepage layout and PPT Girl landing copy\r\n\r\n### Adding Custom Tools\r\n\r\nTools are defined as OpenAI function calling schemas. To add your own tool:\r\n\r\n1. **Create a tool file** in &#96;lib/&#96; (e.g., &#96;lib/my-custom-tool.ts&#96;):\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"Description of what your tool does\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"Parameter description\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // Your tool logic here\r\n  return {\r\n    result: \"Tool execution result\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **Register the tool** in &#96;lib/openai-client.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// Add to getAvailableTools function\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// Add to executeToolCall function\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **Wire it into the chat API** in &#96;app/api/chatbot/route.ts&#96;:\r\n\r\n&#96;&#96;&#96;typescript\r\n// The tools are automatically included when calling chatCompletionStream\r\n&#96;&#96;&#96;\r\n\r\n**Existing Tool Examples:**\r\n- &#96;lib/browser-use.ts&#96; - Browser automation\r\n- &#96;lib/acontext-disk-tools.ts&#96; - File system operations\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - Experience search\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo management\r\n\r\n### Customizing Acontext Integration\r\n\r\nThe Acontext integration is modular and can be customized:\r\n\r\n- **Session Management**: &#96;lib/acontext-integration.ts&#96; - Modify session creation and management\r\n- **Client Configuration**: &#96;lib/acontext-client.ts&#96; - Adjust Acontext client settings\r\n- **Tool Integration**: &#96;lib/acontext-disk-tools.ts&#96; - Customize disk tool behavior\r\n- **Experience Search**: &#96;lib/acontext-experience-search-tool.ts&#96; - Modify search logic\r\n\r\n## 📚 Project Structure\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app directory\r\n│   ├── api/               # API routes\r\n│   │   ├── acontext/      # Acontext API endpoints\r\n│   │   ├── chatbot/       # Chat API endpoint\r\n│   │   └── tools/         # Tools API endpoint\r\n│   ├── auth/              # Authentication pages\r\n│   ├── protected/         # Protected chat page\r\n│   └── page.tsx           # Homepage\r\n├── components/             # React components\r\n│   ├── ui/                # shadcn/ui components\r\n│   ├── chatbot-panel.tsx  # Main chat interface\r\n│   └── parallax-character.tsx  # Homepage character\r\n├── lib/                   # Core libraries\r\n│   ├── acontext-*.ts      # Acontext integration\r\n│   ├── openai-client.ts   # OpenAI client wrapper\r\n│   ├── browser-use.ts    # Browser automation\r\n│   └── supabase/          # Supabase utilities\r\n├── specs/                 # Project specifications\r\n└── types/                 # TypeScript types\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 Available Tools\r\n\r\n### Built-in Tools\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - Performs web automation tasks\r\n   - Requires Browser Use Cloud API key\r\n   - Location: &#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk Tools**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - File system operations on Acontext Disk\r\n   - Location: &#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **Experience Search** (&#96;experience_search&#96;)\r\n   - Searches user's learned skills from Acontext Space\r\n   - Location: &#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo Management** (&#96;todo&#96;)\r\n   - Create and manage todos within chat sessions\r\n   - Location: &#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### Adding Your Own Tools\r\n\r\nSee the [Customization Guide](#adding-custom-tools) section above.\r\n\r\n## 🌐 Environment Variables\r\n\r\n| Variable | Description | Required |\r\n|----------|-------------|----------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase project URL | Yes |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon key | Yes |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API key | Yes (for full features) |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API base URL | No (has default) |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI-compatible API endpoint | Yes |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API key | Yes |\r\n| &#96;OPENAI_LLM_MODEL&#96; | Model name (e.g., &#96;gpt-4o-mini&#96;) | Yes |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | Temperature (0-2) | No (default: 0.7) |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | Max tokens in response | No (default: 2000) |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API key | No (optional) |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | Upstream image generation API key (sent as &#96;x-goog-api-key&#96;) | No (optional, required for image_generate) |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | Upstream image generation base URL | No (default: &#96;https://api.openai-next.com&#96;) |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | Image generation model name (server-controlled; not overridable by tool args) | No (default: &#96;gemini-3-pro-image-preview&#96;) |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | Image generation API timeout in milliseconds | No (default: 120000) |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | Bypass HTTP_PROXY/HTTPS_PROXY for Acontext API (local development only) | No (optional) |\r\n\r\n## 🚢 Deployment\r\n\r\n### Deploy to Vercel\r\n\r\nVercel deployment will guide you through creating a Supabase account and project.\r\n\r\nAfter installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.\r\n\r\n[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=PPT-style%20slide%20generator%20powered%20by%20Acontext%2C%20with%20chat-driven%20workflow%20and%20semantic%20memory.&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n\r\nThe above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.\r\n\r\n#### Vercel Configuration Explained\r\n\r\nWhen deploying to Vercel, you have two options:\r\n\r\n**Option 1: One-Click Deploy (Recommended for First-Time Setup)**\r\n\r\n1. Click the \"Deploy with Vercel\" button above\r\n2. Vercel will prompt you to:\r\n   - Sign in to Vercel (or create an account)\r\n   - Connect your GitHub account (if not already connected)\r\n   - Create a new Supabase project (or connect existing one)\r\n3. During the Supabase integration setup:\r\n   - Vercel will automatically create a Supabase project for you\r\n   - All required Supabase environment variables will be automatically configured:\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. You'll need to manually add the remaining environment variables in Vercel dashboard:\r\n   - &#96;ACONTEXT_API_KEY&#96; - Your Acontext API key\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API endpoint (default: &#96;https://api.openai.com/v1&#96;)\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - Your OpenAI API key\r\n   - &#96;OPENAI_LLM_MODEL&#96; - Model name (e.g., &#96;gpt-4o-mini&#96;)\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - Temperature (default: &#96;0.7&#96;)\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - Max tokens (default: &#96;2000&#96;)\r\n   - &#96;BROWSER_USE_API_KEY&#96; - Optional, for browser automation\r\n   - &#96;ACONTEXT_BASE_URL&#96; - Optional, defaults to &#96;https://api.acontext.com/api/v1&#96;\r\n   - &#96;IMAGE_GEN_API_KEY&#96; - Optional, required for image generation feature\r\n   - &#96;IMAGE_GEN_BASE_URL&#96; - Optional, defaults to &#96;https://api.openai-next.com&#96;\r\n   - &#96;IMAGE_GEN_DEFAULT_MODEL&#96; - Optional, defaults to &#96;gemini-3-pro-image-preview&#96;\r\n   - &#96;IMAGE_GEN_TIMEOUT_MS&#96; - Optional, defaults to &#96;120000&#96; (120 seconds)\r\n   - &#96;ACONTEXT_BYPASS_PROXY&#96; - Optional, for local development only\r\n5. After deployment, run the database migrations:\r\n   - Go to your Supabase project dashboard\r\n   - Navigate to SQL Editor\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run the SQL from &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n**Option 2: Manual Deployment (If You Already Have a GitHub Repository)**\r\n\r\n1. Push your code to GitHub\r\n2. Go to [Vercel Dashboard](https://vercel.com/dashboard)\r\n3. Click \"Add New Project\"\r\n4. Import your GitHub repository\r\n5. Configure environment variables:\r\n   - **Supabase Integration**: Click \"Add Integration\" → Search \"Supabase\" → Connect your Supabase project\r\n     - This automatically sets &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **Manual Variables**: Add the remaining environment variables listed above\r\n6. Click \"Deploy\"\r\n7. After deployment, run the database migrations in Supabase SQL Editor:\r\n   - Run &#96;specs/001-chatbot-openai/schema.sql&#96; (base schema)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; (Acontext session/space support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; (Acontext Disk support)\r\n   - Run &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; (per-user Space mapping)\r\n\r\n#### Environment Variables in Vercel\r\n\r\nTo add environment variables in Vercel:\r\n\r\n1. Go to your project in Vercel Dashboard\r\n2. Navigate to **Settings** → **Environment Variables**\r\n3. Add each variable with its value\r\n4. Select which environments to apply to (Production, Preview, Development)\r\n5. Click \"Save\"\r\n6. Redeploy your application for changes to take effect\r\n\r\n**Important Notes:**\r\n- Environment variables starting with &#96;NEXT_PUBLIC_&#96; are exposed to the browser\r\n- Keep sensitive keys (like &#96;OPENAI_LLM_API_KEY&#96;, &#96;ACONTEXT_API_KEY&#96;) secure and never commit them\r\n- Vercel automatically provides &#96;NEXT_PUBLIC_SUPABASE_URL&#96; and &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; when you use the Supabase integration\r\n\r\n#### Local Development After Vercel Deployment\r\n\r\nIf you wish to just develop locally and not deploy to Vercel, follow the steps below:\r\n\r\n1. Clone the repository from GitHub (created during Vercel deployment)\r\n2. Install dependencies: &#96;npm install&#96;\r\n3. Create &#96;.env.local&#96; file with all environment variables (see [Installation](#installation) section)\r\n4. Run database migrations in Supabase SQL Editor\r\n5. Start development server: &#96;npm run dev&#96;\r\n\r\n### Other Platforms\r\n\r\nThis is a standard Next.js application and can be deployed to any platform that supports Next.js:\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- Self-hosted with Node.js\r\n\r\n## 🔌 Acontext Integration Details\r\n\r\n### Implemented Features\r\n\r\n#### 1. Session Persistence ✅\r\n- Each chat session maps to an Acontext Session (reused, not recreated each time)\r\n- Database schema includes &#96;acontext_session_id&#96; field\r\n- Sessions automatically create or reuse Acontext sessions\r\n- All messages are stored in the same Acontext session\r\n\r\n#### 2. Semantic Search ✅\r\n- Retrieves relevant historical context from Acontext before generating responses\r\n- Searches Acontext session for relevant historical messages before calling LLM\r\n- Injects search results into system prompt to enhance context coherence\r\n- Enabled by default, can be disabled with &#96;enableSemanticSearch: false&#96;\r\n\r\n#### 3. File Upload &amp; Artifacts ✅\r\n- Support for uploading files (PDFs, images, documents) for AI analysis\r\n- Chat interface includes file upload button (📎 icon)\r\n- Supports multiple file uploads\r\n- Files are uploaded to Acontext Disk via Artifacts API\r\n- Uploaded files are referenced in messages, AI can read file content\r\n- **Image Support**: Uses OpenAI Vision API, AI can directly view and analyze images\r\n- **File List View**: View all files stored in Acontext Disk\r\n\r\n#### 4. File System Tools (Function Calling) ✅\r\n- LLM can autonomously read/write files on Acontext Disk through tool functions\r\n- Includes official &#96;DISK_TOOLS&#96; exposed via OpenAI Tool Schema: &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n- Chat API automatically provides these tools when Acontext is configured\r\n- Tools automatically select existing disk (or create one if needed), no frontend intervention required\r\n\r\n### File Upload Usage\r\n\r\n#### Frontend (Chat Interface)\r\n\r\n1. **Click attachment button**: 📎 (paperclip) icon button next to input box\r\n2. **Select files**: Opens file picker, supports multiple files\r\n3. **View preview**: Selected files appear above input box with filename\r\n4. **Remove attachment**: Click ❌ button next to file to remove\r\n5. **Send message**: Enter message and send, files upload with message\r\n6. **View file list**: Click \"Files\" button to view all files in Acontext Disk\r\n\r\n#### API Usage\r\n\r\nSend a message with attachments:\r\n\r\n&#96;&#96;&#96;typescript\r\nconst response = await fetch(\"/api/chatbot\", {\r\n  method: \"POST\",\r\n  headers: {\r\n    \"Content-Type\": \"application/json\",\r\n  },\r\n  body: JSON.stringify({\r\n    message: \"Analyze this document\",\r\n    sessionId: \"your-session-id\",\r\n    attachments: [\r\n      {\r\n        filename: \"document.pdf\",\r\n        content: \"base64-encoded-content\", // base64 encoded file content\r\n        mimeType: \"application/pdf\",\r\n      },\r\n      {\r\n        filename: \"image.png\",\r\n        content: \"base64-encoded-image\",\r\n        mimeType: \"image/png\",\r\n      },\r\n    ],\r\n    enableSemanticSearch: true, // optional, default true\r\n  }),\r\n});\r\n&#96;&#96;&#96;\r\n\r\n**Attachment Format:**\r\n- &#96;filename&#96; (string): File name\r\n- &#96;content&#96; (string): Base64 encoded file content (without &#96;data:image/png;base64,&#96; prefix)\r\n- &#96;mimeType&#96; (string): MIME type, e.g., &#96;application/pdf&#96;, &#96;image/png&#96;, &#96;text/plain&#96;\r\n\r\n#### View File List\r\n\r\n&#96;&#96;&#96;typescript\r\n// List all artifacts\r\nconst response = await fetch(\"/api/acontext/artifacts\");\r\nconst data = await response.json();\r\n\r\nif (data.success) {\r\n  console.log(&#96;Found ${data.count} files:&#96;, data.artifacts);\r\n}\r\n\r\n// List files from specific disk\r\nconst response = await fetch(\"/api/acontext/artifacts?diskId=your-disk-id\");\r\n&#96;&#96;&#96;\r\n\r\n### Database Migration\r\n\r\nRun the following SQL to add Acontext-related fields:\r\n\r\n&#96;&#96;&#96;sql\r\n-- Run in Supabase SQL Editor\r\n-- File location: specs/001-chatbot-openai/migration-acontext.sql\r\n&#96;&#96;&#96;\r\n\r\n### Environment Variables\r\n\r\nEnsure Acontext is configured in &#96;.env.local&#96;:\r\n\r\n&#96;&#96;&#96;env\r\nACONTEXT_API_KEY=your_api_key_here\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # Optional, defaults to this\r\n\r\n# Bypass proxy for Acontext API (local development only)\r\n# When set to true or 1, Acontext API requests bypass HTTP_PROXY/HTTPS_PROXY\r\n# Other service requests still use proxy\r\nACONTEXT_BYPASS_PROXY=true  # Optional, only needed for local development\r\n&#96;&#96;&#96;\r\n\r\n### Implementation Details\r\n\r\n**Key Files:**\r\n- &#96;lib/acontext-integration.ts&#96; - Acontext integration utility functions\r\n- &#96;lib/acontext-disk-tools.ts&#96; - Acontext disk file system tools (Function Calling)\r\n- &#96;app/api/chatbot/route.ts&#96; - Updated chat API with Acontext integration\r\n- &#96;components/chatbot-panel.tsx&#96; - File upload UI\r\n- &#96;types/chat.ts&#96; - Updated type definitions\r\n\r\n**Key Functions:**\r\n- &#96;getOrCreateAcontextSession()&#96; - Get or create Acontext session\r\n- &#96;searchRelevantContext()&#96; - Semantic search for relevant context\r\n- &#96;uploadFileToAcontext()&#96; - Upload file to Acontext\r\n- &#96;storeMessageInAcontext()&#96; - Store message in Acontext\r\n\r\n**Notes:**\r\n- **Optional Integration**: If &#96;ACONTEXT_API_KEY&#96; is not configured, all Acontext features automatically skip, basic chat functionality remains unaffected\r\n- **Error Handling**: All Acontext operations have error handling, failures don't affect main flow\r\n- **Performance**: Semantic search retrieves recent messages as context, production may need more refined search strategy\r\n\r\n## 📖 Documentation\r\n\r\n- Project docs (context / SOPs):\r\n  - &#96;public/fonts/skills/README.md&#96; - Skills folder purpose (project experience / context entry)\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - How to add a new character (frontend)\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext Documentation](https://docs.acontext.io)\r\n- [Next.js Documentation](https://nextjs.org/docs)\r\n- [Supabase Documentation](https://supabase.com/docs)\r\n- [shadcn/ui Documentation](https://ui.shadcn.com)\r\n\r\n## 🤝 Contributing\r\n\r\nThis is a starter template - feel free to fork and customize it for your needs!\r\n\r\n## 📄 License\r\n\r\nCheck the LICENSE file in the repository.\r\n\r\n## 🆘 Support\r\n\r\n- **Acontext**: [Documentation](https://docs.acontext.io) | [Support](https://acontext.io)\r\n- **Issues**: Open an issue in the repository\r\n\r\n---\r\n\r\n**Built with ❤️ using Acontext Platform**\r\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Updating README-zh images and button paths**</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="apply_patch">
+<details>
+<summary>Tool use: **apply_patch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "relativeWorkspacePath": "README-zh.md"
+}
+```
+Additional data:
+
+```json
+{
+  "codeblockId": "ee1a9410-48a8-4af7-8a53-11e1c872431f",
+  "codeblock": {
+    "uri": {
+      "scheme": "file",
+      "authority": "",
+      "path": "/c:/acontext-agent-playground-ppt/README-zh.md",
+      "query": "",
+      "fragment": "",
+      "_formatted": "file:///c%3A/acontext-agent-playground-ppt/README-zh.md",
+      "_fsPath": null
+    },
+    "codeblockId": "ee1a9410-48a8-4af7-8a53-11e1c872431f",
+    "codeBlockIdx": 0,
+    "content": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;基于 Acontext Agent Playground 打造的 PPT 风格幻灯片生成体验&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    由 &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt; 驱动\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#功能特性\"&gt;&lt;strong&gt;功能特性&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#快速开始\"&gt;&lt;strong&gt;快速开始&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#部署\"&gt;&lt;strong&gt;部署&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#文档\"&gt;&lt;strong&gt;文档&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** 是一个由 [Acontext](https://acontext.io) 驱动的智能 PPT 幻灯片生成系统。只需与 **\"PPT Girl\"**（一位 AI 助手）对话，描述您的演示主题，她就会自动为您创建一系列精美的赛博朋克风格幻灯片图片，直接用于演示。\r\n\r\n## 🎯 核心功能\r\n\r\n### 它能做什么？\r\n\r\n**通过自然对话将文本转换为专业 PPT 幻灯片**：\r\n\r\n1. **📝 输入**：您提供演示内容（文本、段落、主题或大纲）\r\n2. **🧠 规划**：PPT Girl 分析您的内容并提出逐页幻灯片大纲（标题 + 要点）\r\n3. **✏️ 确认**：您审查并确认大纲\r\n4. **🎨 生成**：PPT Girl 使用 AI 图像生成技术创建 16:9 赛博朋克风格幻灯片图片\r\n5. **📦 交付**：每张幻灯片图片自动存储并可通过 URL 访问\r\n\r\n### PPT 生成的关键特性\r\n\r\n- **🎨 一致的视觉风格**：所有幻灯片共享统一的赛博朋克美学（霓虹灯、全息效果、未来主义背景）\r\n- **📐 智能布局**：干净、专业的布局，为文本叠加预留充足空间\r\n- **🔄 交互式工作流**：在生成前确认大纲，可针对特定幻灯片进行迭代\r\n- **💾 自动存储**：所有生成的幻灯片存储在 Acontext Disk 中，便于访问\r\n- **🧠 上下文感知**：记住您之前的幻灯片，在整个会话中保持视觉一致性\r\n\r\n## 🤔 为什么需要 Acontext？集成的核心价值\r\n\r\n**Acontext 不是可选的** - 它使这个 PPT 生成器变得智能和实用。原因如下：\r\n\r\n### 1. **多幻灯片演示的持久记忆** 🧠\r\n**问题**：生成完整演示需要多轮对话。没有记忆，AI 会忘记：\r\n- 已经创建了哪些幻灯片\r\n- 您同意的视觉风格和主题\r\n- 演示的整体结构\r\n\r\n**Acontext 解决方案**：每个聊天会话持久化到 Acontext Session。PPT Girl 会记住：\r\n- 当前演示中所有先前生成的幻灯片\r\n- 您的偏好（例如，\"使用更多紫色调\"、\"让幻灯片更简洁\"）\r\n- 演示结构和上下文\r\n\r\n**实际影响**：您可以 say \"添加一张关于定价的幻灯片\" 或 \"让第 3 张幻灯片更详细\" - PPT Girl 知道您指的是哪张幻灯片。\r\n\r\n### 2. **语义搜索保持风格一致性** 🔍\r\n**问题**：生成多张幻灯片时，保持视觉一致性很困难。您可能希望：\r\n- 所有幻灯片共享相似的配色方案\r\n- 一致的背景元素\r\n- 相关幻灯片之间的相似布局\r\n\r\n**Acontext 解决方案**：在生成每张新幻灯片之前，Acontext 执行语义搜索以检索：\r\n- 之前的幻灯片生成提示\r\n- 您的反馈和风格偏好\r\n- 同一演示中的相关幻灯片\r\n\r\n**实际影响**：当您说\"让这张幻灯片的风格与介绍幻灯片匹配\"时，PPT Girl 可以自动找到并引用您之前的幻灯片。\r\n\r\n### 3. **技能学习实现持续改进** 📈\r\n**问题**：每个用户都有不同的偏好。有些人喜欢极简设计，其他人更喜欢详细的背景。如果不学习，AI 每次都从零开始。\r\n\r\n**Acontext 解决方案**：Acontext Space 从已完成的演示中学习：\r\n- 您偏好的幻灯片风格\r\n- 您演示中的常见模式（例如，\"您总是包含结论幻灯片\"）\r\n- 之前运行良好的成功幻灯片结构\r\n\r\n**实际影响**：您创建的演示越多，PPT Girl 就越了解您的风格。您的第 10 个演示将比第一个更符合您的偏好。\r\n\r\n### 4. **生成的幻灯片的自动文件管理** 📁\r\n**问题**：生成的幻灯片图片需要存储、组织并易于访问。手动管理文件既繁琐又容易出错。\r\n\r\n**Acontext Disk 解决方案**：\r\n- 所有生成的幻灯片自动存储在 Acontext Disk 中\r\n- 每张幻灯片都有唯一的 URL，便于共享和嵌入\r\n- 文件按会话和日期组织\r\n- 无需手动下载或管理文件\r\n\r\n**实际影响**：您可以在一个地方查看所有生成的幻灯片，批量下载它们，或立即分享单张幻灯片。\r\n\r\n### 5. **长演示的上下文压缩** 💾\r\n**问题**：创建 20 张幻灯片的演示涉及许多消息、工具调用和生成的图像。没有压缩，对话上下文变得太大，LLM 无法高效处理。\r\n\r\n**Acontext 解决方案**：\r\n- 当对话变长时自动压缩上下文\r\n- 保留重要信息（幻灯片结构、确认的大纲）\r\n- 压缩或总结不太相关的中间消息\r\n\r\n**实际影响**：您可以创建任意长度的演示，而不会遇到 token 限制或丢失重要上下文。\r\n\r\n### 6. **跨会话智能** 🔄\r\n**问题**：没有记忆，每次新对话都从零开始。您无法引用之前演示中的幻灯片或基于过去的工作构建。\r\n\r\n**Acontext 解决方案**：\r\n- 搜索所有您之前的演示\r\n- 引用之前会话中的幻灯片\r\n- 基于现有幻灯片库构建\r\n\r\n**实际影响**：\"创建与我上周制作的类似的演示\"成为可能。PPT Girl 可以找到并引用您之前的工作。\r\n\r\n---\r\n\r\n**核心结论**：Acontext 将 PPT Girl 从\"一次性幻灯片生成器\"转变为**智能演示助手**，它学习您的偏好，在会话间保持上下文，并随着时间的推移提供越来越好的结果。\r\n\r\n## ✨ 功能特性\r\n\r\n### 🎨 PPT 幻灯片生成（核心功能）\r\n\r\n- **🤖 AI 驱动生成**：与 PPT Girl 自然语言对话创建专业幻灯片\r\n- **📋 智能大纲规划**：自动将内容拆分为逻辑幻灯片结构（标题 + 要点）\r\n- **🎨 赛博朋克视觉风格**：一致的未来主义美学，霓虹灯和全息效果\r\n- **📐 专业布局**：干净、16:9 布局，优化文本叠加和内容展示\r\n- **🔄 交互式工作流**：生成前审查和确认大纲；可针对单张幻灯片迭代\r\n- **🖼️ 图像生成工具**：与 AI 图像生成 API 无缝集成\r\n- **💾 自动存储**：生成的幻灯片存储在 Acontext Disk 中，提供可分享 URL\r\n- **📊 多幻灯片支持**：生成整个演示，所有幻灯片保持一致的风格\r\n\r\n### 💬 聊天与界面\r\n\r\n- **🔐 身份认证**：使用 Supabase 的邮箱/密码认证\r\n- **💬 丰富聊天 UI**：功能完整的聊天界面，包含消息历史、流式响应和工具调用可视化\r\n- **🎨 可自定义 UI**：基于 Tailwind CSS 和 shadcn/ui 组件构建 - 完全可自定义\r\n- **🤖 头像支持**：可自定义智能体头像（包含 PPT Girl 角色）\r\n- **📁 文件上传**：支持上传 PDF、图片和文档作为上下文\r\n- **🌐 浏览器自动化**：集成 Browser Use SDK 用于网页自动化任务（可选）\r\n- **🌓 主题支持**：使用 next-themes 的深色/浅色模式\r\n\r\n### 🧠 Acontext 驱动的智能\r\n\r\n- **💾 会话持久化**：每个聊天会话持久化到 Acontext Session - PPT Girl 记住您的演示\r\n- **🔍 语义上下文搜索**：在生成回复前自动检索相关历史上下文（之前的幻灯片、风格偏好）\r\n- **📦 磁盘存储**：所有生成的幻灯片自动存储在 Acontext Disk 中，便于有序访问\r\n- **📈 经验学习**：从您的 Space 中学习，了解您偏好的幻灯片风格并持续改进\r\n- **🗜️ 上下文压缩**：长演示的自动 token 管理，支持手动压缩选项\r\n- **🔄 跨会话智能**：引用之前演示中的幻灯片，基于过去的工作构建\r\n\r\n## 🛠️ 技术栈\r\n\r\n- **框架**：Next.js 15+ (App Router)\r\n- **认证和数据库**：Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI 平台**：Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**：OpenAI (&#96;openai&#96; SDK) - 兼容 OpenAI API\r\n- **浏览器智能体**：Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI 组件**：Tailwind CSS, shadcn/ui, Lucide 图标\r\n- **语言**：TypeScript\r\n- **主题**：next-themes\r\n\r\n## 📖 使用示例\r\n\r\n以下是与 PPT Girl 的真实对话流程：\r\n\r\n### 示例 1：创建产品发布演示\r\n\r\n**您**：\"我需要一个关于我们新 AI 聊天机器人产品发布的演示。它应该包括：介绍、功能、定价和后续步骤。\"\r\n\r\n**PPT Girl**：\r\n&gt; 我会帮您创建一个关于 AI 聊天机器人产品发布的演示。让我提出一个幻灯片大纲：\r\n&gt; \r\n&gt; **幻灯片 1：介绍**\r\n&gt; - 欢迎来到 AI 聊天机器人发布\r\n&gt; - 革命性的客户支持\r\n&gt; \r\n&gt; **幻灯片 2：核心功能**\r\n&gt; - 24/7 智能支持\r\n&gt; - 自然语言理解\r\n&gt; - 多平台集成\r\n&gt; \r\n&gt; **幻灯片 3：定价**\r\n&gt; - 灵活的定价层级\r\n&gt; - 提供企业解决方案\r\n&gt; \r\n&gt; **幻灯片 4：后续步骤**\r\n&gt; - 注册抢先体验\r\n&gt; - 预约演示\r\n&gt; \r\n&gt; 这个大纲适合您吗？我应该继续生成幻灯片图片吗？\r\n\r\n**您**：\"是的，看起来不错！让介绍幻灯片更有戏剧性。\"\r\n\r\n**PPT Girl**：\r\n&gt; [使用 image_generate 工具生成 4 张幻灯片图片]\r\n&gt; \r\n&gt; ✅ **幻灯片 1：介绍**（已更新，更具戏剧性的视觉效果）\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 2：核心功能**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 3：定价**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 4：后续步骤**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; 您的演示已准备就绪！所有幻灯片已保存，可通过上面的 URL 访问。您可以下载它们或直接在演示软件中使用。\r\n\r\n### 示例 2：迭代幻灯片\r\n\r\n**您**（在后续对话中）：\"我想在定价幻灯片之前添加一张关于客户推荐的幻灯片。\"\r\n\r\n**PPT Girl**（记住您之前的演示）：\r\n&gt; 我会在功能幻灯片和定价幻灯片之间添加一张推荐幻灯片。让我提出：\r\n&gt; \r\n&gt; **幻灯片 3：客户推荐**\r\n&gt; - \"我们使用过的最佳聊天机器人\" - 公司 A\r\n&gt; - \"支持工单减少 60%\" - 公司 B\r\n&gt; - \"易于集成\" - 公司 C\r\n&gt; \r\n&gt; 我应该生成这张幻灯片，使用与您之前的幻灯片相同的赛博朋克风格吗？\r\n\r\n**您**：\"是的，但使用更多的紫色调以稍微区分。\"\r\n\r\n**PPT Girl**：\r\n&gt; [生成带紫色调的赛博朋克风格幻灯片]\r\n&gt; \r\n&gt; ✅ **幻灯片 3：客户推荐**（紫色调，匹配您之前的风格）\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; 完成！这张幻灯片将与您现有的演示完美契合。\r\n\r\n**关键要点**：注意 PPT Girl 如何记住：\r\n- 您之前的演示结构\r\n- 您使用的视觉风格\r\n- 如何在允许变化的同时保持一致\r\n\r\n这种智能来自 **Acontext 的持久记忆和语义搜索** - 没有它，PPT Girl 将无法记住您之前的幻灯片，也无法保持一致性。\r\n\r\n## 📦 快速开始\r\n\r\n### 前置要求\r\n\r\n- Node.js 18+ 和 npm/yarn/pnpm\r\n- Supabase 账户（[在此创建](https://database.new)）\r\n- Acontext 账户（[在此注册](https://acontext.io)）\r\n- OpenAI API 密钥（或兼容的 API 端点）\r\n\r\n### 安装步骤\r\n\r\n1. **克隆仓库**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **安装依赖**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# 或\r\nyarn install\r\n# 或\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **设置 Supabase**\r\n\r\n   - 在 [Supabase Dashboard](https://database.new) 创建新项目\r\n   - 记录您的 &#96;Project URL&#96; 和 &#96;Anon (publishable) key&#96;\r\n\r\n4. **配置环境变量**\r\n\r\n   在根目录创建 &#96;.env.local&#96; 文件：\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (必需)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (完整功能需要)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # 可选，默认为此值\r\n\r\n# OpenAI LLM (必需)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # 或 gpt-3.5-turbo, gpt-4 等\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (可选，用于浏览器自动化)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **设置数据库架构**\r\n\r\n   - 打开您的 Supabase 项目\r\n   - 进入 **SQL Editor**\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96; 中的 SQL\r\n   - 这将创建 &#96;chat_sessions&#96; 和 &#96;chat_messages&#96; 表\r\n   - 对于 Acontext 集成，还需运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **运行开发服务器**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# 或\r\nyarn dev\r\n# 或\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\n访问 &#96;http://localhost:3000&#96; 查看您的应用。\r\n\r\n## 🎨 自定义指南\r\n\r\n### 自定义 UI\r\n\r\nUI 使用 **Tailwind CSS** 和 **shadcn/ui** 组件构建，易于自定义：\r\n\r\n1. **主题颜色**：编辑 &#96;tailwind.config.ts&#96; 更改配色方案\r\n2. **组件**：所有 UI 组件都在 &#96;components/ui/&#96; 目录中 - 根据需要修改\r\n3. **布局**：主页面在 &#96;app/&#96; 目录中\r\n4. **首页**：自定义 &#96;app/page.tsx&#96; 作为您的着陆页\r\n5. **聊天界面**：修改 &#96;components/chatbot-panel.tsx&#96; 进行聊天 UI 更改\r\n\r\n### 自定义头像\r\n\r\n在本 PPT Girl 分支中，已经预置了一位护士风二次元角色作为默认头像，您也可以很方便地替换为自己的角色：\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **角色图片**：默认头像在 &#96;/public/fonts/character1/ppt girl.png&#96;（保持同名即可，无需改代码），或修改 &#96;contexts/character-context.tsx&#96; / &#96;components/parallax-character.tsx&#96; 中的图片路径\r\n2. **首页头像**：首页 hero 区域通过视差组件展示 &#96;ppt girl.png&#96;，如果想调整位置和大小，可编辑 &#96;ParallaxCharacter&#96; 组件\r\n3. **聊天头像**：默认聊天头像在 &#96;/public/fonts/character1/ppt_girl_chatbot.png&#96;，可在 &#96;contexts/character-context.tsx&#96; 中替换为您自己的图片\r\n\r\n示例位置：\r\n- &#96;components/parallax-character.tsx&#96; - 首页视差角色（使用 &#96;/fonts/ppt girl.png&#96;）\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - 默认首页角色 PNG 资源\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - 默认聊天头像 PNG 资源\r\n- &#96;app/page.tsx&#96; - 首页布局和 PPT Girl 相关文案\r\n\r\n### 添加自定义工具\r\n\r\n工具定义为 OpenAI 函数调用架构。要添加您自己的工具：\r\n\r\n1. **在 &#96;lib/&#96; 中创建工具文件**（例如 &#96;lib/my-custom-tool.ts&#96;）：\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"描述您的工具功能\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"参数描述\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // 您的工具逻辑\r\n  return {\r\n    result: \"工具执行结果\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **在 &#96;lib/openai-client.ts&#96; 中注册工具**：\r\n\r\n&#96;&#96;&#96;typescript\r\n// 添加到 getAvailableTools 函数\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// 添加到 executeToolCall 函数\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **在 &#96;app/api/chatbot/route.ts&#96; 中接入聊天 API**：\r\n\r\n&#96;&#96;&#96;typescript\r\n// 调用 chatCompletionStream 时工具会自动包含\r\n&#96;&#96;&#96;\r\n\r\n**现有工具示例：**\r\n- &#96;lib/browser-use.ts&#96; - 浏览器自动化\r\n- &#96;lib/acontext-disk-tools.ts&#96; - 文件系统操作\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - 经验搜索\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo 管理\r\n\r\n### 自定义 Acontext 集成\r\n\r\nAcontext 集成是模块化的，可以自定义：\r\n\r\n- **会话管理**：&#96;lib/acontext-integration.ts&#96; - 修改会话创建和管理\r\n- **客户端配置**：&#96;lib/acontext-client.ts&#96; - 调整 Acontext 客户端设置\r\n- **工具集成**：&#96;lib/acontext-disk-tools.ts&#96; - 自定义磁盘工具行为\r\n- **经验搜索**：&#96;lib/acontext-experience-search-tool.ts&#96; - 修改搜索逻辑\r\n\r\n## 📚 项目结构\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app 目录\r\n│   ├── api/               # API 路由\r\n│   │   ├── acontext/      # Acontext API 端点\r\n│   │   ├── chatbot/       # 聊天 API 端点\r\n│   │   └── tools/         # 工具 API 端点\r\n│   ├── auth/              # 认证页面\r\n│   ├── protected/         # 受保护的聊天页面\r\n│   └── page.tsx           # 首页\r\n├── components/             # React 组件\r\n│   ├── ui/                # shadcn/ui 组件\r\n│   ├── chatbot-panel.tsx  # 主聊天界面\r\n│   └── parallax-character.tsx  # 首页角色\r\n├── lib/                   # 核心库\r\n│   ├── acontext-*.ts      # Acontext 集成\r\n│   ├── openai-client.ts   # OpenAI 客户端包装器\r\n│   ├── browser-use.ts    # 浏览器自动化\r\n│   └── supabase/          # Supabase 工具\r\n├── specs/                 # 项目规范\r\n└── types/                 # TypeScript 类型\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 可用工具\r\n\r\n### 内置工具\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - 执行网页自动化任务\r\n   - 需要 Browser Use Cloud API 密钥\r\n   - 位置：&#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk 工具**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - Acontext Disk 上的文件系统操作\r\n   - 位置：&#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **经验搜索** (&#96;experience_search&#96;)\r\n   - 从 Acontext Space 搜索用户已学习的技能\r\n   - 位置：&#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo 管理** (&#96;todo&#96;)\r\n   - 在聊天会话中创建和管理待办事项\r\n   - 位置：&#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### 添加您自己的工具\r\n\r\n请参阅上面的[自定义指南](#添加自定义工具)部分。\r\n\r\n## 🌐 环境变量\r\n\r\n| 变量 | 描述 | 必需 |\r\n|------|------|------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase 项目 URL | 是 |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon 密钥 | 是 |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API 密钥 | 是（完整功能需要） |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API 基础 URL | 否（有默认值） |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI 兼容 API 端点 | 是 |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API 密钥 | 是 |\r\n| &#96;OPENAI_LLM_MODEL&#96; | 模型名称（例如 &#96;gpt-4o-mini&#96;） | 是 |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | 温度（0-2） | 否（默认：0.7） |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | 响应最大 token 数 | 否（默认：2000） |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API 密钥 | 否（可选） |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | 生图上游 API key（用于 &#96;x-goog-api-key&#96;） | 否（可选，仅 image_generate 需要） |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | 生图上游 base URL | 否（默认：&#96;https://api.openai-next.com&#96;） |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | 生图模型（服务端固定，不允许由 tool 入参覆盖） | 否（默认：&#96;gemini-3-pro-image-preview&#96;） |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | 图像生成 API 超时时间（毫秒） | 否（默认：120000） |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | 为 Acontext API 绕过 HTTP_PROXY/HTTPS_PROXY（仅本地开发） | 否（可选） |\r\n\r\n## 🚢 部署\r\n\r\n### 部署到 Vercel\r\n\r\nVercel 部署将引导您创建 Supabase 账户和项目。\r\n\r\n安装 Supabase 集成后，所有相关的环境变量将自动分配给项目，因此部署将完全正常运行。\r\n\r\n[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=%E5%9F%BA%E4%BA%8E%20Acontext%20%E7%9A%84%20PPT%20%E9%A3%8E%E6%A0%BC%E5%B9%BB%E7%81%AF%E7%89%87%E7%94%9F%E6%88%90%EF%BC%8C%E5%AF%B9%E8%AF%9D%E5%BC%8F%E6%B5%81%E7%A8%8B%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E8%AE%B0%E5%BF%86%E5%92%8C%E7%AE%80%E5%8E%86%E7%AE%A1%E7%90%86%E5%BC%95%E6%93%8E%E6%94%AF%E6%92%91%E3%80%82&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n\r\n上述操作还会将 Starter kit 克隆到您的 GitHub，您可以本地克隆并在本地开发。\r\n\r\n#### Vercel 配置说明\r\n\r\n部署到 Vercel 时，您有两个选项：\r\n\r\n**选项 1：一键部署（首次设置推荐）**\r\n\r\n1. 点击上面的\"使用 Vercel 部署\"按钮\r\n2. Vercel 将提示您：\r\n   - 登录 Vercel（或创建账户）\r\n   - 连接您的 GitHub 账户（如果尚未连接）\r\n   - 创建新的 Supabase 项目（或连接现有项目）\r\n3. 在 Supabase 集成设置期间：\r\n   - Vercel 将自动为您创建 Supabase 项目\r\n   - 所有必需的 Supabase 环境变量将自动配置：\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. 您需要在 Vercel 仪表板中手动添加其余环境变量：\r\n   - &#96;ACONTEXT_API_KEY&#96; - 您的 Acontext API 密钥\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API 端点（默认：&#96;https://api.openai.com/v1&#96;）\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - 您的 OpenAI API 密钥\r\n   - &#96;OPENAI_LLM_MODEL&#96; - 模型名称（例如：&#96;gpt-4o-mini&#96;）\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - 温度（默认：&#96;0.7&#96;）\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - 最大 token 数（默认：&#96;2000&#96;）\r\n   - &#96;BROWSER_USE_API_KEY&#96; - 可选，用于浏览器自动化\r\n   - &#96;ACONTEXT_BASE_URL&#96; - 可选，默认为 &#96;https://api.acontext.com/api/v1&#96;\r\n5. 部署后，运行数据库迁移：\r\n   - 转到您的 Supabase 项目仪表板\r\n   - 导航到 SQL Editor\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96; 中的 SQL（基础架构）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; 中的 SQL（Acontext session/space 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; 中的 SQL（Acontext Disk 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; 中的 SQL（每用户 Space 映射）\r\n\r\n**选项 2：手动部署（如果您已有 GitHub 仓库）**\r\n\r\n1. 将代码推送到 GitHub\r\n2. 转到 [Vercel 仪表板](https://vercel.com/dashboard)\r\n3. 点击\"添加新项目\"\r\n4. 导入您的 GitHub 仓库\r\n5. 配置环境变量：\r\n   - **Supabase 集成**：点击\"添加集成\" → 搜索\"Supabase\" → 连接您的 Supabase 项目\r\n     - 这将自动设置 &#96;NEXT_PUBLIC_SUPABASE_URL&#96; 和 &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **手动变量**：添加上面列出的其余环境变量\r\n6. 点击\"部署\"\r\n7. 部署后，在 Supabase SQL Editor 中运行数据库迁移：\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96;（基础架构）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;（Acontext session/space 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96;（Acontext Disk 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96;（每用户 Space 映射）\r\n\r\n#### Vercel 中的环境变量\r\n\r\n在 Vercel 中添加环境变量：\r\n\r\n1. 在 Vercel 仪表板中转到您的项目\r\n2. 导航到 **设置** → **环境变量**\r\n3. 添加每个变量及其值\r\n4. 选择要应用的环境（生产、预览、开发）\r\n5. 点击\"保存\"\r\n6. 重新部署应用程序以使更改生效\r\n\r\n**重要提示：**\r\n- 以 &#96;NEXT_PUBLIC_&#96; 开头的环境变量会暴露给浏览器\r\n- 保持敏感密钥（如 &#96;OPENAI_LLM_API_KEY&#96;、&#96;ACONTEXT_API_KEY&#96;）安全，切勿提交它们\r\n- 当您使用 Supabase 集成时，Vercel 会自动提供 &#96;NEXT_PUBLIC_SUPABASE_URL&#96; 和 &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n\r\n#### Vercel 部署后的本地开发\r\n\r\n如果您只想在本地开发而不部署到 Vercel，请按照以下步骤操作：\r\n\r\n1. 从 GitHub 克隆仓库（在 Vercel 部署期间创建）\r\n2. 安装依赖：&#96;npm install&#96;\r\n3. 创建包含所有环境变量的 &#96;.env.local&#96; 文件（请参阅[安装步骤](#安装步骤)部分）\r\n4. 在 Supabase SQL Editor 中运行数据库迁移\r\n5. 启动开发服务器：&#96;npm run dev&#96;\r\n\r\n### 其他平台\r\n\r\n这是一个标准的 Next.js 应用，可以部署到任何支持 Next.js 的平台：\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- 使用 Node.js 自托管\r\n\r\n## 📖 文档\r\n\r\n- 项目内文档（经验总结 / SOP / context）：\r\n  - &#96;public/fonts/skills/README.md&#96; - skills 文件夹说明（作为项目经验/context 入口）\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - 如何新增角色（前端）\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext 文档](https://docs.acontext.io)\r\n- [Next.js 文档](https://nextjs.org/docs)\r\n- [Supabase 文档](https://supabase.com/docs)\r\n- [shadcn/ui 文档](https://ui.shadcn.com)\r\n\r\n## 🤝 贡献\r\n\r\n这是一个启动模板 - 欢迎 Fork 并根据您的需求自定义！\r\n\r\n## 📄 许可证\r\n\r\n请查看仓库中的 LICENSE 文件。\r\n\r\n## 🆘 支持\r\n\r\n- **Acontext**：[文档](https://docs.acontext.io) | [支持](https://acontext.io)\r\n- **问题**：在仓库中提交 issue\r\n\r\n---\r\n\r\n**使用 Acontext 平台构建 ❤️**\r\n\r\n",
+    "languageId": "markdown"
+  }
+}
+```
+Result:
+
+```json
+{
+  "diff": {
+    "chunks": [
+      {
+        "diffString": "    \r\n    &lt;p align=\"center\"&gt;\r\n-     &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n+     &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n      &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n      &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r",
+        "oldStart": 23,
+        "newStart": 23,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      },
+      {
+        "diffString": "  \r\n  &lt;div align=\"center\"&gt;\r\n-   &lt;img src=\"./public/fonts/character1/ppt girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n+   &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r",
+        "oldStart": 345,
+        "newStart": 345,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      },
+      {
+        "diffString": "  安装 Supabase 集成后，所有相关的环境变量将自动分配给项目，因此部署将完全正常运行。\r\n  \r\n- [![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground&amp;repository-name=acontext-agent-playground&amp;demo-title=ACONTEXT%20Agent%20Playground&amp;demo-description=用于构建上下文感知自主%20AI%20智能体的生产就绪启动模板，由%20Acontext%20驱动。&amp;demo-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt)\r\n+ [![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=%E5%9F%BA%E4%BA%8E%20Acontext%20%E7%9A%84%20PPT%20%E9%A3%8E%E6%A0%BC%E5%B9%BB%E7%81%AF%E7%89%87%E7%94%9F%E6%88%90%EF%BC%8C%E5%AF%B9%E8%AF%9D%E5%BC%8F%E6%B5%81%E7%A8%8B%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E8%AE%B0%E5%BF%86%E5%92%8C%E7%AE%80%E5%8E%86%E7%AE%A1%E7%90%86%E5%BC%95%E6%93%8E%E6%94%AF%E6%92%91%E3%80%82&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n  \r\n  上述操作还会将 Starter kit 克隆到您的 GitHub，您可以本地克隆并在本地开发。\r",
+        "oldStart": 510,
+        "newStart": 510,
+        "oldLines": 5,
+        "newLines": 5,
+        "linesRemoved": 1,
+        "linesAdded": 1
+      }
+    ],
+    "editor": "EDITOR_AI"
+  },
+  "shouldAutoFixLints": true,
+  "resultForModel": "Success. Updated the following files:\nM README-zh.md",
+  "contentsAfterEdit": "&lt;div align=\"center\"&gt;\r\n  &lt;h1 align=\"center\"&gt;Acontext PPT Girl Slide Generator&lt;/h1&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    &lt;strong&gt;基于 Acontext Agent Playground 打造的 PPT 风格幻灯片生成体验&lt;/strong&gt;\r\n  &lt;/p&gt;\r\n  &lt;p align=\"center\"&gt;\r\n    由 &lt;a href=\"https://acontext.io\"&gt;&lt;strong&gt;Acontext&lt;/strong&gt;&lt;/a&gt; 驱动\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;a href=\"#功能特性\"&gt;&lt;strong&gt;功能特性&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#快速开始\"&gt;&lt;strong&gt;快速开始&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#部署\"&gt;&lt;strong&gt;部署&lt;/strong&gt;&lt;/a&gt; ·\r\n    &lt;a href=\"#文档\"&gt;&lt;strong&gt;文档&lt;/strong&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&amp;logo=next.js&amp;logoColor=white\" alt=\"Next.js\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&amp;logo=typescript&amp;logoColor=white\" alt=\"TypeScript\" /&gt;\r\n    &lt;img src=\"https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&amp;logo=supabase&amp;logoColor=white\" alt=\"Supabase\" /&gt;\r\n    &lt;a href=\"https://acontext.io\"&gt;&lt;img src=\"https://assets.memodb.io/Acontext/badge-made-with-acontext.svg\" alt=\"Made with Acontext\" /&gt;&lt;/a&gt;\r\n  &lt;/p&gt;\r\n  \r\n  &lt;p align=\"center\"&gt;\r\n    &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n    &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n    &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r\n  &lt;/p&gt;\r\n&lt;/div&gt;\r\n\r\n&lt;br/&gt;\r\n\r\n**Acontext PPT Girl Slide Generator** 是一个由 [Acontext](https://acontext.io) 驱动的智能 PPT 幻灯片生成系统。只需与 **\"PPT Girl\"**（一位 AI 助手）对话，描述您的演示主题，她就会自动为您创建一系列精美的赛博朋克风格幻灯片图片，直接用于演示。\r\n\r\n## 🎯 核心功能\r\n\r\n### 它能做什么？\r\n\r\n**通过自然对话将文本转换为专业 PPT 幻灯片**：\r\n\r\n1. **📝 输入**：您提供演示内容（文本、段落、主题或大纲）\r\n2. **🧠 规划**：PPT Girl 分析您的内容并提出逐页幻灯片大纲（标题 + 要点）\r\n3. **✏️ 确认**：您审查并确认大纲\r\n4. **🎨 生成**：PPT Girl 使用 AI 图像生成技术创建 16:9 赛博朋克风格幻灯片图片\r\n5. **📦 交付**：每张幻灯片图片自动存储并可通过 URL 访问\r\n\r\n### PPT 生成的关键特性\r\n\r\n- **🎨 一致的视觉风格**：所有幻灯片共享统一的赛博朋克美学（霓虹灯、全息效果、未来主义背景）\r\n- **📐 智能布局**：干净、专业的布局，为文本叠加预留充足空间\r\n- **🔄 交互式工作流**：在生成前确认大纲，可针对特定幻灯片进行迭代\r\n- **💾 自动存储**：所有生成的幻灯片存储在 Acontext Disk 中，便于访问\r\n- **🧠 上下文感知**：记住您之前的幻灯片，在整个会话中保持视觉一致性\r\n\r\n## 🤔 为什么需要 Acontext？集成的核心价值\r\n\r\n**Acontext 不是可选的** - 它使这个 PPT 生成器变得智能和实用。原因如下：\r\n\r\n### 1. **多幻灯片演示的持久记忆** 🧠\r\n**问题**：生成完整演示需要多轮对话。没有记忆，AI 会忘记：\r\n- 已经创建了哪些幻灯片\r\n- 您同意的视觉风格和主题\r\n- 演示的整体结构\r\n\r\n**Acontext 解决方案**：每个聊天会话持久化到 Acontext Session。PPT Girl 会记住：\r\n- 当前演示中所有先前生成的幻灯片\r\n- 您的偏好（例如，\"使用更多紫色调\"、\"让幻灯片更简洁\"）\r\n- 演示结构和上下文\r\n\r\n**实际影响**：您可以 say \"添加一张关于定价的幻灯片\" 或 \"让第 3 张幻灯片更详细\" - PPT Girl 知道您指的是哪张幻灯片。\r\n\r\n### 2. **语义搜索保持风格一致性** 🔍\r\n**问题**：生成多张幻灯片时，保持视觉一致性很困难。您可能希望：\r\n- 所有幻灯片共享相似的配色方案\r\n- 一致的背景元素\r\n- 相关幻灯片之间的相似布局\r\n\r\n**Acontext 解决方案**：在生成每张新幻灯片之前，Acontext 执行语义搜索以检索：\r\n- 之前的幻灯片生成提示\r\n- 您的反馈和风格偏好\r\n- 同一演示中的相关幻灯片\r\n\r\n**实际影响**：当您说\"让这张幻灯片的风格与介绍幻灯片匹配\"时，PPT Girl 可以自动找到并引用您之前的幻灯片。\r\n\r\n### 3. **技能学习实现持续改进** 📈\r\n**问题**：每个用户都有不同的偏好。有些人喜欢极简设计，其他人更喜欢详细的背景。如果不学习，AI 每次都从零开始。\r\n\r\n**Acontext 解决方案**：Acontext Space 从已完成的演示中学习：\r\n- 您偏好的幻灯片风格\r\n- 您演示中的常见模式（例如，\"您总是包含结论幻灯片\"）\r\n- 之前运行良好的成功幻灯片结构\r\n\r\n**实际影响**：您创建的演示越多，PPT Girl 就越了解您的风格。您的第 10 个演示将比第一个更符合您的偏好。\r\n\r\n### 4. **生成的幻灯片的自动文件管理** 📁\r\n**问题**：生成的幻灯片图片需要存储、组织并易于访问。手动管理文件既繁琐又容易出错。\r\n\r\n**Acontext Disk 解决方案**：\r\n- 所有生成的幻灯片自动存储在 Acontext Disk 中\r\n- 每张幻灯片都有唯一的 URL，便于共享和嵌入\r\n- 文件按会话和日期组织\r\n- 无需手动下载或管理文件\r\n\r\n**实际影响**：您可以在一个地方查看所有生成的幻灯片，批量下载它们，或立即分享单张幻灯片。\r\n\r\n### 5. **长演示的上下文压缩** 💾\r\n**问题**：创建 20 张幻灯片的演示涉及许多消息、工具调用和生成的图像。没有压缩，对话上下文变得太大，LLM 无法高效处理。\r\n\r\n**Acontext 解决方案**：\r\n- 当对话变长时自动压缩上下文\r\n- 保留重要信息（幻灯片结构、确认的大纲）\r\n- 压缩或总结不太相关的中间消息\r\n\r\n**实际影响**：您可以创建任意长度的演示，而不会遇到 token 限制或丢失重要上下文。\r\n\r\n### 6. **跨会话智能** 🔄\r\n**问题**：没有记忆，每次新对话都从零开始。您无法引用之前演示中的幻灯片或基于过去的工作构建。\r\n\r\n**Acontext 解决方案**：\r\n- 搜索所有您之前的演示\r\n- 引用之前会话中的幻灯片\r\n- 基于现有幻灯片库构建\r\n\r\n**实际影响**：\"创建与我上周制作的类似的演示\"成为可能。PPT Girl 可以找到并引用您之前的工作。\r\n\r\n---\r\n\r\n**核心结论**：Acontext 将 PPT Girl 从\"一次性幻灯片生成器\"转变为**智能演示助手**，它学习您的偏好，在会话间保持上下文，并随着时间的推移提供越来越好的结果。\r\n\r\n## ✨ 功能特性\r\n\r\n### 🎨 PPT 幻灯片生成（核心功能）\r\n\r\n- **🤖 AI 驱动生成**：与 PPT Girl 自然语言对话创建专业幻灯片\r\n- **📋 智能大纲规划**：自动将内容拆分为逻辑幻灯片结构（标题 + 要点）\r\n- **🎨 赛博朋克视觉风格**：一致的未来主义美学，霓虹灯和全息效果\r\n- **📐 专业布局**：干净、16:9 布局，优化文本叠加和内容展示\r\n- **🔄 交互式工作流**：生成前审查和确认大纲；可针对单张幻灯片迭代\r\n- **🖼️ 图像生成工具**：与 AI 图像生成 API 无缝集成\r\n- **💾 自动存储**：生成的幻灯片存储在 Acontext Disk 中，提供可分享 URL\r\n- **📊 多幻灯片支持**：生成整个演示，所有幻灯片保持一致的风格\r\n\r\n### 💬 聊天与界面\r\n\r\n- **🔐 身份认证**：使用 Supabase 的邮箱/密码认证\r\n- **💬 丰富聊天 UI**：功能完整的聊天界面，包含消息历史、流式响应和工具调用可视化\r\n- **🎨 可自定义 UI**：基于 Tailwind CSS 和 shadcn/ui 组件构建 - 完全可自定义\r\n- **🤖 头像支持**：可自定义智能体头像（包含 PPT Girl 角色）\r\n- **📁 文件上传**：支持上传 PDF、图片和文档作为上下文\r\n- **🌐 浏览器自动化**：集成 Browser Use SDK 用于网页自动化任务（可选）\r\n- **🌓 主题支持**：使用 next-themes 的深色/浅色模式\r\n\r\n### 🧠 Acontext 驱动的智能\r\n\r\n- **💾 会话持久化**：每个聊天会话持久化到 Acontext Session - PPT Girl 记住您的演示\r\n- **🔍 语义上下文搜索**：在生成回复前自动检索相关历史上下文（之前的幻灯片、风格偏好）\r\n- **📦 磁盘存储**：所有生成的幻灯片自动存储在 Acontext Disk 中，便于有序访问\r\n- **📈 经验学习**：从您的 Space 中学习，了解您偏好的幻灯片风格并持续改进\r\n- **🗜️ 上下文压缩**：长演示的自动 token 管理，支持手动压缩选项\r\n- **🔄 跨会话智能**：引用之前演示中的幻灯片，基于过去的工作构建\r\n\r\n## 🛠️ 技术栈\r\n\r\n- **框架**：Next.js 15+ (App Router)\r\n- **认证和数据库**：Supabase (&#96;@supabase/supabase-js&#96;, &#96;@supabase/ssr&#96;)\r\n- **AI 平台**：Acontext (&#96;@acontext/acontext&#96;)\r\n- **LLM**：OpenAI (&#96;openai&#96; SDK) - 兼容 OpenAI API\r\n- **浏览器智能体**：Browser Use SDK (&#96;browser-use-sdk&#96;)\r\n- **UI 组件**：Tailwind CSS, shadcn/ui, Lucide 图标\r\n- **语言**：TypeScript\r\n- **主题**：next-themes\r\n\r\n## 📖 使用示例\r\n\r\n以下是与 PPT Girl 的真实对话流程：\r\n\r\n### 示例 1：创建产品发布演示\r\n\r\n**您**：\"我需要一个关于我们新 AI 聊天机器人产品发布的演示。它应该包括：介绍、功能、定价和后续步骤。\"\r\n\r\n**PPT Girl**：\r\n&gt; 我会帮您创建一个关于 AI 聊天机器人产品发布的演示。让我提出一个幻灯片大纲：\r\n&gt; \r\n&gt; **幻灯片 1：介绍**\r\n&gt; - 欢迎来到 AI 聊天机器人发布\r\n&gt; - 革命性的客户支持\r\n&gt; \r\n&gt; **幻灯片 2：核心功能**\r\n&gt; - 24/7 智能支持\r\n&gt; - 自然语言理解\r\n&gt; - 多平台集成\r\n&gt; \r\n&gt; **幻灯片 3：定价**\r\n&gt; - 灵活的定价层级\r\n&gt; - 提供企业解决方案\r\n&gt; \r\n&gt; **幻灯片 4：后续步骤**\r\n&gt; - 注册抢先体验\r\n&gt; - 预约演示\r\n&gt; \r\n&gt; 这个大纲适合您吗？我应该继续生成幻灯片图片吗？\r\n\r\n**您**：\"是的，看起来不错！让介绍幻灯片更有戏剧性。\"\r\n\r\n**PPT Girl**：\r\n&gt; [使用 image_generate 工具生成 4 张幻灯片图片]\r\n&gt; \r\n&gt; ✅ **幻灯片 1：介绍**（已更新，更具戏剧性的视觉效果）\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 2：核心功能**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 3：定价**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; ✅ **幻灯片 4：后续步骤**\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; 您的演示已准备就绪！所有幻灯片已保存，可通过上面的 URL 访问。您可以下载它们或直接在演示软件中使用。\r\n\r\n### 示例 2：迭代幻灯片\r\n\r\n**您**（在后续对话中）：\"我想在定价幻灯片之前添加一张关于客户推荐的幻灯片。\"\r\n\r\n**PPT Girl**（记住您之前的演示）：\r\n&gt; 我会在功能幻灯片和定价幻灯片之间添加一张推荐幻灯片。让我提出：\r\n&gt; \r\n&gt; **幻灯片 3：客户推荐**\r\n&gt; - \"我们使用过的最佳聊天机器人\" - 公司 A\r\n&gt; - \"支持工单减少 60%\" - 公司 B\r\n&gt; - \"易于集成\" - 公司 C\r\n&gt; \r\n&gt; 我应该生成这张幻灯片，使用与您之前的幻灯片相同的赛博朋克风格吗？\r\n\r\n**您**：\"是的，但使用更多的紫色调以稍微区分。\"\r\n\r\n**PPT Girl**：\r\n&gt; [生成带紫色调的赛博朋克风格幻灯片]\r\n&gt; \r\n&gt; ✅ **幻灯片 3：客户推荐**（紫色调，匹配您之前的风格）\r\n&gt; 🖼️ 图片：[生成的幻灯片 URL]\r\n&gt; \r\n&gt; 完成！这张幻灯片将与您现有的演示完美契合。\r\n\r\n**关键要点**：注意 PPT Girl 如何记住：\r\n- 您之前的演示结构\r\n- 您使用的视觉风格\r\n- 如何在允许变化的同时保持一致\r\n\r\n这种智能来自 **Acontext 的持久记忆和语义搜索** - 没有它，PPT Girl 将无法记住您之前的幻灯片，也无法保持一致性。\r\n\r\n## 📦 快速开始\r\n\r\n### 前置要求\r\n\r\n- Node.js 18+ 和 npm/yarn/pnpm\r\n- Supabase 账户（[在此创建](https://database.new)）\r\n- Acontext 账户（[在此注册](https://acontext.io)）\r\n- OpenAI API 密钥（或兼容的 API 端点）\r\n\r\n### 安装步骤\r\n\r\n1. **克隆仓库**\r\n\r\n&#96;&#96;&#96;bash\r\ngit clone https://github.com/mbt1909432/acontext-agent-playground-ppt.git nextjs-with-supabase-acontext\r\ncd nextjs-with-supabase-acontext\r\n&#96;&#96;&#96;\r\n\r\n2. **安装依赖**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm install\r\n# 或\r\nyarn install\r\n# 或\r\npnpm install\r\n&#96;&#96;&#96;\r\n\r\n3. **设置 Supabase**\r\n\r\n   - 在 [Supabase Dashboard](https://database.new) 创建新项目\r\n   - 记录您的 &#96;Project URL&#96; 和 &#96;Anon (publishable) key&#96;\r\n\r\n4. **配置环境变量**\r\n\r\n   在根目录创建 &#96;.env.local&#96; 文件：\r\n\r\n&#96;&#96;&#96;env\r\n# Supabase (必需)\r\nNEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url\r\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-or-anon-key\r\n\r\n# Acontext (完整功能需要)\r\nACONTEXT_API_KEY=your-acontext-api-key\r\nACONTEXT_BASE_URL=https://api.acontext.com/api/v1  # 可选，默认为此值\r\n\r\n# OpenAI LLM (必需)\r\nOPENAI_LLM_ENDPOINT=https://api.openai.com/v1\r\nOPENAI_LLM_API_KEY=your-openai-api-key\r\nOPENAI_LLM_MODEL=gpt-4o-mini  # 或 gpt-3.5-turbo, gpt-4 等\r\nOPENAI_LLM_TEMPERATURE=0.7\r\nOPENAI_LLM_MAX_TOKENS=2000\r\n\r\n# Browser Use Cloud (可选，用于浏览器自动化)\r\nBROWSER_USE_API_KEY=your-browser-use-cloud-api-key\r\n&#96;&#96;&#96;\r\n\r\n5. **设置数据库架构**\r\n\r\n   - 打开您的 Supabase 项目\r\n   - 进入 **SQL Editor**\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96; 中的 SQL\r\n   - 这将创建 &#96;chat_sessions&#96; 和 &#96;chat_messages&#96; 表\r\n   - 对于 Acontext 集成，还需运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;\r\n\r\n6. **运行开发服务器**\r\n\r\n&#96;&#96;&#96;bash\r\nnpm run dev\r\n# 或\r\nyarn dev\r\n# 或\r\npnpm dev\r\n&#96;&#96;&#96;\r\n\r\n访问 &#96;http://localhost:3000&#96; 查看您的应用。\r\n\r\n## 🎨 自定义指南\r\n\r\n### 自定义 UI\r\n\r\nUI 使用 **Tailwind CSS** 和 **shadcn/ui** 组件构建，易于自定义：\r\n\r\n1. **主题颜色**：编辑 &#96;tailwind.config.ts&#96; 更改配色方案\r\n2. **组件**：所有 UI 组件都在 &#96;components/ui/&#96; 目录中 - 根据需要修改\r\n3. **布局**：主页面在 &#96;app/&#96; 目录中\r\n4. **首页**：自定义 &#96;app/page.tsx&#96; 作为您的着陆页\r\n5. **聊天界面**：修改 &#96;components/chatbot-panel.tsx&#96; 进行聊天 UI 更改\r\n\r\n### 自定义头像\r\n\r\n在本 PPT Girl 分支中，已经预置了一位护士风二次元角色作为默认头像，您也可以很方便地替换为自己的角色：\r\n\r\n&lt;div align=\"center\"&gt;\r\n  &lt;img src=\"./public/fonts/character1/ppt%20girl.png\" alt=\"PPT Girl - 首页角色\" width=\"300\" /&gt;\r\n  &amp;nbsp;&amp;nbsp;&amp;nbsp;\r\n  &lt;img src=\"./public/fonts/character1/ppt_girl_chatbot.png\" alt=\"PPT Girl - 聊天机器人头像\" width=\"200\" /&gt;\r\n&lt;/div&gt;\r\n\r\n1. **角色图片**：默认头像在 &#96;/public/fonts/character1/ppt girl.png&#96;（保持同名即可，无需改代码），或修改 &#96;contexts/character-context.tsx&#96; / &#96;components/parallax-character.tsx&#96; 中的图片路径\r\n2. **首页头像**：首页 hero 区域通过视差组件展示 &#96;ppt girl.png&#96;，如果想调整位置和大小，可编辑 &#96;ParallaxCharacter&#96; 组件\r\n3. **聊天头像**：默认聊天头像在 &#96;/public/fonts/character1/ppt_girl_chatbot.png&#96;，可在 &#96;contexts/character-context.tsx&#96; 中替换为您自己的图片\r\n\r\n示例位置：\r\n- &#96;components/parallax-character.tsx&#96; - 首页视差角色（使用 &#96;/fonts/ppt girl.png&#96;）\r\n- &#96;public/fonts/character1/ppt girl.png&#96; - 默认首页角色 PNG 资源\r\n- &#96;public/fonts/character1/ppt_girl_chatbot.png&#96; - 默认聊天头像 PNG 资源\r\n- &#96;app/page.tsx&#96; - 首页布局和 PPT Girl 相关文案\r\n\r\n### 添加自定义工具\r\n\r\n工具定义为 OpenAI 函数调用架构。要添加您自己的工具：\r\n\r\n1. **在 &#96;lib/&#96; 中创建工具文件**（例如 &#96;lib/my-custom-tool.ts&#96;）：\r\n\r\n&#96;&#96;&#96;typescript\r\nexport function getMyToolSchema() {\r\n  return {\r\n    type: \"function\" as const,\r\n    function: {\r\n      name: \"my_custom_tool\",\r\n      description: \"描述您的工具功能\",\r\n      parameters: {\r\n        type: \"object\",\r\n        properties: {\r\n          param1: {\r\n            type: \"string\",\r\n            description: \"参数描述\",\r\n          },\r\n        },\r\n        required: [\"param1\"],\r\n      },\r\n    },\r\n  };\r\n}\r\n\r\nexport async function executeMyTool(args: { param1: string }) {\r\n  // 您的工具逻辑\r\n  return {\r\n    result: \"工具执行结果\",\r\n  };\r\n}\r\n&#96;&#96;&#96;\r\n\r\n2. **在 &#96;lib/openai-client.ts&#96; 中注册工具**：\r\n\r\n&#96;&#96;&#96;typescript\r\n// 添加到 getAvailableTools 函数\r\nif (shouldIncludeMyTool) {\r\n  tools.push(getMyToolSchema());\r\n}\r\n\r\n// 添加到 executeToolCall 函数\r\nif (name === \"my_custom_tool\") {\r\n  const args = JSON.parse(argsJson || \"{}\");\r\n  return await executeMyTool(args);\r\n}\r\n&#96;&#96;&#96;\r\n\r\n3. **在 &#96;app/api/chatbot/route.ts&#96; 中接入聊天 API**：\r\n\r\n&#96;&#96;&#96;typescript\r\n// 调用 chatCompletionStream 时工具会自动包含\r\n&#96;&#96;&#96;\r\n\r\n**现有工具示例：**\r\n- &#96;lib/browser-use.ts&#96; - 浏览器自动化\r\n- &#96;lib/acontext-disk-tools.ts&#96; - 文件系统操作\r\n- &#96;lib/acontext-experience-search-tool.ts&#96; - 经验搜索\r\n- &#96;lib/acontext-todo-tool.ts&#96; - Todo 管理\r\n\r\n### 自定义 Acontext 集成\r\n\r\nAcontext 集成是模块化的，可以自定义：\r\n\r\n- **会话管理**：&#96;lib/acontext-integration.ts&#96; - 修改会话创建和管理\r\n- **客户端配置**：&#96;lib/acontext-client.ts&#96; - 调整 Acontext 客户端设置\r\n- **工具集成**：&#96;lib/acontext-disk-tools.ts&#96; - 自定义磁盘工具行为\r\n- **经验搜索**：&#96;lib/acontext-experience-search-tool.ts&#96; - 修改搜索逻辑\r\n\r\n## 📚 项目结构\r\n\r\n&#96;&#96;&#96;\r\nnextjs-with-supabase-acontext/\r\n├── app/                    # Next.js app 目录\r\n│   ├── api/               # API 路由\r\n│   │   ├── acontext/      # Acontext API 端点\r\n│   │   ├── chatbot/       # 聊天 API 端点\r\n│   │   └── tools/         # 工具 API 端点\r\n│   ├── auth/              # 认证页面\r\n│   ├── protected/         # 受保护的聊天页面\r\n│   └── page.tsx           # 首页\r\n├── components/             # React 组件\r\n│   ├── ui/                # shadcn/ui 组件\r\n│   ├── chatbot-panel.tsx  # 主聊天界面\r\n│   └── parallax-character.tsx  # 首页角色\r\n├── lib/                   # 核心库\r\n│   ├── acontext-*.ts      # Acontext 集成\r\n│   ├── openai-client.ts   # OpenAI 客户端包装器\r\n│   ├── browser-use.ts    # 浏览器自动化\r\n│   └── supabase/          # Supabase 工具\r\n├── specs/                 # 项目规范\r\n└── types/                 # TypeScript 类型\r\n&#96;&#96;&#96;\r\n\r\n## 🔧 可用工具\r\n\r\n### 内置工具\r\n\r\n1. **Browser Use Task** (&#96;browser_use_task&#96;)\r\n   - 执行网页自动化任务\r\n   - 需要 Browser Use Cloud API 密钥\r\n   - 位置：&#96;lib/browser-use.ts&#96;\r\n\r\n2. **Acontext Disk 工具**\r\n   - &#96;write_file&#96;, &#96;read_file&#96;, &#96;replace_string&#96;, &#96;list_artifacts&#96;, &#96;download_file&#96;\r\n   - Acontext Disk 上的文件系统操作\r\n   - 位置：&#96;lib/acontext-disk-tools.ts&#96;\r\n\r\n3. **经验搜索** (&#96;experience_search&#96;)\r\n   - 从 Acontext Space 搜索用户已学习的技能\r\n   - 位置：&#96;lib/acontext-experience-search-tool.ts&#96;\r\n\r\n4. **Todo 管理** (&#96;todo&#96;)\r\n   - 在聊天会话中创建和管理待办事项\r\n   - 位置：&#96;lib/acontext-todo-tool.ts&#96;\r\n\r\n### 添加您自己的工具\r\n\r\n请参阅上面的[自定义指南](#添加自定义工具)部分。\r\n\r\n## 🌐 环境变量\r\n\r\n| 变量 | 描述 | 必需 |\r\n|------|------|------|\r\n| &#96;NEXT_PUBLIC_SUPABASE_URL&#96; | Supabase 项目 URL | 是 |\r\n| &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96; | Supabase publishable/anon 密钥 | 是 |\r\n| &#96;ACONTEXT_API_KEY&#96; | Acontext API 密钥 | 是（完整功能需要） |\r\n| &#96;ACONTEXT_BASE_URL&#96; | Acontext API 基础 URL | 否（有默认值） |\r\n| &#96;OPENAI_LLM_ENDPOINT&#96; | OpenAI 兼容 API 端点 | 是 |\r\n| &#96;OPENAI_LLM_API_KEY&#96; | OpenAI API 密钥 | 是 |\r\n| &#96;OPENAI_LLM_MODEL&#96; | 模型名称（例如 &#96;gpt-4o-mini&#96;） | 是 |\r\n| &#96;OPENAI_LLM_TEMPERATURE&#96; | 温度（0-2） | 否（默认：0.7） |\r\n| &#96;OPENAI_LLM_MAX_TOKENS&#96; | 响应最大 token 数 | 否（默认：2000） |\r\n| &#96;BROWSER_USE_API_KEY&#96; | Browser Use Cloud API 密钥 | 否（可选） |\r\n| &#96;IMAGE_GEN_API_KEY&#96; | 生图上游 API key（用于 &#96;x-goog-api-key&#96;） | 否（可选，仅 image_generate 需要） |\r\n| &#96;IMAGE_GEN_BASE_URL&#96; | 生图上游 base URL | 否（默认：&#96;https://api.openai-next.com&#96;） |\r\n| &#96;IMAGE_GEN_DEFAULT_MODEL&#96; | 生图模型（服务端固定，不允许由 tool 入参覆盖） | 否（默认：&#96;gemini-3-pro-image-preview&#96;） |\r\n| &#96;IMAGE_GEN_TIMEOUT_MS&#96; | 图像生成 API 超时时间（毫秒） | 否（默认：120000） |\r\n| &#96;ACONTEXT_BYPASS_PROXY&#96; | 为 Acontext API 绕过 HTTP_PROXY/HTTPS_PROXY（仅本地开发） | 否（可选） |\r\n\r\n## 🚢 部署\r\n\r\n### 部署到 Vercel\r\n\r\nVercel 部署将引导您创建 Supabase 账户和项目。\r\n\r\n安装 Supabase 集成后，所有相关的环境变量将自动分配给项目，因此部署将完全正常运行。\r\n\r\n[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&amp;ref=main&amp;project-name=acontext-agent-playground-ppt&amp;repository-name=acontext-agent-playground-ppt&amp;demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&amp;demo-description=%E5%9F%BA%E4%BA%8E%20Acontext%20%E7%9A%84%20PPT%20%E9%A3%8E%E6%A0%BC%E5%B9%BB%E7%81%AF%E7%89%87%E7%94%9F%E6%88%90%EF%BC%8C%E5%AF%B9%E8%AF%9D%E5%BC%8F%E6%B5%81%E7%A8%8B%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E8%AE%B0%E5%BF%86%E5%92%8C%E7%AE%80%E5%8E%86%E7%AE%A1%E7%90%86%E5%BC%95%E6%93%8E%E6%94%AF%E6%92%91%E3%80%82&amp;demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)\r\n\r\n上述操作还会将 Starter kit 克隆到您的 GitHub，您可以本地克隆并在本地开发。\r\n\r\n#### Vercel 配置说明\r\n\r\n部署到 Vercel 时，您有两个选项：\r\n\r\n**选项 1：一键部署（首次设置推荐）**\r\n\r\n1. 点击上面的\"使用 Vercel 部署\"按钮\r\n2. Vercel 将提示您：\r\n   - 登录 Vercel（或创建账户）\r\n   - 连接您的 GitHub 账户（如果尚未连接）\r\n   - 创建新的 Supabase 项目（或连接现有项目）\r\n3. 在 Supabase 集成设置期间：\r\n   - Vercel 将自动为您创建 Supabase 项目\r\n   - 所有必需的 Supabase 环境变量将自动配置：\r\n     - &#96;NEXT_PUBLIC_SUPABASE_URL&#96;\r\n     - &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n4. 您需要在 Vercel 仪表板中手动添加其余环境变量：\r\n   - &#96;ACONTEXT_API_KEY&#96; - 您的 Acontext API 密钥\r\n   - &#96;OPENAI_LLM_ENDPOINT&#96; - OpenAI API 端点（默认：&#96;https://api.openai.com/v1&#96;）\r\n   - &#96;OPENAI_LLM_API_KEY&#96; - 您的 OpenAI API 密钥\r\n   - &#96;OPENAI_LLM_MODEL&#96; - 模型名称（例如：&#96;gpt-4o-mini&#96;）\r\n   - &#96;OPENAI_LLM_TEMPERATURE&#96; - 温度（默认：&#96;0.7&#96;）\r\n   - &#96;OPENAI_LLM_MAX_TOKENS&#96; - 最大 token 数（默认：&#96;2000&#96;）\r\n   - &#96;BROWSER_USE_API_KEY&#96; - 可选，用于浏览器自动化\r\n   - &#96;ACONTEXT_BASE_URL&#96; - 可选，默认为 &#96;https://api.acontext.com/api/v1&#96;\r\n5. 部署后，运行数据库迁移：\r\n   - 转到您的 Supabase 项目仪表板\r\n   - 导航到 SQL Editor\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96; 中的 SQL（基础架构）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96; 中的 SQL（Acontext session/space 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96; 中的 SQL（Acontext Disk 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96; 中的 SQL（每用户 Space 映射）\r\n\r\n**选项 2：手动部署（如果您已有 GitHub 仓库）**\r\n\r\n1. 将代码推送到 GitHub\r\n2. 转到 [Vercel 仪表板](https://vercel.com/dashboard)\r\n3. 点击\"添加新项目\"\r\n4. 导入您的 GitHub 仓库\r\n5. 配置环境变量：\r\n   - **Supabase 集成**：点击\"添加集成\" → 搜索\"Supabase\" → 连接您的 Supabase 项目\r\n     - 这将自动设置 &#96;NEXT_PUBLIC_SUPABASE_URL&#96; 和 &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n   - **手动变量**：添加上面列出的其余环境变量\r\n6. 点击\"部署\"\r\n7. 部署后，在 Supabase SQL Editor 中运行数据库迁移：\r\n   - 运行 &#96;specs/001-chatbot-openai/schema.sql&#96;（基础架构）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext.sql&#96;（Acontext session/space 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-disk.sql&#96;（Acontext Disk 支持）\r\n   - 运行 &#96;specs/001-chatbot-openai/migration-acontext-space-user.sql&#96;（每用户 Space 映射）\r\n\r\n#### Vercel 中的环境变量\r\n\r\n在 Vercel 中添加环境变量：\r\n\r\n1. 在 Vercel 仪表板中转到您的项目\r\n2. 导航到 **设置** → **环境变量**\r\n3. 添加每个变量及其值\r\n4. 选择要应用的环境（生产、预览、开发）\r\n5. 点击\"保存\"\r\n6. 重新部署应用程序以使更改生效\r\n\r\n**重要提示：**\r\n- 以 &#96;NEXT_PUBLIC_&#96; 开头的环境变量会暴露给浏览器\r\n- 保持敏感密钥（如 &#96;OPENAI_LLM_API_KEY&#96;、&#96;ACONTEXT_API_KEY&#96;）安全，切勿提交它们\r\n- 当您使用 Supabase 集成时，Vercel 会自动提供 &#96;NEXT_PUBLIC_SUPABASE_URL&#96; 和 &#96;NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY&#96;\r\n\r\n#### Vercel 部署后的本地开发\r\n\r\n如果您只想在本地开发而不部署到 Vercel，请按照以下步骤操作：\r\n\r\n1. 从 GitHub 克隆仓库（在 Vercel 部署期间创建）\r\n2. 安装依赖：&#96;npm install&#96;\r\n3. 创建包含所有环境变量的 &#96;.env.local&#96; 文件（请参阅[安装步骤](#安装步骤)部分）\r\n4. 在 Supabase SQL Editor 中运行数据库迁移\r\n5. 启动开发服务器：&#96;npm run dev&#96;\r\n\r\n### 其他平台\r\n\r\n这是一个标准的 Next.js 应用，可以部署到任何支持 Next.js 的平台：\r\n- Netlify\r\n- Railway\r\n- Render\r\n- AWS Amplify\r\n- 使用 Node.js 自托管\r\n\r\n## 📖 文档\r\n\r\n- 项目内文档（经验总结 / SOP / context）：\r\n  - &#96;public/fonts/skills/README.md&#96; - skills 文件夹说明（作为项目经验/context 入口）\r\n  - &#96;public/fonts/skills/ADDING_NEW_CHARACTER.md&#96; - 如何新增角色（前端）\r\n  - &#96;docs/skills-summary.md&#96;\r\n  - &#96;docs/agent-dabaihua.md&#96;\r\n- [Acontext 文档](https://docs.acontext.io)\r\n- [Next.js 文档](https://nextjs.org/docs)\r\n- [Supabase 文档](https://supabase.com/docs)\r\n- [shadcn/ui 文档](https://ui.shadcn.com)\r\n\r\n## 🤝 贡献\r\n\r\n这是一个启动模板 - 欢迎 Fork 并根据您的需求自定义！\r\n\r\n## 📄 许可证\r\n\r\n请查看仓库中的 LICENSE 文件。\r\n\r\n## 🆘 支持\r\n\r\n- **Acontext**：[文档](https://docs.acontext.io) | [支持](https://acontext.io)\r\n- **问题**：在仓库中提交 issue\r\n\r\n---\r\n\r\n**使用 Acontext 平台构建 ❤️**\r\n\r\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Checking homepage issues and repo status**</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: git status --short</summary>
+
+```bash
+git status --short
+```
+
+```
+ M .specstory/history/2026-01-20_06-34Z-current-changes-and-multiple-commits.md
+ M README-zh.md
+ M README.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Preparing precise README snippet citation**
+
+I'm confirming exact README line ranges for citing the updated image path and Vercel button link to reference the repo accurately while noting the unchanged specstory file, aiming to include a concise code block citation with proper line numbers in the final response.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README-zh.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Planning snippet extraction for button lines**
+
+I'm preparing to reread the section with button lines around lines 504 to 526 to extract a snippet for the Vercel button, ensuring I can properly cite it without overloading the content.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file">
+<details><summary>Tool use: **read_file** • Read file: README-zh.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+**Providing final summary with citations**
+
+- Updated the image path in README.md (lines 1–28) with percent encoding, shown in code blocks for both English and Chinese versions.  
+- Modified Vercel button section in README.md (lines 504–514), also included Chinese version with corresponding code block.  
+- The repository link for citation: [mbt1909432/acontext-agent-playground-ppt](https://github.com/mbt1909432/acontext-agent-playground-ppt).  
+- Noted that `.specstory` file is already modified and remains unchanged.</details></think>
+
+---
+
+- 修正 README/README-zh 顶部角色图路径为 URL 编码，保证 GitHub 首页图片正常展示。  
+```1:28:README.md
+  <p align="center">
+    <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - Homepage Character" width="300" />
+    &nbsp;&nbsp;&nbsp;
+    <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - Chatbot Avatar" width="200" />
+  </p>
+</div>
+```
+```1:28:README-zh.md
+  <p align="center">
+    <img src="./public/fonts/character1/ppt%20girl.png" alt="PPT Girl - 首页角色" width="300" />
+    &nbsp;&nbsp;&nbsp;
+    <img src="./public/fonts/character1/ppt_girl_chatbot.png" alt="PPT Girl - 聊天机器人头像" width="200" />
+  </p>
+</div>
+```
+- 更新 Vercel 一键部署按钮的仓库/项目名称、Demo 标题与描述，指向当前仓库与正确演示链接。  
+```504:514:README.md
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground-ppt&repository-name=acontext-agent-playground-ppt&demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&demo-description=PPT-style%20slide%20generator%20powered%20by%20Acontext%2C%20with%20chat-driven%20workflow%20and%20semantic%20memory.&demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)
+```
+```504:514:README-zh.md
+[![使用 Vercel 部署](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmbt1909432%2Facontext-agent-playground-ppt&ref=main&project-name=acontext-agent-playground-ppt&repository-name=acontext-agent-playground-ppt&demo-title=Acontext%20PPT%20Girl%20Slide%20Generator&demo-description=%E5%9F%BA%E4%BA%8E%20Acontext%20%E7%9A%84%20PPT%20%E9%A3%8E%E6%A0%BC%E5%B9%BB%E7%81%AF%E7%89%87%E7%94%9F%E6%88%90%EF%BC%8C%E5%AF%B9%E8%AF%9D%E5%BC%8F%E6%B5%81%E7%A8%8B%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E8%AE%B0%E5%BF%86%E5%92%8C%E7%AE%80%E5%8E%86%E7%AE%A1%E7%90%86%E5%BC%95%E6%93%8E%E6%94%AF%E6%92%91%E3%80%82&demo-url=https%3A%2F%2Facontext-agent-playground-ppt.vercel.app)
+```
+
+当前仓库链接供确认：[mbt1909432/acontext-agent-playground-ppt](https://github.com/mbt1909432/acontext-agent-playground-ppt)。未经我改动的 `.specstory` 仍处于已修改状态。
 
 ---
 
