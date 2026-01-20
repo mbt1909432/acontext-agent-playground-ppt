@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { hasEnvVars } from "@/lib/utils";
 import { useCharacter } from "@/contexts/character-context";
 
+const GITHUB_OPEN_SOURCE_URL = "https://github.com/mbt1909432?tab=repositories";
+
 export default function Home() {
   const { character } = useCharacter();
   const [currentAvatarSrc, setCurrentAvatarSrc] = useState(character.avatarPath);
@@ -234,6 +236,21 @@ export default function Home() {
                     </div>
                   )}
 
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild variant="outline" className="h-10">
+                      <Link
+                        href={GITHUB_OPEN_SOURCE_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open Source on GitHub
+                      </Link>
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      This project is open-source — feel free to fork and contribute.
+                    </span>
+                  </div>
+
                   {/* Feature tags */}
                   <div className="flex flex-wrap gap-3 pt-2">
                     {["Auto slide outline", "16:9 PPT visuals", "Anime assistant style"].map((tag, index) => (
@@ -404,6 +421,16 @@ export default function Home() {
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
                 © 2026 Acontext PPT Girl Slide Generator
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                <Link
+                  href={GITHUB_OPEN_SOURCE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  GitHub (Open Source)
+                </Link>
               </p>
             </div>
           </div>
