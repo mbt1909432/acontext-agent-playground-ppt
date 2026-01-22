@@ -15,8 +15,6 @@ export function ParallaxCharacter() {
   const [prevCharacterId, setPrevCharacterId] = useState<typeof character.id | null>(null);
   const [prevGlow, setPrevGlow] = useState<typeof character.glow | null>(null);
 
-  const [pulse, setPulse] = useState(1);
-  const frameRef = useRef<number | null>(null);
   const latestGlowRef = useRef(character.glow);
 
   // Keep a ref of the last-rendered glow so we can snapshot "previous" glow during transitions
@@ -52,24 +50,6 @@ export function ParallaxCharacter() {
     }
   }, [character.avatarPath, character.id, currentSrc, currentCharacterId]);
 
-  // Breathing pulse for the current character glow
-  useEffect(() => {
-    const { pulseSpeed, pulseStrength } = character.glow;
-
-    const animate = (time: number) => {
-      const wave = Math.sin(time * 0.002 * pulseSpeed);
-      const p = 1 + wave * pulseStrength;
-      setPulse(p);
-      frameRef.current = requestAnimationFrame(animate);
-    };
-
-    frameRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    };
-  }, [character.id, character.glow.pulseSpeed, character.glow.pulseStrength]);
-
   useEffect(() => {
     let ticking = false;
 
@@ -96,21 +76,12 @@ export function ParallaxCharacter() {
   const currentFilterId = `character-glow-${currentCharacterId}`;
   const prevFilterId = prevCharacterId ? `character-glow-${prevCharacterId}` : null;
 
-  const currentGlow = character.glow;
-  const pulsedGlow = {
-    ...currentGlow,
-    glowRadius: currentGlow.glowRadius * pulse,
-    opacity:
-      currentGlow.opacity *
-      (1 - currentGlow.opacityPulseMix + currentGlow.opacityPulseMix * pulse),
-  };
-
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">
-      {/* Current character glow (with breathing) */}
-      <GlowFilter id={currentFilterId} settings={pulsedGlow} />
+      {/* Current character glow */}
+      <GlowFilter id={currentFilterId} settings={character.glow} />
 
-      {/* Outgoing character glow during crossfade (fixed, no breathing) */}
+      {/* Outgoing character glow during crossfade */}
       {hasPrev && prevFilterId && prevGlow && (
         <GlowFilter id={prevFilterId} settings={prevGlow} />
       )}
@@ -121,7 +92,7 @@ export function ParallaxCharacter() {
           Horizontal position: lg:pl-[800px] (adjust left margin to place character on the right side of text) */}
       <div className="absolute inset-0 flex items-end justify-center lg:justify-start lg:items-start lg:pl-[800px] lg:pt-[00px]">
         <div 
-          className="relative w-full max-w-[420px] lg:max-w-[360px] xl:max-w-[580px] opacity-100 dark:opacity-100"
+          className="relative w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[360px] xl:max-w-[580px] opacity-60 dark:opacity-60 lg:opacity-100 dark:lg:opacity-100"
           style={{
             transform: `translate(${parallaxOffsetX}px, ${parallaxOffsetY}px)`,
             willChange: 'transform',
@@ -158,13 +129,15 @@ export function ParallaxCharacter() {
               opacity: hasPrev ? (showNew ? 1 : 0) : 1,
               transform: hasPrev ? (showNew ? "scale(1)" : "scale(0.95)") : "scale(1)",
               filter: `url(#${currentFilterId})`,
+              // Performance hint: GPU acceleration for filter animations
+              willChange: 'filter, opacity, transform',
             }}
             priority
           />
         </div>
       </div>
       {/* Gradient overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-background/60 lg:to-background dark:from-[#0b0b0f] dark:via-[#0b0b0f]/80 dark:to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-background/60 lg:to-background dark:from-[#0b0b0f] dark:via-[#0b0b0f]/90 dark:to-transparent" />
     </div>
   );
 }
