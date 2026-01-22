@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate the PPT file
-    const pptxBuffer = await pptx.write({ outputType: "nodebuffer" });
+    const pptxBuffer = await pptx.write({ outputType: "nodebuffer" }) as Buffer;
 
     console.log("[API] POST /api/acontext/artifacts/batch-download: PPT generated", {
       slideCount: urls.length - errors.length,
