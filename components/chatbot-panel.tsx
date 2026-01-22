@@ -12,6 +12,7 @@ import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, ChevronUp, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
 import { useCharacter } from "@/contexts/character-context";
@@ -806,6 +807,8 @@ export function ChatbotPanel({
     publicUrl?: string; // public URL for direct access to the file
   }>>(new Map());
   const [filePublicUrls, setFilePublicUrls] = useState<Map<string, string>>(new Map()); // Store publicUrl for each file
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]); // Track selected files for batch download (array to maintain order)
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false); // Track batch download progress
   // Track in-flight preview loads to avoid duplicate /artifacts/content requests
   const previewLoadPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
   const [attachments, setAttachments] = useState<Array<{
@@ -1321,6 +1324,199 @@ export function ChatbotPanel({
     setIsFilesModalOpen(true);
     if (files.length === 0) {
       handleLoadFiles();
+    }
+  };
+
+  // Handle file deletion
+  const [deletingFileKeys, setDeletingFileKeys] = useState<Set<string>>(new Set());
+  
+  const handleDeleteFile = async (file: {
+    id?: string;
+    path?: string;
+    filename?: string;
+  }) => {
+    const fileKey = file.id || file.path || file.filename || "";
+    if (!fileKey || !file.path) {
+      console.warn("[UI] Cannot delete file: missing path", { file });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${file.filename || file.path}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingFileKeys(prev => new Set(prev).add(fileKey));
+      setError(null);
+
+      // Build URL with filePath and optional diskId
+      const url = new URL("/api/acontext/artifacts/delete", window.location.origin);
+      url.searchParams.set("filePath", file.path);
+      if (acontextDiskId) {
+        url.searchParams.set("diskId", acontextDiskId);
+      }
+
+      const res = await fetch(url.toString(), {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete file");
+      }
+
+      // Remove from selected files if it was selected
+      setSelectedFiles(prev => prev.filter(key => key !== fileKey));
+
+      // Remove from previews and publicUrls
+      setFilePreviews(prev => {
+        const next = new Map(prev);
+        next.delete(fileKey);
+        return next;
+      });
+      setFilePublicUrls(prev => {
+        const next = new Map(prev);
+        next.delete(fileKey);
+        return next;
+      });
+
+      // Refresh files list
+      await handleLoadFiles();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete file";
+      setError(errorMessage);
+      console.error("[UI] Failed to delete file:", err);
+    } finally {
+      setDeletingFileKeys(prev => {
+        const next = new Set(prev);
+        next.delete(fileKey);
+        return next;
+      });
+    }
+  };
+
+  // Handle file selection toggle
+  const handleToggleFileSelection = (fileKey: string) => {
+    setSelectedFiles(prev => {
+      if (prev.includes(fileKey)) {
+        // Remove from array (maintain order of remaining items)
+        return prev.filter(key => key !== fileKey);
+      } else {
+        // Add to end of array (maintain selection order)
+        return [...prev, fileKey];
+      }
+    });
+  };
+
+  // Handle select all / deselect all
+  const handleSelectAllImages = () => {
+    const allImageKeys = files
+      .filter(f => {
+        const { isImage } = detectFileType(f.filename, f.mimeType);
+        return isImage;
+      })
+      .map(f => f.id || f.path || f.filename || "")
+      .filter(key => key !== "");
+    
+    const selectedImageKeys = selectedFiles.filter(key => 
+      allImageKeys.includes(key)
+    );
+    
+    if (selectedImageKeys.length === allImageKeys.length) {
+      // All images are selected, deselect all
+      setSelectedFiles(prev => prev.filter(key => !allImageKeys.includes(key)));
+    } else {
+      // Not all images selected, select all (add to end to maintain order)
+      setSelectedFiles(prev => {
+        const newKeys = allImageKeys.filter(key => !prev.includes(key));
+        return [...prev, ...newKeys];
+      });
+    }
+  };
+
+  // Handle batch download
+  const handleBatchDownload = async () => {
+    if (selectedFiles.length === 0) return;
+
+    setIsBatchDownloading(true);
+    try {
+      // Collect selected files with their publicUrls in selection order
+      const selectedItems: Array<{ url: string; filename: string }> = [];
+      
+      // Process files in the order they were selected
+      for (const fileKey of selectedFiles) {
+        const file = files.find(f => {
+          const key = f.id || f.path || f.filename || "";
+          return key === fileKey;
+        });
+        
+        if (!file) continue;
+        
+        const { isImage } = detectFileType(file.filename, file.mimeType);
+        if (!isImage) continue; // Only download images
+        
+        const publicUrl = filePublicUrls.get(fileKey) || 
+                         filePreviews.get(fileKey)?.publicUrl;
+        
+        if (!publicUrl) {
+          console.warn("[UI] No publicUrl for file", { fileKey, filename: file.filename });
+          continue;
+        }
+        
+        selectedItems.push({
+          url: publicUrl,
+          filename: file.filename || file.path || `file-${fileKey}`,
+        });
+      }
+
+      if (selectedItems.length === 0) {
+        console.warn("[UI] No valid files to download");
+        return;
+      }
+
+      console.log("[UI] Batch download: Requesting PPT generation", {
+        count: selectedItems.length,
+      });
+
+      // Call backend API to generate PPT
+      const response = await fetch("/api/acontext/artifacts/batch-download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ urls: selectedItems }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate PPT");
+      }
+
+      const blob = await response.blob();
+      
+      // Download the PPT file
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `images-${new Date().toISOString().slice(0, 10)}.pptx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("[UI] Batch download: PPT generated successfully", {
+        count: selectedItems.length,
+      });
+
+      // Clear selection after download
+      setSelectedFiles([]);
+    } catch (error) {
+      console.error("[UI] Batch download failed:", error);
+      alert(`PPT generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsBatchDownloading(false);
     }
   };
 
@@ -2797,6 +2993,28 @@ export function ChatbotPanel({
                 </div>
 
                 <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
+                  {selectedFiles.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={handleBatchDownload}
+                      disabled={isBatchDownloading}
+                      className="text-xs"
+                    >
+                      {isBatchDownloading ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3.5 w-3.5 mr-1.5" />
+                          Download ({selectedFiles.length})
+                        </>
+                      )}
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -2856,6 +3074,40 @@ export function ChatbotPanel({
                   </div>
                 )}
 
+                {!isFilesLoading && !filesError && files.length > 0 && (
+                  <div className="mb-3 flex items-center justify-between rounded-lg border bg-muted/50 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={files.filter(f => {
+                          const { isImage } = detectFileType(f.filename, f.mimeType);
+                          if (!isImage) return false;
+                          const key = f.id || f.path || f.filename || "";
+                          return selectedFiles.includes(key);
+                        }).length === files.filter(f => {
+                          const { isImage } = detectFileType(f.filename, f.mimeType);
+                          return isImage;
+                        }).length && files.filter(f => {
+                          const { isImage } = detectFileType(f.filename, f.mimeType);
+                          return isImage;
+                        }).length > 0}
+                        onCheckedChange={handleSelectAllImages}
+                        id="select-all-images"
+                      />
+                      <label
+                        htmlFor="select-all-images"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Select all images
+                      </label>
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        {selectedFiles.length} selected
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {files.map((file, index) => {
                   const fileKey = file.id || file.path || file.filename || String(index);
                   const preview = filePreviews.get(fileKey);
@@ -2876,30 +3128,64 @@ export function ChatbotPanel({
                                        previewMimeType === "application/yaml" ||
                                        (preview && detectFileType(file.filename, previewMimeType).isText);
 
+                  const isSelected = selectedFiles.includes(fileKey);
+                  const selectionOrder = isSelected ? selectedFiles.indexOf(fileKey) + 1 : null;
+
                   return (
                     <div
                       key={fileKey}
-                    className="rounded-xl border bg-card p-4 space-y-2.5"
-                  >
+                      className={`rounded-xl border bg-card p-4 space-y-2.5 ${
+                        isSelected ? "ring-2 ring-primary" : ""
+                      }`}
+                    >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {isImage && (
+                          <>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleToggleFileSelection(fileKey)}
+                              id={`select-${fileKey}`}
+                            />
+                            {selectionOrder && (
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground flex-shrink-0">
+                                {selectionOrder}
+                              </span>
+                            )}
+                          </>
+                        )}
                         <File className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-sm font-medium truncate">
                           {file.filename || file.path || "Unknown file"}
                         </span>
                       </div>
-                        {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
-                          <a
-                            href={preview?.publicUrl || filePublicUrls.get(fileKey)}
-                            download={file.filename || file.path || "download"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground"
+                        <div className="flex items-center gap-2">
+                          {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                            <a
+                              href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                              download={file.filename || file.path || "download"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              <Download className="mr-1 h-3 w-3" />
+                              Download
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleDeleteFile(file)}
+                            disabled={deletingFileKeys.has(fileKey)}
+                            className="inline-flex items-center rounded-md border border-destructive/50 bg-background px-2 py-1 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Delete file"
                           >
-                            <Download className="mr-1 h-3 w-3" />
-                            Download
-                          </a>
-                        )}
+                            {deletingFileKeys.has(fileKey) ? (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-1 h-3 w-3" />
+                            )}
+                            Delete
+                          </button>
+                        </div>
                     </div>
 
                       {/* Preview Section */}
@@ -3205,7 +3491,7 @@ export function ChatbotPanel({
               <FolderOpen className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold">Images</span>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground mb-2">
               {files.filter(f => {
                 const { isImage } = detectFileType(f.filename, f.mimeType);
                 return isImage;
@@ -3214,6 +3500,56 @@ export function ChatbotPanel({
                 return isImage;
               }).length !== 1 ? 's' : ''}
             </div>
+            {/* Select all and Generate PPT buttons */}
+            {files.filter(f => {
+              const { isImage } = detectFileType(f.filename, f.mimeType);
+              return isImage;
+            }).length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={files.filter(f => {
+                      const { isImage } = detectFileType(f.filename, f.mimeType);
+                      return isImage;
+                    }).every(f => {
+                      const key = f.id || f.path || f.filename || "";
+                      return key === "" || selectedFiles.includes(key);
+                    }) && files.filter(f => {
+                      const { isImage } = detectFileType(f.filename, f.mimeType);
+                      return isImage;
+                    }).length > 0}
+                    onCheckedChange={handleSelectAllImages}
+                    id="select-all-images-sidebar"
+                  />
+                  <label
+                    htmlFor="select-all-images-sidebar"
+                    className="text-xs font-medium cursor-pointer"
+                  >
+                    Select all
+                  </label>
+                </div>
+                {selectedFiles.length > 0 && (
+                  <Button
+                    onClick={handleBatchDownload}
+                    disabled={isBatchDownloading}
+                    size="sm"
+                    className="w-full text-xs"
+                  >
+                    {isBatchDownloading ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        Generate PPT ({selectedFiles.length})
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {isFilesLoading && files.length === 0 && (
@@ -3262,12 +3598,27 @@ export function ChatbotPanel({
               const previewIsImage = previewMimeType.startsWith("image/") || 
                                     (preview && detectFileType(file.filename, previewMimeType).isImage);
 
+              const isSelected = selectedFiles.includes(fileKey);
+              const selectionOrder = isSelected ? selectedFiles.indexOf(fileKey) + 1 : null;
+
               return (
                 <div
                   key={fileKey}
-                  className="rounded-lg border bg-card p-2 space-y-2"
+                  className={`rounded-lg border bg-card p-2 space-y-2 ${
+                    isSelected ? "ring-2 ring-primary" : ""
+                  }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleToggleFileSelection(fileKey)}
+                      id={`select-sidebar-${fileKey}`}
+                    />
+                    {selectionOrder && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground flex-shrink-0">
+                        {selectionOrder}
+                      </span>
+                    )}
                     <File className="h-3 w-3 text-primary flex-shrink-0" />
                     <span className="text-xs font-medium truncate" title={file.filename || file.path || "Unknown file"}>
                       {file.filename || file.path || "Unknown file"}
@@ -3330,19 +3681,33 @@ export function ChatbotPanel({
                     </div>
                   )}
 
-                  {/* Download button */}
-                  {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
-                    <a
-                      href={preview?.publicUrl || filePublicUrls.get(fileKey)}
-                      download={file.filename || file.path || "download"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-full rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                  {/* Download and Delete buttons */}
+                  <div className="flex gap-2">
+                    {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                      <a
+                        href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                        download={file.filename || file.path || "download"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <Download className="mr-1 h-3 w-3" />
+                        Download
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleDeleteFile(file)}
+                      disabled={deletingFileKeys.has(fileKey)}
+                      className="inline-flex items-center justify-center rounded-md border border-destructive/50 bg-background px-2 py-1 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Delete file"
                     >
-                      <Download className="mr-1 h-3 w-3" />
-                      Download
-                    </a>
-                  )}
+                      {deletingFileKeys.has(fileKey) ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               );
             })}
