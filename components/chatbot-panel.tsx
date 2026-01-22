@@ -1134,6 +1134,9 @@ export function ChatbotPanel({
       setTokenCounts(data.tokenCounts ?? null);
       setSessionId(targetSessionId);
       
+      // Clear selected files when switching sessions
+      setSelectedFiles([]);
+      
       // Use diskId from API response (which may have just been created)
       // Fallback to session list if not in response
       if (data.acontextDiskId) {
@@ -1175,6 +1178,8 @@ export function ChatbotPanel({
     setTokenCounts(null);
     setError(null);
     setInput("");
+    // Clear selected files when creating new session
+    setSelectedFiles([]);
   };
 
   const handleDeleteSession = async (targetSessionId: string) => {
@@ -1500,7 +1505,7 @@ export function ChatbotPanel({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `images-${new Date().toISOString().slice(0, 10)}.pptx`;
+      link.download = "your_ppt.pptx";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -3620,9 +3625,6 @@ export function ChatbotPanel({
                       </span>
                     )}
                     <File className="h-3 w-3 text-primary flex-shrink-0" />
-                    <span className="text-xs font-medium truncate" title={file.filename || file.path || "Unknown file"}>
-                      {file.filename || file.path || "Unknown file"}
-                    </span>
                   </div>
 
                   {/* Image Preview */}

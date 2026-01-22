@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "Content-Disposition": `attachment; filename="images-${new Date().toISOString().slice(0, 10)}.pptx"`,
+        "Content-Disposition": `attachment; filename="your_ppt.pptx"`,
         ...(errors.length > 0 && {
           "X-Errors": JSON.stringify(errors),
         }),
