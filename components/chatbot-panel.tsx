@@ -2610,24 +2610,24 @@ export function ChatbotPanel({
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex items-start gap-3 animate-message-in ${
+                className={`flex items-start gap-2 sm:gap-3 animate-message-in ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-24 h-24">
-                  <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-2 ring-primary/10">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+                  <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10">
                       <AnimatedAvatar
                         src={avatarSrc}
                         alt={assistantName}
-                        sizes="90px"
+                        sizes="(max-width: 640px) 48px, (max-width: 768px) 64px, (max-width: 1024px) 80px, 96px"
                         priority
                       />
                     </div>
                   </div>
                 )}
-                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
                     {message.role === "assistant" && (
@@ -2648,18 +2648,18 @@ export function ChatbotPanel({
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start items-start gap-3 animate-fade-in">
-                <div className="flex-shrink-0 w-24 h-24">
-                  <div className="relative w-full h-full rounded-full border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-2 ring-primary/10 animate-fade-in">
+              <div className="flex justify-start items-start gap-2 sm:gap-3 animate-fade-in">
+                <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+                  <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10 animate-fade-in">
                     <AnimatedAvatar
                       src={avatarSrc}
                       alt={assistantName}
-                      sizes="96px"
+                      sizes="(max-width: 640px) 48px, (max-width: 768px) 64px, (max-width: 1024px) 80px, 96px"
                       priority
                     />
                   </div>
                 </div>
-                <div className="max-w-[80%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 animate-pulse-slow" />
                   <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
                     <Heart className="h-3 w-3 text-primary/60 animate-pulse-slow" />
@@ -2714,7 +2714,7 @@ export function ChatbotPanel({
           )}
 
           {/* Input row */}
-          <div className="mt-2 flex items-center gap-3 rounded-xl border-2 border-primary/20 bg-card px-4 py-3 shadow-sm hover:border-primary/40 transition-all duration-200 focus-within:border-primary/60 focus-within:shadow-md">
+          <div className="mt-2 flex items-center gap-2 sm:gap-3 rounded-xl border-2 border-primary/20 bg-card px-3 py-2 sm:px-4 sm:py-3 shadow-sm hover:border-primary/40 transition-all duration-200 focus-within:border-primary/60 focus-within:shadow-md">
             {messages.length === 0 && (
               <div className="hidden flex-wrap gap-2 text-xs text-muted-foreground md:flex">
                 <button

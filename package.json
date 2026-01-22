@@ -9,7 +9,7 @@
     "test:acontext:ts": "tsx scripts/test-acontext.ts"
   },
   "dependencies": {
-    "@acontext/acontext": "^0.0.16",
+    "@acontext/acontext": "^0.1.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@google/genai": "^1.36.0",

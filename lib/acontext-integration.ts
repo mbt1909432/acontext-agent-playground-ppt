@@ -836,6 +836,106 @@ export async function listAcontextArtifacts(
 }
 
 /**
+ * Delete an artifact from Acontext Disk
+ * Returns true if deletion succeeds, false otherwise
+ * 
+ * @param filePath - Full path to the file (e.g., "/path/to/file.png")
+ * @param diskId - Optional disk ID. If not provided, uses the first available disk
+ */
+export async function deleteAcontextArtifact(
+  filePath: string,
+  diskId?: string
+): Promise<boolean> {
+  const acontext = getAcontextClient();
+  if (!acontext) {
+    return false;
+  }
+
+  try {
+    // If no diskId provided, list disks and use the first one
+    let targetDiskId = diskId;
+    if (!targetDiskId) {
+      const disks = await acontext.disks.list();
+      if (disks && disks.items && disks.items.length > 0) {
+        targetDiskId = disks.items[0].id;
+      } else {
+        console.debug("[Acontext] No disks found for deletion");
+        return false;
+      }
+    }
+
+    // Validate filePath - it should not be a directory path
+    if (!filePath || filePath === '/' || filePath.endsWith('/')) {
+      console.warn("[Acontext] deleteAcontextArtifact: Invalid filePath - cannot delete directory", { 
+        filePath,
+        isEmpty: !filePath,
+        isRoot: filePath === '/',
+        endsWithSlash: filePath?.endsWith('/'),
+      });
+      return false;
+    }
+
+    // Extract filename and path from filePath
+    // filePath format: "/path/to/file.txt" or "file.txt"
+    const pathParts = filePath.split('/').filter(part => part.length > 0);
+    
+    if (pathParts.length === 0) {
+      console.warn("[Acontext] deleteAcontextArtifact: Invalid filePath: no filename found", { filePath });
+      return false;
+    }
+    
+    const filename = pathParts[pathParts.length - 1];
+    const filePathDir = pathParts.length > 1 
+      ? '/' + pathParts.slice(0, -1).join('/') 
+      : '/';
+    
+    console.log("[Acontext] deleteAcontextArtifact: Parsed path components", {
+      originalFilePath: filePath,
+      pathParts,
+      filename,
+      filePathDir,
+      diskId: targetDiskId,
+    });
+    
+    // Validate filename is not empty
+    if (!filename || filename.trim() === '') {
+      console.warn("[Acontext] deleteAcontextArtifact: Invalid filePath - empty filename", { 
+        filePath,
+        pathParts,
+        filename,
+      });
+      return false;
+    }
+    
+    // Call disks.artifacts.delete API
+    console.log("[Acontext] deleteAcontextArtifact: Calling disks.artifacts.delete API", {
+      diskId: targetDiskId,
+      filePath: filePathDir,
+      filename,
+    });
+    
+    await acontext.disks.artifacts.delete(targetDiskId, {
+      filePath: filePathDir,
+      filename,
+    });
+    
+    console.log("[Acontext] deleteAcontextArtifact: Successfully deleted artifact", {
+      diskId: targetDiskId,
+      filePath: filePathDir,
+      filename,
+    });
+    
+    return true;
+  } catch (error) {
+    await logAcontextError("Failed to delete artifact", error, {
+      filePath,
+      diskId,
+    });
+    return false;
+  }
+}
+
+/**
  * Get artifact content from Acontext Disk
  * Returns the file content as Buffer or null if retrieval fails
  * Also returns publicUrl if available for direct access

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 
 export interface GlowSettings {
   color: string; // Hex color for glow
@@ -15,6 +15,8 @@ interface Props {
 /**
  * SVG filter that creates an outline + glow around transparent PNG assets.
  * Render once and reference via `filter: url(#id)` on the target element.
+ * 
+ * Performance: Uses React.memo to prevent unnecessary re-renders when props haven't changed.
  */
 const GlowFilter: React.FC<Props> = ({ id, settings }) => {
   const { color, outlineWidth, glowRadius, opacity } = settings;
@@ -22,7 +24,15 @@ const GlowFilter: React.FC<Props> = ({ id, settings }) => {
   return (
     <svg style={{ position: "absolute", width: 0, height: 0 }}>
       <defs>
-        <filter id={id} x="-100%" y="-100%" width="300%" height="300%">
+        <filter 
+          id={id} 
+          x="-100%" 
+          y="-100%" 
+          width="300%" 
+          height="300%"
+          // Performance hint: GPU acceleration
+          style={{ willChange: "filter" }}
+        >
           {/* 1) Expand the alpha channel to create an outline */}
           <feMorphology
             in="SourceAlpha"
@@ -56,5 +66,15 @@ const GlowFilter: React.FC<Props> = ({ id, settings }) => {
   );
 };
 
-export default GlowFilter;
+// Memoize to prevent re-renders when props haven't changed
+export default memo(GlowFilter, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if settings actually changed
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.settings.color === nextProps.settings.color &&
+    prevProps.settings.outlineWidth === nextProps.settings.outlineWidth &&
+    prevProps.settings.glowRadius === nextProps.settings.glowRadius &&
+    prevProps.settings.opacity === nextProps.settings.opacity
+  );
+});
 
