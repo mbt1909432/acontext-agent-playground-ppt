@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return the PPT file
-    return new NextResponse(pptxBuffer, {
+    return new NextResponse(new Uint8Array(pptxBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
