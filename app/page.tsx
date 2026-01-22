@@ -158,7 +158,7 @@ export default function Home() {
                     priority
                   />
                 </div>
-                <span className="text-lg font-semibold tracking-tight">
+                <span className="text-sm sm:text-lg font-semibold tracking-tight">
                   Acontext PPT Girl
                 </span>
               </Link>

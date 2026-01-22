@@ -18,8 +18,8 @@ export default function ProtectedLayout({
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* Top navigation */}
       <nav className="flex-shrink-0 border-b bg-card/50 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-6 lg:px-12">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/"
               className="flex items-center gap-2"
@@ -32,18 +32,18 @@ export default function ProtectedLayout({
                 className="h-8 w-8 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 object-cover object-top"
                 priority
               />
-              <span className="text-sm font-semibold tracking-tight">
+              <span className="text-xs sm:text-sm font-semibold tracking-tight">
                 PPT Girl
               </span>
             </Link>
-            <Link href="/">
-              <Button variant="ghost" size="sm">
+            <Link href="/" className="hidden sm:block">
+              <Button variant="ghost" size="sm" className="text-xs">
                 ← Back to Home
               </Button>
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <AuthButton />
             <CharacterSwitcher />
             <ThemeSwitcher />
