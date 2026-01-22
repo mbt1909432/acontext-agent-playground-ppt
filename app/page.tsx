@@ -18,6 +18,52 @@ import { useCharacter } from "@/contexts/character-context";
 
 const GITHUB_OPEN_SOURCE_URL = "https://github.com/mbt1909432/acontext-agent-playground-ppt";
 
+// Character Grid Component
+function CharacterGrid() {
+  const { characters, characterId, setCharacter } = useCharacter();
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+      {characters.map((char) => {
+        const isActive = char.id === characterId;
+        return (
+          <button
+            key={char.id}
+            onClick={() => setCharacter(char.id)}
+            className={`group relative rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+              isActive
+                ? "border-primary shadow-lg scale-105"
+                : "border-border hover:border-primary/50 hover:shadow-md"
+            }`}
+          >
+            <div className="aspect-square relative bg-muted/50">
+              <Image
+                src={char.avatarPath}
+                alt={char.name}
+                fill
+                className="object-cover object-[center_5%]"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+              {isActive && (
+                <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-lg" />
+              )}
+            </div>
+            <div className="p-3 bg-card/80 backdrop-blur-sm">
+              <h3 className="font-semibold text-sm mb-1">{char.name}</h3>
+              <p className="text-xs text-muted-foreground line-clamp-2">{char.tagline}</p>
+              {isActive && (
+                <Badge variant="default" className="mt-2 text-xs">
+                  Active
+                </Badge>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const { character } = useCharacter();
   const [currentAvatarSrc, setCurrentAvatarSrc] = useState(character.avatarPath);
@@ -191,42 +237,24 @@ export default function Home() {
                 {/* Main headline */}
                 <div className="space-y-6 animate-slide-up" style={{ animationDelay: "0.3s" }}>
                   <h1 className="text-5xl font-bold leading-tight sm:text-6xl md:text-7xl lg:text-8xl">
-                    <span className="block text-primary">Acontext</span>
-                    <span className="block">PPT Girl</span>
-                    <span className="block text-primary">Slide Generator</span>
+                    <span className="block text-primary">Chat to Create</span>
+                    <span className="block">Beautiful PPT Slides</span>
                   </h1>
 
                   <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl lg:text-2xl">
-                    Turn any long text into clean, professional PPT-style slides with the Acontext PPT Girl Slide Generator.
-                    Built on Acontext, it helps you outline your deck, confirm the structure, and auto-generate slide-ready
-                    images with 16:9 layouts and space for your content.
+                    Turn any text into professional presentations in minutes. Choose your AI designer, chat about your topic, and get stunning 16:9 slide visuals ready for your deck.
                   </p>
                 </div>
 
-                {/* Highlighted Description */}
-                <div className="animate-slide-up" style={{ animationDelay: "0.35s" }}>
-                  <Card className="bg-primary/10 border-primary/30 backdrop-blur-sm shadow-lg dark:bg-neutral-900/70 dark:border-neutral-800 dark:shadow-[0_30px_80px_-50px_rgba(0,0,0,0.9)]">
-                    <CardContent className="pt-6">
-                      <p className="text-base sm:text-lg font-medium text-foreground leading-relaxed mb-4">
-                        Paste your content, let Acontext PPT Girl propose a slide outline, then approve to auto-generate
-                        consistent, on-brand slide visuals for each page of your deck.
-                      </p>
-                      <p className="text-sm sm:text-base text-muted-foreground">
-                        Every image is optimized for 16:9 PPT slides, keeping PPT Girl in the background so your text stays readable.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* CTA section */}
-                <div className="space-y-6 animate-slide-up" style={{ animationDelay: "0.4s" }}>
+                {/* CTA section - moved up for better visibility */}
+                <div className="space-y-4 animate-slide-up" style={{ animationDelay: "0.35s" }}>
                   {hasEnvVars ? (
                     <Link href="/protected" className="inline-block group">
                       <Button
                         size="lg"
                         className="text-lg px-8 py-7 h-auto font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
                       >
-                        Start PPT Girl Session
+                        Start Creating Slides
                         <span className="ml-2 transition-transform duration-300 group-hover:translate-x-1">→</span>
                       </Button>
                     </Link>
@@ -253,7 +281,7 @@ export default function Home() {
 
                   {/* Feature tags */}
                   <div className="flex flex-wrap gap-3 pt-2">
-                    {["Auto slide outline", "16:9 PPT visuals", "Anime assistant style"].map((tag, index) => (
+                    {["8 AI Designers", "Smart Outline", "16:9 Ready"].map((tag, index) => (
                       <Badge
                         key={tag}
                         variant="outline"
@@ -406,8 +434,108 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Interactive Demo Section */}
+        {/* Workflow Section */}
+        <div className="relative py-12 sm:py-16 lg:py-20 border-t">
+          <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
+                <p className="text-muted-foreground text-lg">Create professional slides in three simple steps</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+                    1
+                  </div>
+                  <h3 className="text-xl font-semibold">Paste Your Content</h3>
+                  <p className="text-muted-foreground">
+                    Share your text, notes, or topic. PPT Girl analyzes and proposes a slide-by-slide outline.
+                  </p>
+                </div>
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+                    2
+                  </div>
+                  <h3 className="text-xl font-semibold">Review & Confirm</h3>
+                  <p className="text-muted-foreground">
+                    Review the proposed outline with titles and bullet points. Approve when ready.
+                  </p>
+                </div>
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+                    3
+                  </div>
+                  <h3 className="text-xl font-semibold">Get Your Slides</h3>
+                  <p className="text-muted-foreground">
+                    PPT Girl generates beautiful 16:9 slide images with consistent style, ready for your presentation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Character Selection Section */}
+        <div className="relative py-12 sm:py-16 lg:py-20 bg-muted/30">
+          <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-4">Choose Your AI Designer</h2>
+                <p className="text-muted-foreground text-lg">8 unique characters, each with their own visual style and expertise</p>
+              </div>
+              <CharacterGrid />
+            </div>
+          </div>
+        </div>
+
+        {/* Acontext Advantages Section */}
         <div className="relative py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-4">Powered by Acontext</h2>
+                <p className="text-muted-foreground text-lg">Intelligent memory and context awareness for better results</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold mb-2">🧠 Persistent Memory</h3>
+                    <p className="text-sm text-muted-foreground">
+                      PPT Girl remembers your previous slides, preferences, and presentation structure across sessions.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold mb-2">🎨 Style Consistency</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Semantic search ensures all slides maintain visual consistency and match your preferred style.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold mb-2">📈 Learning Over Time</h3>
+                    <p className="text-sm text-muted-foreground">
+                      The more presentations you create, the better PPT Girl understands your style and preferences.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="border-primary/20">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold mb-2">💾 Automatic Storage</h3>
+                    <p className="text-sm text-muted-foreground">
+                      All generated slides are automatically stored in Acontext Disk with shareable URLs for easy access.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Demo Section */}
+        <div className="relative py-12 sm:py-16 lg:py-20 border-t">
           <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
             <div className="max-w-7xl">
               <InteractiveDemoGallery />
@@ -439,3 +567,4 @@ export default function Home() {
     </main>
   );
 }
+
