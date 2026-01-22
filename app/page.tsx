@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { hasEnvVars } from "@/lib/utils";
 import { useCharacter } from "@/contexts/character-context";
 
-const GITHUB_OPEN_SOURCE_URL = "https://github.com/mbt1909432?tab=repositories";
+const GITHUB_OPEN_SOURCE_URL = "https://github.com/mbt1909432/acontext-agent-playground-ppt";
 
 export default function Home() {
   const { character } = useCharacter();
