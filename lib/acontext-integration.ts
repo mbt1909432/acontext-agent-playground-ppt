@@ -214,101 +214,7 @@ async function logAcontextError(
   console.error(`[Acontext] ${operation}:`, JSON.stringify(errorDetails, null, 2));
 }
 
-/**
- * Get or create the default Acontext Space for a user.
- *
- * Strategy:
- * - One long-lived Space per user (stored in user_acontext_spaces table)
- * - All new chat sessions created for this user attach to this Space
- *
- * If Acontext is not configured, returns null and callers should gracefully skip
- * Space attachment (sessions will still work, just without self-learned skills).
- */
-export async function getOrCreateUserSpaceId(
-  userId: string
-): Promise<string | null> {
-  const acontext = getAcontextClient();
-  if (!acontext) {
-    return null;
-  }
-
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-
-    // 1) Try to load existing mapping
-    const { data, error } = await supabase
-      .from("user_acontext_spaces")
-      .select("space_id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn(
-        "[Acontext] Failed to load user_acontext_spaces mapping; falling back to session without Space:",
-        error.message
-      );
-      return null;
-    }
-
-    if (data?.space_id) {
-      return data.space_id as string;
-    }
-
-    // 2) Create a new Space for this user
-    console.debug("[Acontext] Creating default Space for user", {
-      userId,
-    });
-
-    const space = await acontext.spaces.create({
-      // Optional metadata to aid debugging/inspection
-      name: `user-${userId}`,
-      description:
-        "Default personal Space for self-learned skills and SOPs for this user.",
-    } as any);
-
-    const spaceId = (space as any).id as string | undefined;
-    if (!spaceId) {
-      console.warn(
-        "[Acontext] Created Space but response did not include id; skipping mapping"
-      );
-      return null;
-    }
-
-    // 3) Persist mapping (best-effort, non-fatal)
-    try {
-      const { error: insertError } = await supabase
-        .from("user_acontext_spaces")
-        .insert({
-          user_id: userId,
-          space_id: spaceId,
-        });
-
-      if (insertError) {
-        console.warn(
-          "[Acontext] Failed to persist user_acontext_spaces mapping; skills will still learn, but mapping is not cached:",
-          insertError.message
-        );
-      }
-    } catch (persistError) {
-      console.warn(
-        "[Acontext] Unexpected error while persisting user_acontext_spaces mapping:",
-        persistError
-      );
-    }
-
-    return spaceId;
-  } catch (error) {
-    await logAcontextError(
-      "Failed to get or create default user Space",
-      error,
-      {
-        userId,
-      }
-    );
-    return null;
-  }
-}
+// Space functionality has been removed - this function is no longer used
 
 /**
  * Get or create an Acontext session for a chat session
@@ -432,123 +338,7 @@ export async function searchRelevantContext(
   }
 }
 
-/**
- * Search for relevant skills (SOP blocks) in Acontext Space based on user query
- * Returns relevant skills that can be used during conversation
- */
-export async function searchRelevantSkills(
-  query: string,
-  spaceId: string
-): Promise<Array<{
-  title: string;
-  summary: string;
-  content?: string;
-  use_when?: string;
-  preferences?: string;
-}>> {
-  const client = getAcontextClient();
-  if (!client || !spaceId) {
-    return [];
-  }
-
-  try {
-    console.debug("[Acontext] Searching relevant skills", {
-      spaceId,
-      query,
-    });
-
-    // Use experienceSearch to find relevant SOP blocks
-    const searchResult = (await client.spaces.experienceSearch(spaceId, {
-      query,
-      mode: "fast",
-      // No limit - return all relevant skills
-    } as any)) as any;
-
-    const blocks = (searchResult?.cited_blocks ?? []) as Array<any>;
-
-    if (!blocks || blocks.length === 0) {
-      console.debug("[Acontext] No relevant skills found");
-      return [];
-    }
-
-    // Map blocks to skills format
-    const skills = blocks.map((block: any) => {
-      const title: string =
-        block.title ||
-        block.name ||
-        block.props?.title ||
-        block.properties?.title ||
-        block.metadata?.title ||
-        "Untitled skill";
-
-      let summary: string =
-        block.summary ||
-        block.description ||
-        block.props?.summary ||
-        block.props?.description ||
-        block.properties?.summary ||
-        block.properties?.description ||
-        block.metadata?.summary ||
-        block.metadata?.description ||
-        "";
-
-      // If no summary found, try to construct one from SOP-specific fields
-      if (!summary) {
-        const parts: string[] = [];
-
-        const useWhen =
-          block.props?.use_when ||
-          block.properties?.use_when ||
-          block.use_when;
-        if (useWhen) {
-          parts.push(`Use when: ${useWhen}`);
-        }
-
-        const preferences =
-          block.props?.preferences ||
-          block.properties?.preferences ||
-          block.preferences;
-        if (preferences) {
-          parts.push(`Preferences: ${preferences}`);
-        }
-
-        summary = parts.length > 0 ? parts.join(". ") : "No summary available.";
-      }
-
-      const content =
-        block.content ||
-        block.text ||
-        block.props?.content ||
-        block.properties?.content;
-
-      return {
-        title,
-        summary,
-        content: typeof content === "string" ? content : undefined,
-        use_when:
-          block.props?.use_when ||
-          block.properties?.use_when ||
-          block.use_when,
-        preferences:
-          block.props?.preferences ||
-          block.properties?.preferences ||
-          block.preferences,
-      };
-    });
-
-    console.debug("[Acontext] Found relevant skills", {
-      count: skills.length,
-    });
-
-    return skills;
-  } catch (error) {
-    await logAcontextError("Failed to search relevant skills", error, {
-      spaceId,
-      query,
-    });
-    return [];
-  }
-}
+// Space functionality has been removed - this function is no longer used
 
 /**
  * Upload a file to Acontext as an artifact
@@ -1653,10 +1443,7 @@ export async function createAcontextSessionDirectly(
   }
 
   try {
-    // Resolve (or lazily create) the user's default Space for skill learning
-    const spaceId = await getOrCreateUserSpaceId(userId);
-
-    // Create session in Acontext with userId in configs and optional space binding
+    // Create session in Acontext with userId in configs (no Space binding)
     const configs = {
       userId,
       source: "nextjs-with-supabase-chatbot",
@@ -1665,18 +1452,11 @@ export async function createAcontextSessionDirectly(
     console.debug("[Acontext] Creating session directly", {
       userId,
       configs,
-      spaceId,
     });
 
     const sessionCreatePayload: Record<string, unknown> = {
       configs,
     };
-
-    if (spaceId) {
-      // Attach this session to the user's long-lived Space so completed tasks
-      // can be learned as reusable skills/SOPs.
-      (sessionCreatePayload as any).spaceId = spaceId;
-    }
 
     const acontextSession = await acontext.sessions.create(
       sessionCreatePayload as any
@@ -1716,7 +1496,6 @@ export async function createAcontextSessionDirectly(
         id: acontextSession.id, // Use Acontext session ID as our session ID
         user_id: userId,
         acontext_session_id: acontextSession.id,
-        acontext_space_id: spaceId ?? null,
         acontext_disk_id: diskId,
         title: title || "New Chat",
       })

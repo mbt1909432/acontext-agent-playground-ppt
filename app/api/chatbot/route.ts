@@ -23,7 +23,7 @@ import {
   getAcontextTokenCounts,
 } from "@/lib/acontext-integration";
 import { getAcontextDiskToolSchemas } from "@/lib/acontext-disk-tools";
-import { getExperienceSearchToolSchema } from "@/lib/acontext-experience-search-tool";
+// Experience search tool has been removed
 import { getTodoToolSchema } from "@/lib/acontext-todo-tool";
 import { getImageGenerateToolSchema } from "@/lib/acontext-image-generate-tool";
 import {
@@ -237,8 +237,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Note: We no longer pre-fetch skills and inject them into the system prompt.
-    // Instead, the agent will use the experience_search tool to search for relevant skills when needed.
+    // Note: Skill learning and experience_search functionality has been removed.
 
     // Load existing messages for context
     const existingMessages = await loadMessages(session.id);
@@ -277,57 +276,26 @@ export async function POST(request: NextRequest) {
     // Add system prompt (use provided one or default Acontext promotion prompt)
     let systemPrompt = body.systemPrompt || getDefaultSystemPrompt();
     
-    // Add instructions about using experience_search tool
-    systemPrompt += `\n\nCRITICAL WORKFLOW RULE: You MUST ALWAYS call experience_search FIRST before executing ANY other tool calls (browser_use_task, write_file, read_file, replace_string, etc.). This is a mandatory step in your workflow for EVERY task.
-
-Workflow:
-1. User makes a request
-2. You MUST call experience_search with a query describing the task
-3. Review the returned learned skills (if any)
-4. Only THEN proceed with other tool calls, incorporating any relevant learned skills
-
-This mandatory step helps you:
-- Avoid repeating mistakes from past attempts
-- Follow established procedures and user preferences
-- Use proven approaches that worked before
-- Understand the user's context and preferences
-- Build on previous successful solutions
-
-Example queries for experience_search:
-- User asks "create a React component" → search: "React component creation"
-- User asks "upload a file" → search: "file upload"
-- User asks "modify the database" → search: "database modification"
-- User asks about skills → search: "skills procedures workflows"
-
-DO NOT skip this step. Always call experience_search first, then proceed with other tools based on what you learned.`;
-
     // Add instructions about using todo tool for complex tasks
-    systemPrompt += `\n\nCOMPLEX TASK WORKFLOW: When you encounter a complex, multi-step task (requiring 3+ distinct steps or involving multiple files/components), you MUST FIRST call the todo tool to create a structured plan.
+    systemPrompt += `\n\nCOMPLEX TASK WORKFLOW: When you encounter a complex, multi-step task (requiring 3+ distinct steps or involving multiple files/components), you SHOULD call the todo tool to create a structured plan.
 
 Workflow for complex tasks:
 1. User makes a complex request
 2. Call todo tool with action="create" to initialize a todo list
-   - This will automatically add a first task: "Search for relevant skills and experiences (using experience_search tool)"
-   - You MUST complete this first task before adding others
-3. Execute the first task:
-   - Update it to status="in_progress"
-   - Call experience_search with a query describing the task
-   - Update it to status="completed" (or "failed" if search fails)
-4. Based on the search results, add more specific tasks using todo add
-5. Execute each task, updating todo status as you progress:
+3. Add specific tasks using todo add
+4. Execute each task, updating todo status as you progress:
    - Set status="in_progress" when starting a task
    - Set status="completed" when finishing successfully
    - Set status="failed" if a task encounters an error
-6. Use todo list to view current progress and remaining tasks
-7. Continue until all tasks are completed
+5. Use todo list to view current progress and remaining tasks
+6. Continue until all tasks are completed
 
 Example: If user asks "build a full-stack app with authentication", you should:
-- First: todo create (automatically adds search skills task)
-- Then: Execute the search task, update it to completed
+- First: todo create
 - Then: todo add tasks like "setup database schema", "create API routes", "build login UI", etc.
 - Then: Execute each task, updating todos as you go
 
-Simple tasks (1-2 steps) don't require todo tool, but complex tasks MUST use it. The first task in every todo list is always to search for skills, which ensures you learn from past experiences before starting work.`;
+Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use it.`;
     
       messages.push({
         role: "system",
@@ -449,7 +417,6 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks MUST use it.
     const toolsEnabled = process.env.CHATBOT_ENABLE_TOOLS !== "false";
     const availableTools = toolsEnabled
       ? [
-          getExperienceSearchToolSchema,
           getTodoToolSchema,
           getBrowserUseToolSchema,
           getImageGenerateToolSchema,

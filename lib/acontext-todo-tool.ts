@@ -38,7 +38,7 @@ export const getTodoToolSchema = {
   function: {
     name: "todo",
     description:
-      "Create and manage a todo list for complex, multi-step tasks. Use this tool FIRST when you encounter a complex task (requiring 3+ distinct steps or involving multiple files/components). This helps break down the work into manageable steps and track progress. When you call 'create', it will automatically add a first task to search for relevant skills using experience_search. You can then add more tasks and update their status as you work through them.",
+      "Create and manage a todo list for complex, multi-step tasks. Use this tool FIRST when you encounter a complex task (requiring 3+ distinct steps or involving multiple files/components). This helps break down the work into manageable steps and track progress. You can add tasks and update their status as you work through them.",
     parameters: {
       type: "object",
       properties: {
@@ -46,7 +46,7 @@ export const getTodoToolSchema = {
           type: "string",
           enum: ["create", "add", "update", "list"],
           description:
-            "Action to perform: 'create' to initialize a new todo list (automatically adds a search skills task), 'add' to add a new task, 'update' to change task status/content, 'list' to view all todos.",
+            "Action to perform: 'create' to initialize a new todo list, 'add' to add a new task, 'update' to change task status/content, 'list' to view all todos.",
         },
         taskId: {
           type: "string",
@@ -123,23 +123,13 @@ export async function runTodo(
         // Clear existing todos and create a new list
         todos.length = 0;
         
-        // Automatically add the first task: search for skills
-        const searchTask: TodoItem = {
-          id: "task_search_skills",
-          content: "Search for relevant skills and experiences (using experience_search tool)",
-          status: "pending",
-          createdAt: now,
-          updatedAt: now,
-        };
-        todos.push(searchTask);
-        
         todoStorage.set(sessionId, todos);
         
         return {
           action: "create",
           todos: [...todos],
           count: todos.length,
-          message: "Todo list created. First task (search skills) added automatically.",
+          message: "Todo list created.",
         };
       }
 

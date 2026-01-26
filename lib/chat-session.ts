@@ -51,10 +51,9 @@ export async function createChatSession(
     userId: data.user_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    title: data.title,
-    acontextSessionId: data.acontext_session_id,
-    acontextSpaceId: data.acontext_space_id,
-    acontextDiskId: data.acontext_disk_id,
+      title: data.title,
+      acontextSessionId: data.acontext_session_id,
+      acontextDiskId: data.acontext_disk_id,
   };
 }
 
@@ -201,7 +200,6 @@ export async function getOrCreateSession(
         updatedAt: data.updated_at,
         title: data.title,
         acontextSessionId: data.acontext_session_id,
-        acontextSpaceId: data.acontext_space_id,
         acontextDiskId: diskId,
       };
     }

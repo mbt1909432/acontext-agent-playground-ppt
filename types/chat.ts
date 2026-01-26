@@ -28,7 +28,6 @@ export interface ChatSession {
   updatedAt: Date | string;
   title?: string;
   acontextSessionId?: string;
-  acontextSpaceId?: string;
   acontextDiskId?: string;
 }
 

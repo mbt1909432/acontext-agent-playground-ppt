@@ -9,10 +9,7 @@ import {
   executeAcontextDiskTool,
   isAcontextDiskToolName,
 } from "@/lib/acontext-disk-tools";
-import {
-  runExperienceSearch,
-  isExperienceSearchToolName,
-} from "@/lib/acontext-experience-search-tool";
+// Experience search tool has been removed
 import {
   runTodo,
   isTodoToolName,
@@ -140,16 +137,7 @@ async function executeToolCall(
     return result;
   }
 
-  if (isExperienceSearchToolName(name)) {
-    if (!userId) {
-      throw new Error("User ID is required for experience_search tool");
-    }
-    const args = JSON.parse(argsJson || "{}");
-    console.log("[openai-client] executeToolCall: calling runExperienceSearch with query:", args.query);
-    const result = await runExperienceSearch(args, userId);
-    console.log("[openai-client] executeToolCall: runExperienceSearch returned:", JSON.stringify(result, null, 2).substring(0, 500));
-    return result;
-  }
+  // Experience search tool has been removed
 
   if (isTodoToolName(name)) {
     if (!sessionId) {

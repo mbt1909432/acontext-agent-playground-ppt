@@ -18,8 +18,8 @@ import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/t
 import { useCharacter } from "@/contexts/character-context";
 
 /**
- * AnimatedAvatar - 带切换动画的头像组件
- * 当src改变时，会平滑地从旧头像过渡到新头像（交叉淡入淡出 + 轻微缩放）
+ * AnimatedAvatar - Avatar component with transition animation
+ * Smoothly transitions from old avatar to new avatar when src changes (cross-fade + slight scale)
  */
 function AnimatedAvatar({
   src,
@@ -40,18 +40,14 @@ function AnimatedAvatar({
 
   useEffect(() => {
     if (src !== currentSrc) {
-      // 保存旧头像
       setPrevSrc(currentSrc);
-      // 更新为新头像，初始状态为透明
       setCurrentSrc(src);
       setShowNew(false);
-      // 使用双重requestAnimationFrame确保DOM更新后再触发动画
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setShowNew(true);
         });
       });
-      // 动画完成后清理
       const timer = setTimeout(() => {
         setPrevSrc(null);
         setShowNew(false);
@@ -64,7 +60,7 @@ function AnimatedAvatar({
 
   return (
     <div className={`relative w-full h-full ${className}`}>
-      {/* 旧头像 - 淡出 */}
+      {/* Previous avatar - fade out */}
       {hasPrev && (
         <Image
           key={`prev-${prevSrc}`}
@@ -80,7 +76,7 @@ function AnimatedAvatar({
           priority={priority}
         />
       )}
-      {/* 新头像 - 淡入 */}
+      {/* New avatar - fade in */}
       <Image
         key={currentSrc}
         src={currentSrc}
@@ -3142,7 +3138,7 @@ export function ChatbotPanel({
                       className={`rounded-xl border bg-card p-4 space-y-2.5 ${
                         isSelected ? "ring-2 ring-primary" : ""
                       }`}
-                    >
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {isImage && (
@@ -3165,18 +3161,18 @@ export function ChatbotPanel({
                         </span>
                       </div>
                         <div className="flex items-center gap-2">
-                          {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
-                            <a
-                              href={preview?.publicUrl || filePublicUrls.get(fileKey)}
-                              download={file.filename || file.path || "download"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground"
-                            >
-                              <Download className="mr-1 h-3 w-3" />
-                              Download
-                            </a>
-                          )}
+                        {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                          <a
+                            href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                            download={file.filename || file.path || "download"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <Download className="mr-1 h-3 w-3" />
+                            Download
+                          </a>
+                        )}
                           <button
                             onClick={() => handleDeleteFile(file)}
                             disabled={deletingFileKeys.has(fileKey)}
@@ -3622,7 +3618,7 @@ export function ChatbotPanel({
                     {selectionOrder && (
                       <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground flex-shrink-0">
                         {selectionOrder}
-                      </span>
+                    </span>
                     )}
                     <File className="h-3 w-3 text-primary flex-shrink-0" />
                   </div>
@@ -3685,18 +3681,18 @@ export function ChatbotPanel({
 
                   {/* Download and Delete buttons */}
                   <div className="flex gap-2">
-                    {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
-                      <a
-                        href={preview?.publicUrl || filePublicUrls.get(fileKey)}
-                        download={file.filename || file.path || "download"}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                  {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                    <a
+                      href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                      download={file.filename || file.path || "download"}
+                      target="_blank"
+                      rel="noopener noreferrer"
                         className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                      >
-                        <Download className="mr-1 h-3 w-3" />
-                        Download
-                      </a>
-                    )}
+                    >
+                      <Download className="mr-1 h-3 w-3" />
+                      Download
+                    </a>
+                  )}
                     <button
                       onClick={() => handleDeleteFile(file)}
                       disabled={deletingFileKeys.has(fileKey)}

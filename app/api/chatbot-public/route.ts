@@ -4,7 +4,7 @@
  * - No Supabase auth check
  * - Uses per-browser guest identity (guestId from request, or fallback)
  * - Persists context in Acontext (session + disk) using derived guest IDs
- * - Tools: experience_search, todo, Acontext disk tools
+ * - Tools: todo, Acontext disk tools
  * - IMPORTANT: browser_use_task is NOT exposed in this route
  */
 
@@ -23,7 +23,7 @@ import {
   loadMessagesFromAcontext,
 } from "@/lib/acontext-integration";
 import { getAcontextDiskToolSchemas } from "@/lib/acontext-disk-tools";
-import { getExperienceSearchToolSchema } from "@/lib/acontext-experience-search-tool";
+// Experience search tool has been removed
 import { getTodoToolSchema } from "@/lib/acontext-todo-tool";
 import { getImageGenerateToolSchema } from "@/lib/acontext-image-generate-tool";
 import {
@@ -56,7 +56,7 @@ This is a PUBLIC DEMO session. The user may not be logged in.
 
 Constraints:
 - You DO NOT have access to browser automation tools in this mode.
-- You CAN use Acontext tools like experience_search, todo, and disk tools as needed.
+- You CAN use Acontext tools like todo and disk tools as needed.
 - Treat this as a temporary workspace scoped to this browser only.
 
 Your primary goals:
@@ -380,7 +380,6 @@ export async function POST(request: NextRequest) {
     const toolsEnabled = process.env.CHATBOT_ENABLE_TOOLS !== "false";
     const availableTools = toolsEnabled
       ? [
-          getExperienceSearchToolSchema,
           getTodoToolSchema,
           getImageGenerateToolSchema,
           ...getAcontextDiskToolSchemas(),
