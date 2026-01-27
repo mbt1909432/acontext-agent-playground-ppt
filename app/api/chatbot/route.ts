@@ -510,11 +510,13 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
                 console.log(`[API] Sending final_message (length: ${event.message.length})`);
                 // Store messages in Acontext session (messages are now stored only in Acontext)
                 if (acontextSessionId) {
-                  // User message was already stored above, only store assistant message
+                  // User message was already stored above, only store assistant message (include toolCalls so they survive reload)
                   await storeMessageInAcontext(
                     acontextSessionId,
                     "assistant",
-                    event.message
+                    event.message,
+                    "openai",
+                    event.toolCalls ?? undefined
                   );
                 }
 
@@ -615,7 +617,9 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
       await storeMessageInAcontext(
         acontextSessionId,
         "assistant",
-        completion.message
+        completion.message,
+        "openai",
+        completion.toolCalls ?? undefined
       );
     }
 

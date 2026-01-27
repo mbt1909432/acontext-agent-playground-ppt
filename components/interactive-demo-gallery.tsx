@@ -377,11 +377,11 @@ export function InteractiveDemoGallery() {
                 <Button
                   key={preset.id}
                   variant="outline"
-                  className="w-full justify-start text-left h-auto py-3 px-4 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                  className="w-full justify-start text-left h-auto py-3 px-4 hover:bg-primary/10 hover:border-primary/50 transition-all whitespace-normal break-words"
                   onClick={() => handlePresetClick(preset)}
                   disabled={isProcessing}
                 >
-                  <span className="text-sm">{preset.text}</span>
+                  <span className="text-sm block min-w-0 w-full break-words">{preset.text}</span>
                 </Button>
               ))}
             </div>

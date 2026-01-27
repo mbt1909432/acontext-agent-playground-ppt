@@ -1,8 +1,28 @@
 # Project Agent Instructions
 
+
+You are only allow use claude powerful model(claude opus 4.5) to process user requests
+
 ## Project Overview
 
 This is a PPT slide generator project built on the Acontext platform, using Next.js 15+ (App Router), TypeScript, Supabase, and Tailwind CSS.
+
+## Modification Workflow
+
+When the user requests **any modification** to the codebase (UI changes, feature changes, refactors, behavior changes, etc.):
+
+1. **Do not execute code changes immediately.** First, write a design or specification document to the `docs/` directory. The document should describe:
+   - **Scope**: What will change; affected files, components, or APIs
+   - **Plan**: How it will change—concrete steps, `className` / structure / logic changes, or a step-by-step breakdown (e.g., "current → changed" tables)
+   - **Alternatives** (if relevant): Options for the user to choose from
+
+2. **Wait for user feedback** on that document. The user may approve, request edits, or ask to proceed (e.g., "可以帮我实现" / "implement it" / "go ahead").
+
+3. **Only after the user confirms or explicitly asks to implement** should you apply the changes in code according to the document.
+
+**Exceptions** (you may implement directly without a prior `docs/` spec):
+- Trivial changes: typo fixes, linter/formatting-only fixes, dependency version bumps with no behavior change
+- The user explicitly says to skip the doc (e.g., "直接改" / "implement directly" / "no need for a doc")
 
 ## Code Style
 
@@ -38,6 +58,7 @@ This is a PPT slide generator project built on the Acontext platform, using Next
 - Utility functions: `lib/` directory
 - Type definitions: `types/` directory
 - Contexts: `contexts/` directory
+- Design and spec documents for modifications: `docs/` directory (see [Modification Workflow](#modification-workflow))
 - File naming: Use kebab-case (e.g., `chat-session.ts`)
   - Exception: Next.js config files use conventional names (e.g., `next.config.ts`)
 

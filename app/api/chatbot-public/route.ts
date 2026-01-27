@@ -462,7 +462,9 @@ export async function POST(request: NextRequest) {
                   await storeMessageInAcontext(
                     acontextSessionId,
                     "assistant",
-                    event.message
+                    event.message,
+                    "openai",
+                    event.toolCalls ?? undefined
                   );
                 }
 
@@ -555,7 +557,9 @@ export async function POST(request: NextRequest) {
       await storeMessageInAcontext(
         acontextSessionId,
         "assistant",
-        completion.message
+        completion.message,
+        "openai",
+        completion.toolCalls ?? undefined
       );
     }
 

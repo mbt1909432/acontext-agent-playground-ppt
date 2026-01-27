@@ -13,9 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, ChevronUp, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, LayoutList, Images } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
 import { useCharacter } from "@/contexts/character-context";
+import { useBreakpoints } from "@/lib/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 /**
  * AnimatedAvatar - Avatar component with transition animation
@@ -170,6 +172,23 @@ function normalizeMessageContent(
     .join("\n");
 }
 
+/** Extract link text from ReactMarkdown link children for console debug */
+function getLinkText(children: React.ReactNode): string {
+  if (children == null) return "";
+  if (typeof children === "string") return children;
+  if (Array.isArray(children)) return children.map((c) => (typeof c === "string" ? c : "")).join("");
+  return String(children);
+}
+
+/** Dedupe link logs per page load — avoid duplicate logs from re-renders */
+const loggedLinkKeys = new Set<string>();
+function logLinkOnce(href: string, text: string): void {
+  const key = `${href}|${text}`;
+  if (loggedLinkKeys.has(key)) return;
+  loggedLinkKeys.add(key);
+  console.log(`<a href="${href}">${text}</a>`);
+}
+
 /**
  * Render message content with support for images and markdown
  * Handles both string content and Vision API format (array with text and images)
@@ -189,14 +208,19 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
               remarkPlugins={[remarkGfm]}
               components={{
                 // Customize link rendering
-                a: ({ node, ...props }) => (
-                  <a
-                    {...props}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
-                  />
-                ),
+                a: ({ node, ...props }) => {
+                  const href = props.href ?? "";
+                  const text = getLinkText(props.children);
+                  if (href) logLinkOnce(href, text);
+                  return (
+                    <a
+                      {...props}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
+                    />
+                  );
+                },
                 // Customize code block rendering
                 code: (codeProps: any) => {
                   const { inline, className, children, ...props } = codeProps;
@@ -289,14 +313,19 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
         remarkPlugins={[remarkGfm]}
         components={{
           // Customize link rendering
-          a: ({ node, ...props }) => (
-            <a
-              {...props}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
-            />
-          ),
+          a: ({ node, ...props }) => {
+            const href = props.href ?? "";
+            const text = getLinkText(props.children);
+            if (href) logLinkOnce(href, text);
+            return (
+              <a
+                {...props}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
+              />
+            );
+          },
           // Customize code block rendering
           code: (codeProps: any) => {
             const { inline, className, children, ...props } = codeProps;
@@ -562,119 +591,116 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
       <div className="mt-3 space-y-2 border-t border-border pt-3">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2 transition-colors hover:bg-accent"
+          className="flex w-full items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:shadow-sm"
         >
-          <div className="flex items-center gap-2">
-            <Wrench className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs text-muted-foreground">
-              Tools Invoked: {toolCalls.length}
+          <div className="flex items-center gap-2.5">
+            <Wrench className="h-4 w-4 text-primary flex-shrink-0 rounded-full bg-primary/10 p-1" />
+            <span className="text-xs font-medium text-foreground">
+              Tools Invoked: <span className="text-primary font-semibold">{toolCalls.length}</span>
             </span>
           </div>
-          {expanded ? (
-            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+          />
         </button>
 
         {expanded && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-1 animate-fade-in">
             {toolCalls.map((toolCall, idx) => {
-              // Regular tool call display (Browser Use steps are handled via toolCall.step)
               return (
-                <Card key={toolCall.id || idx}>
-                  <CardContent className="pt-4 space-y-2">
-                  {/* Tool Name */}
-                  <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-primary">
-                      {toolCall.name}
-                    </span>
-                    {toolCall.error && (
-                        <span className="ml-auto text-xs text-destructive">
-                          Error
+                <Card key={toolCall.id || idx} className="rounded-lg border border-border/80 bg-card shadow-sm">
+                  <CardContent className="p-4 space-y-2.5">
+                    {/* Tool Name */}
+                    <div className="flex items-center gap-2 border-l-2 border-primary pl-2.5">
+                      <span className="text-sm font-mono font-medium text-primary">
+                        {toolCall.name}
                       </span>
-                    )}
-                  </div>
+                      {toolCall.error && (
+                        <span className="ml-auto text-xs font-medium text-destructive px-1.5 py-0.5 rounded bg-destructive/10">
+                          Error
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Tool Arguments */}
-                    <div className="rounded border bg-muted/50 p-2">
-                      <div className="mb-1 text-xs text-muted-foreground">
+                    {/* Tool Arguments */}
+                    <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                      <div className="mb-1.5 text-xs font-medium text-muted-foreground">
                         Parameters:
-                    </div>
+                      </div>
                       <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
-                      {JSON.stringify(toolCall.arguments, null, 2)}
-                    </pre>
-                  </div>
-
-                  {/* Streaming Steps History (for Browser Use tasks) */}
-                  {toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
-                      <div className="rounded border bg-muted/50 p-2">
-                        <div className="mb-2 text-xs text-muted-foreground">
-                          Steps ({toolCall.steps.length}):
-                      </div>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {toolCall.steps.map((step, stepIdx) => (
-                          <div
-                            key={stepIdx}
-                              className="rounded border bg-background/50 p-2"
-                          >
-                              <div className="mb-1 text-xs text-muted-foreground">
-                                Step {stepIdx + 1}:
-                            </div>
-                              <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">
-                              {formatStepContent(step)}
-                            </pre>
-                          </div>
-                        ))}
-                      </div>
+                        {JSON.stringify(toolCall.arguments, null, 2)}
+                      </pre>
                     </div>
-                  )}
-                  {/* Fallback: Show single step if steps array is not available */}
-                  {(!toolCall.steps || toolCall.steps.length === 0) && toolCall.step !== undefined && toolCall.result === undefined && !toolCall.error && (
-                      <div className="rounded border bg-muted/50 p-2">
+
+                    {/* Streaming Steps History (for Browser Use tasks) */}
+                    {toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
+                      <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                        <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                          Steps ({toolCall.steps.length}):
+                        </div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {toolCall.steps.map((step, stepIdx) => (
+                            <div
+                              key={stepIdx}
+                              className="rounded-md border border-border/60 bg-background/50 p-2"
+                            >
+                              <div className="mb-1 text-[11px] font-medium text-muted-foreground">
+                                Step {stepIdx + 1}:
+                              </div>
+                              <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">
+                                {formatStepContent(step)}
+                              </pre>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Fallback: Show single step if steps array is not available */}
+                    {(!toolCall.steps || toolCall.steps.length === 0) && toolCall.step !== undefined && toolCall.result === undefined && !toolCall.error && (
+                      <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
                         <div className="mb-1 text-xs text-muted-foreground">
                           Step:
-                      </div>
+                        </div>
                         <pre className="text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto">
-                        {formatStepContent(toolCall.step)}
-                      </pre>
-                    </div>
-                  )}
+                          {formatStepContent(toolCall.step)}
+                        </pre>
+                      </div>
+                    )}
 
-                  {/* Tool Result or Error */}
-                  {toolCall.error ? (
-                      <div className="rounded border border-destructive/50 bg-destructive/10 p-2">
+                    {/* Tool Result or Error */}
+                    {toolCall.error ? (
+                      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-2">
                         <div className="mb-1 text-xs text-destructive">
                           Error:
-                      </div>
+                        </div>
                         <div className="text-xs font-mono text-destructive">{toolCall.error}</div>
-                    </div>
-                  ) : toolCall.result !== undefined && toolCall.result !== null ? (
-                      <div className="rounded border bg-muted/50 p-2">
-                        <div className="mb-1 text-xs text-muted-foreground">
-                          Result:
                       </div>
+                    ) : toolCall.result !== undefined && toolCall.result !== null ? (
+                      <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                        <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                          Result:
+                        </div>
                         <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
-                        {formatStepContent(toolCall.result)}
-                      </pre>
-                    </div>
-                  ) : toolCall.result === null ? (
-                      <div className="rounded border border-yellow-500/50 bg-yellow-500/10 p-2">
+                          {formatStepContent(toolCall.result)}
+                        </pre>
+                      </div>
+                    ) : toolCall.result === null ? (
+                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-2">
                         <div className="mb-1 text-xs text-yellow-600 dark:text-yellow-400">
                           Result:
-                      </div>
+                        </div>
                         <div className="text-xs font-mono italic text-yellow-700 dark:text-yellow-300">null (No result returned)</div>
-                    </div>
-                  ) : null}
+                      </div>
+                    ) : null}
 
-                  {/* Invocation Time */}
-                  {toolCall.invokedAt && (
-                    <div className="text-right">
+                    {/* Invocation Time */}
+                    {toolCall.invokedAt && (
+                      <div className="text-right pt-1">
                         <span className="text-xs text-muted-foreground">
-                        {new Date(toolCall.invokedAt).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  )}
+                          {new Date(toolCall.invokedAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -690,21 +716,24 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
     <div className="mt-2 space-y-2 border-t border-border pt-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="flex w-full items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2 text-xs font-medium text-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10"
       >
-        <span>Used {toolCalls.length} tool(s)</span>
-        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        <span>
+          Used <span className="text-primary font-semibold">{toolCalls.length}</span> tool(s)
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
       </button>
 
       {expanded && (
-        <div className="space-y-2 text-xs">
+        <div className="space-y-2 pt-1 text-xs animate-fade-in">
           {toolCalls.map((toolCall, idx) => {
-            // Regular tool call display (Browser Use steps are handled via toolCall.step)
             return (
-              <div key={toolCall.id || idx} className="rounded border bg-muted/50 p-2 space-y-1">
-                <div className="font-semibold text-primary">{toolCall.name}</div>
+              <div key={toolCall.id || idx} className="rounded-lg border border-border/80 bg-card p-2.5 space-y-1.5 shadow-sm">
+                <div className="font-semibold text-primary border-l-2 border-primary pl-2">{toolCall.name}</div>
                 <div>
-                  <div className="text-muted-foreground">Parameters:</div>
+                  <div className="text-muted-foreground font-medium">Parameters:</div>
                   <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
                     {JSON.stringify(toolCall.arguments, null, 2)}
                   </pre>
@@ -712,11 +741,11 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                 {/* Streaming Steps History (for Browser Use tasks) */}
                 {toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
                   <div>
-                    <div className="text-muted-foreground">Steps ({toolCall.steps.length}):</div>
+                    <div className="text-muted-foreground font-medium">Steps ({toolCall.steps.length}):</div>
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {toolCall.steps.map((step, stepIdx) => (
-                        <div key={stepIdx} className="rounded border bg-background/50 p-1.5">
-                          <div className="text-[9px] text-muted-foreground mb-0.5">
+                        <div key={stepIdx} className="rounded-md border border-border/60 bg-muted/30 p-1.5">
+                          <div className="text-[9px] font-medium text-muted-foreground mb-0.5">
                             Step {stepIdx + 1}:
                           </div>
                           <pre className="text-[10px] overflow-x-auto whitespace-pre-wrap break-words">
@@ -730,27 +759,27 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                 {/* Fallback: Show single step if steps array is not available */}
                 {(!toolCall.steps || toolCall.steps.length === 0) && toolCall.step !== undefined && toolCall.result === undefined && !toolCall.error && (
                   <div>
-                    <div className="text-muted-foreground">Step:</div>
+                    <div className="text-muted-foreground font-medium">Step:</div>
                     <pre className="text-[10px] overflow-x-auto max-h-32 overflow-y-auto">
                       {formatStepContent(toolCall.step)}
                     </pre>
                   </div>
                 )}
                 {toolCall.error ? (
-                  <div className="text-destructive">
-                    <div className="text-muted-foreground">Error:</div>
+                  <div className="rounded bg-destructive/10 px-1.5 text-destructive">
+                    <div className="text-muted-foreground font-medium">Error:</div>
                     <div>{toolCall.error}</div>
                   </div>
                 ) : toolCall.result !== undefined && toolCall.result !== null ? (
                   <div>
-                    <div className="text-muted-foreground">Result:</div>
+                    <div className="text-muted-foreground font-medium">Result:</div>
                     <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
                       {formatStepContent(toolCall.result)}
                     </pre>
                   </div>
                 ) : toolCall.result === null ? (
                   <div>
-                    <div className="text-muted-foreground">Result:</div>
+                    <div className="text-muted-foreground font-medium">Result:</div>
                     <div className="text-[10px] text-yellow-600 dark:text-yellow-400 italic">null (No result returned)</div>
                   </div>
                 ) : null}
@@ -824,6 +853,49 @@ export function ChatbotPanel({
   const [pingLoading, setPingLoading] = useState(false);
   const [pingResponse, setPingResponse] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  const { isMd, isLg } = useBreakpoints();
+  const SIDEBAR_STORAGE_KEY = "chatbot-sidebars";
+
+  const [leftSidebarOpen, setLeftSidebarOpenState] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpenState] = useState(true);
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (raw) {
+        const v = JSON.parse(raw) as { left?: boolean; right?: boolean };
+        if (typeof v.left === "boolean") setLeftSidebarOpenState(v.left);
+        if (typeof v.right === "boolean") setRightSidebarOpenState(v.right);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const persistSidebars = (patch: { left?: boolean; right?: boolean }) => {
+    try {
+      const raw = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      const v = raw ? (JSON.parse(raw) as { left?: boolean; right?: boolean }) : {};
+      if (patch.left !== undefined) v.left = patch.left;
+      if (patch.right !== undefined) v.right = patch.right;
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(v));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const setLeftSidebarOpen = (open: boolean) => {
+    setLeftSidebarOpenState(open);
+    persistSidebars({ left: open });
+  };
+
+  const setRightSidebarOpen = (open: boolean) => {
+    setRightSidebarOpenState(open);
+    persistSidebars({ right: open });
+  };
   
   const handlePing = async () => {
     setPingLoading(true);
@@ -1490,11 +1562,11 @@ export function ChatbotPanel({
         return;
       }
 
-      console.log("[UI] Batch download: Requesting PPT generation", {
+      console.log("[UI] Batch download: Requesting PDF generation", {
         count: selectedItems.length,
       });
 
-      // Call backend API to generate PPT
+      // Call backend API to generate PDF
       const response = await fetch("/api/acontext/artifacts/batch-download", {
         method: "POST",
         headers: {
@@ -1505,22 +1577,22 @@ export function ChatbotPanel({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate PPT");
+        throw new Error(errorData.error || "Failed to generate PDF");
       }
 
       const blob = await response.blob();
       
-      // Download the PPT file
+      // Download the PDF file
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "your_ppt.pptx";
+      link.download = "your_slides.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      console.log("[UI] Batch download: PPT generated successfully", {
+      console.log("[UI] Batch download: PDF generated successfully", {
         count: selectedItems.length,
       });
 
@@ -1528,7 +1600,7 @@ export function ChatbotPanel({
       setSelectedFiles([]);
     } catch (error) {
       console.error("[UI] Batch download failed:", error);
-      alert(`PPT generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      alert(`PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsBatchDownloading(false);
     }
@@ -2060,8 +2132,7 @@ export function ChatbotPanel({
         typewriterDisplayRef.current.set(assistantMessageId, "");
 
         setMessages((prev) => [...prev, assistantMessage]);
-        // Set loading to false once assistant message is added to avoid duplicate display
-        setIsLoading(false);
+        // Keep isLoading true until stream finishes so input stays disabled during output
 
         while (true) {
           const { done, value } = await reader.read();
@@ -2187,7 +2258,12 @@ export function ChatbotPanel({
                       )
                     );
                   } else if (eventType === "error") {
-                    throw new Error(parsed.error || "Stream error");
+                    // Display error to user but don't interrupt the stream
+                    // Backend should have already sent tool messages for failed tool calls
+                    const errorMsg = parsed.error || "Stream error";
+                    console.error("[ChatbotPanel] Stream error:", errorMsg);
+                    setError(errorMsg);
+                    // Continue processing - don't throw to allow stream to complete
                   }
                 } catch (e) {
                   console.error("Failed to parse SSE data:", e);
@@ -2360,7 +2436,7 @@ export function ChatbotPanel({
               </div>
             )}
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div className="scrollbar-subtle flex-1 overflow-y-auto space-y-4 pr-2">
               {messages.length === 0 && (
                 <div className="text-center text-muted-foreground text-sm py-8">
                   Start a conversation by sending a message below.
@@ -2374,28 +2450,32 @@ export function ChatbotPanel({
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm transition-all duration-200 relative overflow-hidden group ${
+                    className={`max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm relative overflow-hidden ${
                       message.role === "user"
-                        ? "bg-primary text-primary-foreground hover:shadow-md"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted border-l-4 border-primary/30"
                     }`}
                   >
-                    {message.role === "assistant" && (
-                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
                     {message.toolCalls && message.toolCalls.length > 0 && (
                       <ToolCallsDisplay toolCalls={message.toolCalls} isFullPage={false} />
                     )}
                     <div className="text-sm relative z-10">
                       {renderMessageContent(message.content)}
                     </div>
+                    {message.role === "assistant" && index === messages.length - 1 && isLoading && (
+                      <div className="text-sm flex items-center gap-2 mt-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-muted-foreground">Processing...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
-              {isLoading && (
+              {isLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-xl px-4 py-2.5 border-l-4 border-primary/30 shadow-sm">
+                  <div className="bg-muted rounded-xl px-4 py-2.5 border-l-4 border-primary/30 shadow-sm flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-muted-foreground">Processing...</span>
                   </div>
                 </div>
               )}
@@ -2487,11 +2567,43 @@ export function ChatbotPanel({
   // Full-page chat layout (used on /protected) - Futuristic style
   return (
     <div
-      className={`relative flex h-full w-full min-h-0 overflow-hidden bg-background text-foreground md:flex-row-reverse ${className ?? ""}`}
+      className={`relative flex h-full w-full min-h-0 overflow-hidden bg-background text-foreground ${className ?? ""}`}
     >
-      {/* Session list (shown on the right in desktop via row-reverse) */}
-      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col justify-between border-r md:border-r-0 md:border-l bg-card px-4 py-3 md:flex">
-        <div className="space-y-4 overflow-y-auto pr-1">
+      {/* Left strip — always show when left sidebar not visible (md+ closed, or mobile). Click opens sidebar (md+) or drawer (mobile). */}
+      {(!isMd || !leftSidebarOpen) && (
+        <div
+          className={cn(
+            "flex h-full w-10 flex-shrink-0 flex-col items-center justify-center border-r border-border/80 bg-card transition-colors",
+            "hover:bg-muted/50 hover:border-primary/30"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => (isMd ? setLeftSidebarOpen(true) : setLeftDrawerOpen(true))}
+            className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+            aria-label="打开会话列表"
+          >
+            <PanelLeftOpen className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Session list (left sidebar) — md+ and open */}
+      {isMd && leftSidebarOpen && (
+        <aside className="relative flex h-full w-64 flex-shrink-0 flex-col justify-between border-r bg-card px-4 py-3">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex items-center justify-between gap-2 pb-2">
+              <span className="text-xs font-medium text-muted-foreground">Sessions</span>
+              <button
+                type="button"
+                onClick={() => setLeftSidebarOpen(false)}
+                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="收起会话列表"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="scrollbar-hide flex-1 space-y-4 overflow-y-auto pr-1">
           <Button
             className="w-full justify-start gap-2" 
             variant="outline"
@@ -2566,9 +2678,13 @@ export function ChatbotPanel({
               })}
             </div>
           </div>
-        </div>
+            </div>
+          </div>
+        </aside>
+      )}
 
-        <div className="mt-4 space-y-2 rounded-lg border bg-card px-4 py-4">
+      {/* Status / Session ID block - temporarily hidden per request */}
+      {/* <div className="mt-4 space-y-2 rounded-lg border bg-card px-4 py-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Status</span>
             <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-primary/30 bg-primary/10 px-2.5 py-1 text-xs text-primary shadow-sm">
@@ -2582,10 +2698,7 @@ export function ChatbotPanel({
               {sessionId ? sessionId.slice(0, 8) + "..." : "pending..."}
             </span>
           </div>
-        </div>
-
-        {/* Tools list removed: replaced by View Tools button + modal */}
-      </aside>
+        </div> */}
 
       {/* Main chat area */}
       <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col items-center px-4 py-2 md:px-8 md:py-3">
@@ -2660,6 +2773,30 @@ export function ChatbotPanel({
                 <Wrench className="h-3 w-3 text-primary" />
               </Button>
 
+              {!isMd && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setLeftDrawerOpen(true)}
+                    className="h-8 w-8 flex-shrink-0 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                    aria-label="打开会话列表"
+                  >
+                    <LayoutList className="h-3 w-3 text-primary" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setRightDrawerOpen(true)}
+                    className="h-8 w-8 flex-shrink-0 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                    aria-label="打开幻灯片列表"
+                  >
+                    <Images className="h-3 w-3 text-primary" />
+                  </Button>
+                </>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -2694,7 +2831,21 @@ export function ChatbotPanel({
 
             {/* Controls - desktop / tablet layout */}
             <div className="hidden flex-wrap items-center gap-2 md:flex">
-              {messages.length === 0 && (
+              {!isLg && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRightDrawerOpen(true)}
+                  className="text-xs h-7 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200 inline-flex items-center gap-1.5"
+                  aria-label="打开幻灯片列表"
+                >
+                  <Images className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-primary">Images</span>
+                </Button>
+              )}
+              {/* Sample prompts (Describe monitoring scenario, Provide context) - hidden to save space */}
+              {/* {messages.length === 0 && (
                 <>
                   <button
                     type="button"
@@ -2715,7 +2866,7 @@ export function ChatbotPanel({
                     Provide context
                   </button>
                 </>
-              )}
+              )} */}
 
               <div
                 className={`rounded-full border px-2 py-1 text-xs ${
@@ -2804,7 +2955,7 @@ export function ChatbotPanel({
           </div>
 
           {/* Messages area */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col space-y-3 overflow-y-auto pr-1 sm:space-y-4 sm:pr-2">
+          <div className="scrollbar-subtle flex min-h-0 min-w-0 flex-1 flex-col space-y-3 overflow-y-auto pr-1 sm:space-y-4 sm:pr-2">
             {messages.length === 0 && (
               <div className="py-12 text-center animate-fade-in">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 relative">
@@ -2837,8 +2988,7 @@ export function ChatbotPanel({
                     </div>
                   </div>
                 )}
-                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden group break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
                     {message.role === "assistant" && (
                       <Heart className="h-3 w-3 text-primary/60 animate-pulse-slow" />
@@ -2854,10 +3004,16 @@ export function ChatbotPanel({
                   <div className="text-sm leading-relaxed">
                     {renderMessageContent(message.content)}
                   </div>
+                  {message.role === "assistant" && index === messages.length - 1 && isLoading && (
+                    <div className="text-sm leading-relaxed flex items-center gap-2 mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-muted-foreground">Processing...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
               <div className="flex justify-start items-start gap-2 sm:gap-3 animate-fade-in">
                 <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
                   <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10 animate-fade-in">
@@ -2925,7 +3081,8 @@ export function ChatbotPanel({
 
           {/* Input row */}
           <div className="mt-2 flex items-center gap-2 sm:gap-3 rounded-xl border-2 border-primary/20 bg-card px-3 py-2 sm:px-4 sm:py-3 shadow-sm hover:border-primary/40 transition-all duration-200 focus-within:border-primary/60 focus-within:shadow-md">
-            {messages.length === 0 && (
+            {/* Sample prompts (Monitor AI companies, Analyze requirements context) - hidden to save space */}
+            {/* {messages.length === 0 && (
               <div className="hidden flex-wrap gap-2 text-xs text-muted-foreground md:flex">
                 <button
                   type="button"
@@ -2946,7 +3103,7 @@ export function ChatbotPanel({
                   Analyze requirements context
                 </button>
               </div>
-            )}
+            )} */}
 
             <input
               ref={fileInputRef}
@@ -3497,19 +3654,51 @@ export function ChatbotPanel({
         )}
       </section>
 
-      {/* Right side: Images sidebar */}
-      <aside className="relative hidden h-full w-64 flex-shrink-0 flex-col border-l bg-card px-4 py-3 lg:flex">
-        <div className="space-y-4 overflow-y-auto pr-1">
+      {/* Right strip — always show when right sidebar not visible (lg+ closed, or tablet/mobile). Click opens sidebar (lg+) or drawer (tablet/mobile). */}
+      {(!isLg || !rightSidebarOpen) && (
+        <div
+          className={cn(
+            "flex h-full w-10 flex-shrink-0 flex-col items-center justify-center border-l border-border/80 bg-card transition-colors",
+            "hover:bg-muted/50 hover:border-primary/30"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => (isLg ? setRightSidebarOpen(true) : setRightDrawerOpen(true))}
+            className="flex h-full w-full items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+            aria-label="打开幻灯片列表"
+          >
+            <PanelRightOpen className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Right side: Slides sidebar — lg+ and open */}
+      {isLg && rightSidebarOpen && (
+        <aside className="relative flex h-full w-64 flex-shrink-0 flex-col border-l bg-card px-4 py-3">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex items-center justify-between gap-2 pb-2">
+              <span className="text-xs font-medium text-muted-foreground">Slides</span>
+              <button
+                type="button"
+                onClick={() => setRightSidebarOpen(false)}
+                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="收起幻灯片列表"
+              >
+                <PanelRightClose className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="scrollbar-subtle flex-1 space-y-4 overflow-y-auto pr-1">
           <div className="sticky top-0 bg-card pb-2 z-10">
             <div className="flex items-center gap-2 mb-1">
               <FolderOpen className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">Images</span>
+              <span className="text-sm font-semibold">Slides</span>
             </div>
             <div className="text-xs text-muted-foreground mb-2">
               {files.filter(f => {
                 const { isImage } = detectFileType(f.filename, f.mimeType);
                 return isImage;
-              }).length} image{files.filter(f => {
+              }).length} slide{files.filter(f => {
                 const { isImage } = detectFileType(f.filename, f.mimeType);
                 return isImage;
               }).length !== 1 ? 's' : ''}
@@ -3542,26 +3731,24 @@ export function ChatbotPanel({
                     Select all
                   </label>
                 </div>
-                {selectedFiles.length > 0 && (
-                  <Button
-                    onClick={handleBatchDownload}
-                    disabled={isBatchDownloading}
-                    size="sm"
-                    className="w-full text-xs"
-                  >
-                    {isBatchDownloading ? (
-                      <>
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-1 h-3 w-3" />
-                        Generate PPT ({selectedFiles.length})
-                      </>
-                    )}
-                  </Button>
-                )}
+                <Button
+                  onClick={handleBatchDownload}
+                  disabled={isBatchDownloading || selectedFiles.length === 0}
+                  size="sm"
+                  className="w-full text-xs"
+                >
+                  {isBatchDownloading ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      generate ({selectedFiles.length}) pdf
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </div>
@@ -3570,7 +3757,7 @@ export function ChatbotPanel({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span className="ml-2 text-xs text-muted-foreground">
-                Loading images...
+                Loading slides...
               </span>
             </div>
           )}
@@ -3590,7 +3777,7 @@ export function ChatbotPanel({
             <div className="py-8 text-center">
               <File className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
               <div className="text-xs text-muted-foreground">
-                No images found
+                No slides found
               </div>
             </div>
           )}
@@ -3636,94 +3823,298 @@ export function ChatbotPanel({
                     <File className="h-3 w-3 text-primary flex-shrink-0" />
                   </div>
 
-                  {/* Image Preview */}
-                  {preview && (
-                    <div className="mt-2">
-                      {preview.isLoading && (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                        </div>
-                      )}
-                      {preview.error && (
-                        <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1">
-                          <div className="text-xs text-destructive">
-                            Error loading preview
+                  <div className="group">
+                    {/* Image Preview */}
+                    {preview && (
+                      <div className="mt-2">
+                        {preview.isLoading && (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-3 w-3 animate-spin text-primary" />
                           </div>
-                        </div>
-                      )}
-                      {!preview.isLoading && !preview.error && preview.content && previewIsImage && (
-                        <>
-                          {preview.isUrl ? (
-                            <div className="rounded border bg-muted overflow-hidden">
-                              <img
-                                src={preview.content}
-                                alt={file.filename || "Preview"}
-                                className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => setSelectedImageIndex(index)}
-                                onError={(e) => {
-                                  console.error("[UI] Failed to load image preview from URL", {
-                                    fileKey,
-                                    filename: file.filename,
-                                    url: preview.content,
-                                  });
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
+                        )}
+                        {preview.error && (
+                          <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1">
+                            <div className="text-xs text-destructive">
+                              Error loading preview
                             </div>
-                          ) : (
-                            <div className="rounded border bg-muted overflow-hidden">
-                              <img
-                                src={`data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`}
-                                alt={file.filename || "Preview"}
-                                className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => setSelectedImageIndex(index)}
-                                onError={(e) => {
-                                  console.error("[UI] Failed to load image preview", {
-                                    fileKey,
-                                    filename: file.filename,
-                                  });
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
+                          </div>
+                        )}
+                        {!preview.isLoading && !preview.error && preview.content && previewIsImage && (
+                          <>
+                            {preview.isUrl ? (
+                              <div className="rounded border bg-muted overflow-hidden">
+                                <img
+                                  src={preview.content}
+                                  alt={file.filename || "Preview"}
+                                  className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => setSelectedImageIndex(index)}
+                                  onError={(e) => {
+                                    console.error("[UI] Failed to load image preview from URL", {
+                                      fileKey,
+                                      filename: file.filename,
+                                      url: preview.content,
+                                    });
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="rounded border bg-muted overflow-hidden">
+                                <img
+                                  src={`data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`}
+                                  alt={file.filename || "Preview"}
+                                  className="w-full h-auto max-h-48 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => setSelectedImageIndex(index)}
+                                  onError={(e) => {
+                                    console.error("[UI] Failed to load image preview", {
+                                      fileKey,
+                                      filename: file.filename,
+                                    });
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Download and Delete buttons */}
-                  <div className="flex gap-2">
-                  {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
-                    <a
-                      href={preview?.publicUrl || filePublicUrls.get(fileKey)}
-                      download={file.filename || file.path || "download"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    {/* Download and Delete buttons - hover to show when preview exists */}
+                    <div
+                      className={`flex gap-2 ${preview
+                        ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100"
+                        : ""
+                      }`}
                     >
-                      <Download className="mr-1 h-3 w-3" />
-                      Download
-                    </a>
-                  )}
-                    <button
-                      onClick={() => handleDeleteFile(file)}
-                      disabled={deletingFileKeys.has(fileKey)}
-                      className="inline-flex items-center justify-center rounded-md border border-destructive/50 bg-background px-2 py-1 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      title="Delete file"
-                    >
-                      {deletingFileKeys.has(fileKey) ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3 w-3" />
+                      {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                        <a
+                          href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                          download={file.filename || file.path || "download"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          <Download className="mr-1 h-3 w-3" />
+                          Download
+                        </a>
                       )}
-                    </button>
+                      <button
+                        onClick={() => handleDeleteFile(file)}
+                        disabled={deletingFileKeys.has(fileKey)}
+                        className="inline-flex items-center justify-center rounded-md border border-destructive/50 bg-background px-2 py-1 text-xs font-medium text-destructive shadow-sm hover:bg-destructive/10 hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Delete file"
+                      >
+                        {deletingFileKeys.has(fileKey) ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* Sessions drawer (mobile) */}
+      {leftDrawerOpen && !isMd && (
+        <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="会话列表">
+          <div
+            className="absolute inset-0 bg-black/50"
+            aria-hidden="true"
+            onClick={() => setLeftDrawerOpen(false)}
+          />
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-[min(280px,85vw)] bg-card shadow-xl flex flex-col",
+              "animate-in slide-in-from-left-5 duration-200"
+            )}
+          >
+            <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+              <span className="text-sm font-semibold">Sessions</span>
+              <button
+                type="button"
+                onClick={() => setLeftDrawerOpen(false)}
+                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="关闭"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="scrollbar-hide flex-1 overflow-y-auto space-y-4 px-4 py-3">
+              <Button
+                className="w-full justify-start gap-2"
+                variant="outline"
+                type="button"
+                onClick={() => { handleNewSession(); setLeftDrawerOpen(false); }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Session</span>
+              </Button>
+              <div className="space-y-3">
+                <div className="px-1 text-xs text-muted-foreground">Session History</div>
+                <div className="space-y-1.5">
+                  {isSessionsLoading && (
+                    <div className="px-1 text-xs text-muted-foreground">Loading sessions...</div>
+                  )}
+                  {!isSessionsLoading && sessions.length === 0 && (
+                    <div className="px-1 text-xs text-muted-foreground">No sessions yet. Start a new conversation.</div>
+                  )}
+                  {sessions.map((s) => {
+                    const isActive = s.id === sessionId;
+                    const createdAt = typeof s.createdAt === "string" ? new Date(s.createdAt) : s.createdAt;
+                    const isDeleting = deletingSessionId === s.id;
+                    return (
+                      <div
+                        key={s.id}
+                        className={cn(
+                          "group flex w-full items-center gap-2 rounded-lg border-l-2 px-2.5 py-2.5 text-sm transition-colors",
+                          isActive ? "border-primary bg-accent" : "border-border bg-card hover:bg-accent"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { handleLoadSessionMessages(s.id); setLeftDrawerOpen(false); }}
+                          className="flex-1 text-left"
+                        >
+                          <div className="mb-0.5 line-clamp-2 text-xs font-medium">{s.title || "Untitled Session"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {createdAt instanceof Date ? createdAt.toLocaleString() : String(createdAt)}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
+                          className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground opacity-0 transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                          aria-label="Delete session"
+                        >
+                          {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </aside>
+      )}
+
+      {/* Images drawer (tablet + mobile) */}
+      {rightDrawerOpen && !isLg && (
+        <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="图片列表">
+          <div
+            className="absolute inset-0 bg-black/50"
+            aria-hidden="true"
+            onClick={() => setRightDrawerOpen(false)}
+          />
+          <div
+            className={cn(
+              "absolute right-0 top-0 bottom-0 w-[min(360px,90vw)] bg-card shadow-xl flex flex-col",
+              "animate-in slide-in-from-right-5 duration-200"
+            )}
+          >
+            <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+              <span className="text-sm font-semibold flex items-center gap-2">
+                <FolderOpen className="h-4 w-4 text-primary" />
+                Images
+              </span>
+              <button
+                type="button"
+                onClick={() => setRightDrawerOpen(false)}
+                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="关闭"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="scrollbar-subtle flex-1 overflow-y-auto px-4 py-3 space-y-4">
+              <div className="text-xs text-muted-foreground">
+                {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length} image
+                {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length !== 1 ? "s" : ""}
+              </div>
+              {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).every(f => {
+                        const key = f.id || f.path || f.filename || ""; return key === "" || selectedFiles.includes(key);
+                      }) && files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length > 0}
+                      onCheckedChange={handleSelectAllImages}
+                      id="select-all-images-drawer"
+                    />
+                    <label htmlFor="select-all-images-drawer" className="text-xs font-medium cursor-pointer">Select all</label>
+                  </div>
+                  <Button onClick={handleBatchDownload} disabled={isBatchDownloading || selectedFiles.length === 0} size="sm" className="w-full text-xs">
+                    {isBatchDownloading ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Generating...</> : <><Sparkles className="mr-1 h-3 w-3" />generate ({selectedFiles.length}) pdf</>}
+                  </Button>
+                </div>
+              )}
+              {isFilesLoading && files.length === 0 && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="ml-2 text-xs text-muted-foreground">Loading images...</span>
+                </div>
+              )}
+              {filesError && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2">
+                  <div className="text-xs text-destructive">Failed to load: {filesError}</div>
+                </div>
+              )}
+              {!isFilesLoading && !filesError && files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length === 0 && (
+                <div className="py-8 text-center">
+                  <File className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
+                  <div className="text-xs text-muted-foreground">No images found</div>
+                </div>
+              )}
+              <div className="space-y-2">
+                {files.filter(file => { const { isImage } = detectFileType(file.filename, file.mimeType); return isImage; }).map((file, index) => {
+                  const fileKey = file.id || file.path || file.filename || String(index);
+                  const preview = filePreviews.get(fileKey);
+                  const mimeType = file.mimeType || "";
+                  const { isImage } = detectFileType(file.filename, mimeType);
+                  if (!isImage) return null;
+                  const previewMimeType = preview?.mimeType || mimeType;
+                  const previewIsImage = previewMimeType.startsWith("image/") || (preview && detectFileType(file.filename, previewMimeType).isImage);
+                  const isSelected = selectedFiles.includes(fileKey);
+                  const selectionOrder = isSelected ? selectedFiles.indexOf(fileKey) + 1 : null;
+                  return (
+                    <div key={fileKey} className={cn("rounded-lg border bg-card p-2 space-y-2", isSelected && "ring-2 ring-primary")}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Checkbox checked={isSelected} onCheckedChange={() => handleToggleFileSelection(fileKey)} id={`select-drawer-${fileKey}`} />
+                        {selectionOrder && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground flex-shrink-0">{selectionOrder}</span>}
+                        <File className="h-3 w-3 text-primary flex-shrink-0" />
+                      </div>
+                      {preview && !preview.isLoading && !preview.error && preview.content && previewIsImage && (
+                        <div className="rounded border bg-muted overflow-hidden">
+                          {preview.isUrl ? (
+                            <img src={preview.content} alt={file.filename || "Preview"} className="w-full h-auto max-h-32 object-contain cursor-pointer hover:opacity-90" onClick={() => setSelectedImageIndex(index)} />
+                          ) : (
+                            <img src={`data:${previewMimeType};base64,${(preview.content as string).replace(/\s/g, "")}`} alt={file.filename || "Preview"} className="w-full h-auto max-h-32 object-contain cursor-pointer hover:opacity-90" onClick={() => setSelectedImageIndex(index)} />
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                          <a href={preview?.publicUrl || filePublicUrls.get(fileKey)} download={file.filename || file.path || "download"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent"> <Download className="mr-1 h-3 w-3" />Download</a>
+                        )}
+                        <button onClick={() => handleDeleteFile(file)} disabled={deletingFileKeys.has(fileKey)} className="inline-flex items-center justify-center rounded-md border border-destructive/50 bg-background px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50">
+                          {deletingFileKeys.has(fileKey) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Lightbox Modal */}
       {selectedImageIndex !== null && (() => {

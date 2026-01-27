@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ts-ignore - pptxgenjs may not have type definitions
-import PptxGenJS from "pptxgenjs";
+import sharp from "sharp";
+import { PDFDocument } from "pdf-lib";
 
 /**
  * POST /api/acontext/artifacts/batch-download
- * Generate a PPT file from images in selection order
+ * Generate a PDF file from images in selection order
  * 
  * Request body:
  * {
@@ -12,7 +12,7 @@ import PptxGenJS from "pptxgenjs";
  * }
  * 
  * Response:
- * PPT file (application/vnd.openxmlformats-officedocument.presentationml.presentation)
+ * PDF file (application/pdf)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -51,16 +51,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("[API] POST /api/acontext/artifacts/batch-download: Processing PPT generation", {
+    console.log("[API] POST /api/acontext/artifacts/batch-download: Processing PDF generation", {
       count: urls.length,
     });
 
-    // Create a new PowerPoint presentation
-    const pptx = new PptxGenJS();
-    pptx.layout = "LAYOUT_WIDE"; // 16:9 aspect ratio
-    pptx.author = "Acontext Agent";
-    pptx.company = "Acontext";
-    pptx.title = "Images Presentation";
+    // Create a new PDF document
+    const pdfDoc = await PDFDocument.create();
+    pdfDoc.setTitle("Slides");
+    pdfDoc.setAuthor("Acontext Agent");
+    pdfDoc.setProducer("Acontext");
+
+    // A4 landscape in points (72dpi)
+    const PAGE_W = 842;
+    const PAGE_H = 595;
 
     const errors: Array<{ url: string; filename: string; error: string }> = [];
 
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
       try {
         const { url, filename } = item;
 
-        console.log("[API] batch-download: Fetching image", {
+        console.log("[API] batch-download: Fetching image for PDF", {
           url: url.substring(0, 100) + "...",
           filename,
         });
@@ -98,28 +101,33 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // Convert buffer to base64 data URL for pptxgenjs
-        const base64 = buffer.toString("base64");
-        const dataUrl = `data:${contentType};base64,${base64}`;
+        // pdf-lib supports JPG/PNG embeds; convert other formats to PNG
+        const isJpeg =
+          contentType === "image/jpeg" ||
+          contentType === "image/jpg" ||
+          filename.toLowerCase().endsWith(".jpg") ||
+          filename.toLowerCase().endsWith(".jpeg");
+        const isPng =
+          contentType === "image/png" || filename.toLowerCase().endsWith(".png");
 
-        // Add a slide with the image
-        const slide = pptx.addSlide();
-        
-        // Add image to slide, filling the entire slide
-        slide.addImage({
-          data: dataUrl,
-          x: 0,
-          y: 0,
-          w: "100%",
-          h: "100%",
-          sizing: {
-            type: "contain", // Maintain aspect ratio, fit within bounds
-            w: "100%",
-            h: "100%",
-          },
-        });
+        const embedBytes = isJpeg || isPng ? buffer : await sharp(buffer).png().toBuffer();
+        const embeddedImage = isJpeg
+          ? await pdfDoc.embedJpg(embedBytes)
+          : await pdfDoc.embedPng(embedBytes);
 
-        console.log("[API] batch-download: Added slide", {
+        // Add a PDF page and draw the image centered, preserving aspect ratio
+        const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+        const imgW = embeddedImage.width;
+        const imgH = embeddedImage.height;
+        const scale = Math.min(PAGE_W / imgW, PAGE_H / imgH);
+        const drawW = imgW * scale;
+        const drawH = imgH * scale;
+        const x = (PAGE_W - drawW) / 2;
+        const y = (PAGE_H - drawH) / 2;
+
+        page.drawImage(embeddedImage, { x, y, width: drawW, height: drawH });
+
+        console.log("[API] batch-download: Added PDF page", {
           filename,
           size: buffer.length,
           mimeType: contentType,
@@ -140,21 +148,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate the PPT file
-    const pptxBuffer = await pptx.write({ outputType: "nodebuffer" }) as Buffer;
+    // Generate the PDF file
+    const pdfBytes = await pdfDoc.save();
 
-    console.log("[API] POST /api/acontext/artifacts/batch-download: PPT generated", {
-      slideCount: urls.length - errors.length,
+    console.log("[API] POST /api/acontext/artifacts/batch-download: PDF generated", {
+      pageCount: urls.length - errors.length,
       errorCount: errors.length,
-      fileSize: pptxBuffer.length,
+      fileSize: pdfBytes.length,
     });
 
-    // Return the PPT file
-    return new NextResponse(new Uint8Array(pptxBuffer), {
+    // Return the PDF file
+    return new NextResponse(new Uint8Array(pdfBytes), {
       status: 200,
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "Content-Disposition": `attachment; filename="your_ppt.pptx"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="your_slides.pdf"`,
         ...(errors.length > 0 && {
           "X-Errors": JSON.stringify(errors),
         }),
@@ -164,7 +172,7 @@ export async function POST(request: NextRequest) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
 
-    console.error("[API] Failed to generate PPT:", error);
+    console.error("[API] Failed to generate PDF:", error);
 
     return NextResponse.json(
       {

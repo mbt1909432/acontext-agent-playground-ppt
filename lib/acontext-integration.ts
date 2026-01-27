@@ -10,7 +10,7 @@
 
 import OpenAI from "openai";
 import { getAcontextClient } from "@/lib/acontext-client";
-import type { ChatSession } from "@/types/chat";
+import type { ChatSession, ToolInvocation } from "@/types/chat";
 
 /**
  * Edit strategy types for context editing
@@ -1261,7 +1261,8 @@ export async function getAcontextArtifactContent(
 
 /**
  * Store a message in Acontext session
- * Supports both string content and Vision API format (array with images)
+ * Supports both string content and Vision API format (array with images).
+ * For assistant messages, optionally persist tool_calls so they survive reload (e.g. session switch, refresh).
  */
 export async function storeMessageInAcontext(
   acontextSessionId: string,
@@ -1270,7 +1271,8 @@ export async function storeMessageInAcontext(
     | { type: "text"; text: string }
     | { type: "image_url"; image_url: { url: string } }
   >,
-  format: "openai" | "anthropic" | "gemini" = "openai"
+  format: "openai" | "anthropic" | "gemini" = "openai",
+  toolCalls?: ToolInvocation[] | null
 ): Promise<boolean> {
   const acontext = getAcontextClient();
   if (!acontext) {
@@ -1279,29 +1281,31 @@ export async function storeMessageInAcontext(
 
   try {
     // Build message blob in the format expected by Acontext
-    // For OpenAI format, we can pass a simple object
-    // Support both string and array (Vision API) formats
     const messageBlob: Record<string, unknown> = {
       role,
       content,
     };
-    
-    const contentLength = typeof content === "string" 
-      ? content.length 
+    if (role === "assistant" && toolCalls && toolCalls.length > 0) {
+      messageBlob.tool_calls = toolCalls;
+    }
+
+    const contentLength = typeof content === "string"
+      ? content.length
       : JSON.stringify(content).length;
-    
+
     console.debug("[Acontext] Storing message", {
       acontextSessionId,
       role,
       contentLength,
       isArray: Array.isArray(content),
       format,
+      hasToolCalls: !!(toolCalls && toolCalls.length),
     });
-    
+
     await acontext.sessions.storeMessage(acontextSessionId, messageBlob, {
       format,
     });
-    
+
     console.debug("[Acontext] Message stored successfully");
     return true;
   } catch (error) {

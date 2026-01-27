@@ -302,6 +302,15 @@ export async function chatCompletion(
             error: `Unsupported tool call type: ${toolCall.type}`,
             invokedAt: new Date(),
           });
+          // Add to toolResults so we generate a tool message (required by OpenAI)
+          toolResults.push({
+            id: toolCall.id,
+            type: "function",
+            function: {
+              name: fnName,
+              arguments: JSON.stringify(fnArgs),
+            },
+          });
           continue;
         }
 
@@ -339,6 +348,15 @@ export async function chatCompletion(
           error: error instanceof Error ? error.message : String(error),
           invokedAt: new Date(),
         });
+        // Add to toolResults so we generate a tool message (required by OpenAI)
+        toolResults.push({
+          id: toolCall.id,
+          type: "function",
+          function: {
+            name: fnName,
+            arguments: isFunctionCall ? toolCall.function.arguments : JSON.stringify(fnArgs),
+          },
+        });
       }
     }
 
@@ -346,17 +364,24 @@ export async function chatCompletion(
     currentMessages = [
       ...currentMessages,
       assistantMessage,
-      ...toolResults.map((toolCall) => ({
-        role: "tool" as const,
-        tool_call_id: toolCall.id,
-        content: safeToolResultToMessageContent(
-          toolCall.type === "function" && toolCall.function
-            ? toolCall.function.name
-            : "unknown",
-          toolCall.id,
-          allToolCalls.find((tc) => tc.id === toolCall.id)?.result || {}
-        ),
-      })),
+      ...toolResults.map((toolCall) => {
+        const toolCallInvocation = allToolCalls.find((tc) => tc.id === toolCall.id);
+        // If tool call failed, use error as content; otherwise use result
+        const toolCallResult = toolCallInvocation?.error
+          ? { error: toolCallInvocation.error }
+          : toolCallInvocation?.result ?? {};
+        return {
+          role: "tool" as const,
+          tool_call_id: toolCall.id,
+          content: safeToolResultToMessageContent(
+            toolCall.type === "function" && toolCall.function
+              ? toolCall.function.name
+              : "unknown",
+            toolCall.id,
+            toolCallResult
+          ),
+        };
+      }),
     ];
 
     // Continue loop to process next response
@@ -553,6 +578,15 @@ export async function* chatCompletionStream(
           };
           allToolCalls.push(errorToolCall);
           yield { type: "tool_call_error", toolCall: errorToolCall };
+          // Add to toolResults so we generate a tool message (required by OpenAI)
+          toolResults.push({
+            id: toolCall.id,
+            type: "function",
+            function: {
+              name: fnName,
+              arguments: JSON.stringify(fnArgs),
+            },
+          });
           continue;
         }
 
@@ -624,6 +658,15 @@ export async function* chatCompletionStream(
               error instanceof Error ? error.message : String(error);
             allToolCalls.push(toolCallInvocation);
             yield { type: "tool_call_error", toolCall: toolCallInvocation };
+            // Add to toolResults so we generate a tool message (required by OpenAI)
+            toolResults.push({
+              id: toolCall.id,
+              type: "function",
+              function: {
+                name,
+                arguments: argsJson,
+              },
+            });
           }
         } else {
           // Non-streaming tool call
@@ -668,6 +711,18 @@ export async function* chatCompletionStream(
         };
         allToolCalls.push(errorToolCall);
         yield { type: "tool_call_error", toolCall: errorToolCall };
+        // Add to toolResults so we generate a tool message (required by OpenAI)
+        // Only add if not already added (e.g. browser_use_task inner catch already added it)
+        if (!toolResults.some((tr) => tr.id === toolCall.id)) {
+          toolResults.push({
+            id: toolCall.id,
+            type: "function",
+            function: {
+              name: fnName,
+              arguments: isFunctionCall ? toolCall.function.arguments : JSON.stringify(fnArgs),
+            },
+          });
+        }
       }
     }
 
@@ -676,7 +731,11 @@ export async function* chatCompletionStream(
       ...currentMessages,
       assistantMessage,
       ...toolResults.map((toolCall) => {
-        const toolCallResult = allToolCalls.find((tc) => tc.id === toolCall.id)?.result || {};
+        const toolCallInvocation = allToolCalls.find((tc) => tc.id === toolCall.id);
+        // If tool call failed, use error as content; otherwise use result
+        const toolCallResult = toolCallInvocation?.error
+          ? { error: toolCallInvocation.error }
+          : toolCallInvocation?.result ?? {};
         console.log(`[openai-client] chatCompletionStream: sending tool result for ${toolCall.id}:`, JSON.stringify(toolCallResult, null, 2).substring(0, 500));
         return {
           role: "tool" as const,
