@@ -67,3 +67,4 @@ next-env.d.ts
 
 # cursor/specstory chat history
 /.specstory/
+/docs
