@@ -16,7 +16,8 @@ import { User } from "lucide-react";
 const CharacterSwitcher = () => {
   const { character, characterId, setCharacter, characters } = useCharacter();
   const [mounted, setMounted] = useState(false);
-  const avatarObjectClass = "object-cover object-[center_5%]";
+  const avatarObjectClass =
+    "object-cover object-[center_5%] [filter:drop-shadow(0_0_1px_rgba(0,0,0,0.85))]";
 
   // Prevent hydration mismatch
   useEffect(() => {

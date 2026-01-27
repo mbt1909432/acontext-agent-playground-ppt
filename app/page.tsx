@@ -36,19 +36,21 @@ function CharacterGrid() {
                 : "border-border hover:border-primary/50 hover:shadow-md"
             }`}
           >
-            <div className="aspect-square relative bg-muted/50">
+            <div className="aspect-square relative bg-card/80 backdrop-blur-sm">
               <Image
                 src={char.avatarPath}
                 alt={char.name}
                 fill
-                className="object-cover object-[center_5%]"
+                className="object-cover object-[center_5%] [filter:drop-shadow(0_0_1px_rgba(0,0,0,0.85))_drop-shadow(0_0_10px_rgba(0,0,0,0.25))]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />
+              {/* Light dark overlay to hide transparent-edge seams on dark backgrounds */}
+              <div className="pointer-events-none absolute inset-0 bg-black/10" />
               {isActive && (
-                <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-lg" />
+                <div className="pointer-events-none absolute inset-0 bg-primary/10" />
               )}
             </div>
-            <div className="p-3 bg-card/80 backdrop-blur-sm">
+            <div className="p-3">
               <h3 className="font-semibold text-sm mb-1">{char.name}</h3>
               <p className="text-xs text-muted-foreground line-clamp-2">{char.tagline}</p>
               {isActive && (
