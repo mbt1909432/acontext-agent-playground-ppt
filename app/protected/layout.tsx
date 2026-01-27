@@ -1,60 +1,17 @@
-"use client";
+import { ProtectedLayoutClient } from "@/components/protected-layout-client";
 
-import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { CharacterSwitcher } from "@/components/character-switcher";
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { useCharacter } from "@/contexts/character-context";
-
-export default function ProtectedLayout({
+/**
+ * Server layout for /protected. Awaits params when present (dynamic segment
+ * e.g. /protected/[id]) to satisfy Next.js 15+ async params. Never passes
+ * params to client to avoid "params are being enumerated" error.
+ */
+export default async function ProtectedLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params?: Promise<{ id?: string }>;
 }) {
-  const { character } = useCharacter();
-  return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      {/* Top navigation */}
-      <nav className="flex-shrink-0 border-b bg-card/50 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2"
-            >
-              <Image
-                src={character.avatarPath}
-                alt={character.name}
-                width={100}
-                height={100}
-                className="h-8 w-8 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 object-cover object-top"
-                priority
-              />
-              <span className="text-xs sm:text-sm font-semibold tracking-tight">
-                PPT Girl
-              </span>
-            </Link>
-            <Link href="/" className="hidden sm:block">
-              <Button variant="ghost" size="sm" className="text-xs">
-                ← Back to Home
-              </Button>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <AuthButton />
-            <CharacterSwitcher />
-            <ThemeSwitcher />
-          </div>
-        </div>
-      </nav>
-
-      {/* Main content area */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {children}
-      </div>
-    </main>
-  );
+  if (params) await params;
+  return <ProtectedLayoutClient>{children}</ProtectedLayoutClient>;
 }

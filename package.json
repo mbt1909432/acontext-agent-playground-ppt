@@ -7,7 +7,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@acontext/acontext": "^0.1.0",
+    "@acontext/acontext": "^0.1.1",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@google/genai": "^1.36.0",

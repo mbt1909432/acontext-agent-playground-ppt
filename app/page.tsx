@@ -181,7 +181,7 @@ export default function Home() {
                     alt={character.name}
                     width={40}
                     height={40}
-                    className={`absolute inset-0 h-10 w-10 ${avatarObjectClass} transition-all duration-[400ms] ease-in-out`}
+                    className={`absolute inset-0 h-10 w-10 ${avatarObjectClass} transition-all duration-400 ease-in-out`}
                     style={{
                       opacity: 0,
                       transform: "scale(0.95)",
@@ -196,7 +196,7 @@ export default function Home() {
                     alt={character.name}
                     width={40}
                     height={40}
-                    className={`h-10 w-10 ${avatarObjectClass} transition-all duration-[400ms] ease-in-out`}
+                    className={`h-10 w-10 ${avatarObjectClass} transition-all duration-400 ease-in-out`}
                     style={{
                       opacity: hasPrevAvatar ? (showNewAvatar ? 1 : 0) : 1,
                       transform: hasPrevAvatar ? (showNewAvatar ? "scale(1)" : "scale(0.95)") : "scale(1)",

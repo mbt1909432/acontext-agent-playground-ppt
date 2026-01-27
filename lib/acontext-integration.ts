@@ -45,6 +45,106 @@ export interface TokenCounts {
 }
 
 /**
+ * Acontext message item structure
+ */
+interface AcontextMessageItem {
+  id?: string;
+  role?: string;
+  content?: string | Array<{
+    type?: string;
+    text?: string;
+    image_url?: { url: string };
+  }>;
+  tool_calls?: unknown;
+  created_at?: string | Date;
+}
+
+/**
+ * Acontext artifact item structure
+ */
+interface AcontextArtifactItem {
+  path?: string;
+  filename?: string;
+  mimeType?: string;
+  size?: number;
+  length?: number;
+  contentType?: string;
+  createdAt?: string | Date;
+  created_at?: string | Date;
+  timestamp?: string | Date;
+  meta?: {
+    __artifact_info__?: {
+      content_type?: string;
+      size?: number;
+      length?: number;
+      contentType?: string;
+      mimeType?: string;
+      type?: string;
+    };
+  };
+}
+
+/**
+ * Acontext session structure
+ */
+interface AcontextSession {
+  id: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Acontext disk structure
+ */
+interface AcontextDisk {
+  id: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Acontext artifact response structure
+ */
+interface AcontextArtifactResponse {
+  path?: string;
+  filename?: string;
+  mimeType?: string;
+  meta?: {
+    __artifact_info__?: {
+      content_type?: string;
+      size?: number;
+    };
+  };
+}
+
+/**
+ * Acontext content response structure
+ */
+interface AcontextContentResponse {
+  type?: string;
+  text?: string;
+  raw?: string | Buffer | ArrayBuffer | ArrayBufferView | { type: string; data: number[] };
+}
+
+/**
+ * Acontext artifact result structure
+ */
+interface AcontextArtifactResult {
+  artifact?: AcontextArtifactResponse;
+  content?: AcontextContentResponse;
+  public_url?: string;
+}
+
+/**
+ * Node.js error with additional properties
+ */
+interface NodeError extends Error {
+  code?: string;
+  errno?: number;
+  syscall?: string;
+  hostname?: string;
+  port?: number;
+}
+
+/**
  * Enhanced error logging helper with deep error extraction
  */
 async function logAcontextError(
@@ -76,19 +176,19 @@ async function logAcontextError(
       
       // Check for Node.js system errors (which have code, errno, syscall, etc.)
       if ('code' in err) {
-        info.code = (err as any).code;
+        info.code = (err as NodeError).code;
       }
       if ('errno' in err) {
-        info.errno = (err as any).errno;
+        info.errno = (err as NodeError).errno;
       }
       if ('syscall' in err) {
-        info.syscall = (err as any).syscall;
+        info.syscall = (err as NodeError).syscall;
       }
       if ('hostname' in err) {
-        info.hostname = (err as any).hostname;
+        info.hostname = (err as NodeError).hostname;
       }
       if ('port' in err) {
-        info.port = (err as any).port;
+        info.port = (err as NodeError).port;
       }
       
       // Network error detection
@@ -316,9 +416,9 @@ export async function searchRelevantContext(
     // For now, return recent messages as context
     // In a production system, you'd want to use Acontext's semantic search API
     // to find the most relevant messages based on the query
-    const relevantMessages = messages.items
+    const relevantMessages = (messages.items as AcontextMessageItem[])
       .slice(-limit)
-      .map((msg: any) => ({
+      .map((msg) => ({
         role: msg.role || "user",
         content: typeof msg.content === "string" ? msg.content : String(msg.content),
       }));
@@ -408,8 +508,8 @@ export async function uploadFileToAcontext(
     // Build full path from artifact response
     // artifact.path is the directory (e.g., "/generated/2026-01-15/")
     // artifact.filename is the filename (e.g., "image_xxx.png")
-    const artifactPath = (artifact as any).path as string | undefined;
-    const artifactFilename = (artifact as any).filename as string | undefined;
+    const artifactPath = (artifact as AcontextArtifactResponse).path;
+    const artifactFilename = (artifact as AcontextArtifactResponse).filename;
     
     if (artifactPath && artifactFilename) {
       // Combine path and filename, ensuring path ends with / and removing duplicate slashes
@@ -465,7 +565,7 @@ async function listArtifactsRecursive(
 
     // Normalize and add files from current directory
     const items = Array.isArray(result.artifacts) ? result.artifacts : [];
-    const normalizedArtifacts = items.map((item: any) => {
+    const normalizedArtifacts = items.map((item: AcontextArtifactItem) => {
       // Extract metadata if available
       const artifactInfo = item.meta?.__artifact_info__;
       
@@ -547,7 +647,13 @@ async function listArtifactsRecursive(
         filename: filename || 'unknown',
         mimeType: mimeType,
         size: size,
-      createdAt: item.createdAt || item.created_at || item.timestamp,
+      createdAt: item.createdAt 
+        ? (typeof item.createdAt === 'string' ? item.createdAt : item.createdAt.toISOString())
+        : item.created_at 
+        ? (typeof item.created_at === 'string' ? item.created_at : item.created_at.toISOString())
+        : item.timestamp
+        ? (typeof item.timestamp === 'string' ? item.timestamp : item.timestamp.toISOString())
+        : undefined,
       };
       
       console.log(`[Acontext] listArtifactsRecursive: Normalizing artifact:`, {
@@ -851,7 +957,7 @@ export async function getAcontextArtifactContent(
       hasContent: !!result?.content,
       hasPublicUrl: !!result?.public_url,
       contentType: result?.content?.type,
-      artifactMimeType: (result?.artifact as any)?.mimeType,
+      artifactMimeType: (result?.artifact as AcontextArtifactResponse | undefined)?.mimeType,
     });
 
     // Get MIME type - prioritize file extension inference over API response
@@ -873,26 +979,25 @@ export async function getAcontextArtifactContent(
     if (mimeType === "application/octet-stream") {
       // Try to get from content.type if available
       if (result?.content) {
-        const contentData = result.content as any;
-        if (contentData.type && contentData.type !== "application/octet-stream") {
+        const contentData = result.content as AcontextContentResponse | undefined;
+        if (contentData?.type && contentData.type !== "application/octet-stream") {
           mimeType = contentData.type;
         }
       }
       
       // Then check artifact metadata (__artifact_info__.content_type as per docs)
       if (mimeType === "application/octet-stream" && result?.artifact) {
-        const artifact = result.artifact as any;
+        const artifact = result.artifact as AcontextArtifactResponse | undefined;
         
         // Check __artifact_info__.content_type first (as per docs)
-        const artifactInfo = artifact.meta?.__artifact_info__;
+        const artifactInfo = artifact?.meta?.__artifact_info__;
         if (artifactInfo && typeof artifactInfo === 'object') {
-          mimeType = artifactInfo.content_type || artifactInfo.contentType || 
-                     artifactInfo.mimeType || artifactInfo.type || mimeType;
+          mimeType = artifactInfo.content_type || mimeType;
         }
         
         // Fallback to artifact-level properties if still generic
-        if (mimeType === "application/octet-stream") {
-          mimeType = artifact.mimeType || artifact.contentType || mimeType;
+        if (mimeType === "application/octet-stream" && artifact) {
+          mimeType = artifact.mimeType || mimeType;
         }
       }
       
@@ -917,7 +1022,11 @@ export async function getAcontextArtifactContent(
     
     if (result?.content) {
       // Content is available directly from the API
-      const contentData = result.content as any;
+      const contentData = result.content as AcontextContentResponse | undefined;
+      
+      if (!contentData) {
+        throw new Error("Content data is undefined");
+      }
       
       // IMPORTANT: For text files, prioritize content.text over content.raw
       // According to Acontext docs, text files return content.text which is already parsed
@@ -949,11 +1058,13 @@ export async function getAcontextArtifactContent(
         } else if (
           typeof contentData.raw === "object" &&
           contentData.raw &&
-          (contentData.raw as any).type === "Buffer" &&
-          Array.isArray((contentData.raw as any).data)
+          "type" in contentData.raw &&
+          contentData.raw.type === "Buffer" &&
+          "data" in contentData.raw &&
+          Array.isArray(contentData.raw.data)
         ) {
           // Some clients serialize Buffers as { type: "Buffer", data: number[] }
-          content = Buffer.from((contentData.raw as any).data);
+          content = Buffer.from((contentData.raw as { type: string; data: number[] }).data);
         } else if (typeof contentData.raw === "string") {
           // Acontext may return either:
           // - base64 encoded string (binary)
@@ -982,11 +1093,21 @@ export async function getAcontextArtifactContent(
         }
         
         // If content type is text, try to decode and show text preview
-        const isTextContent = contentData.type === 'text' || 
-                             (typeof contentData.type === 'string' && contentData.type.startsWith('text/'));
-        const logData: any = {
+        const isTextContent = contentData?.type === 'text' || 
+                             (typeof contentData?.type === 'string' && contentData.type.startsWith('text/'));
+        const logData: {
+          bufferLength: number;
+          contentType?: string;
+          textLength?: number;
+          textPreview?: string;
+          hasRaw?: boolean;
+          hasInvalidUtf8?: boolean;
+          fallbackEncoding?: string;
+          hexPreview?: string;
+          textDecodeError?: string;
+        } = {
           bufferLength: content.length,
-          contentType: contentData.type,
+          contentType: contentData?.type,
         };
         
         if (isTextContent && content.length > 0) {
@@ -1388,7 +1509,7 @@ export async function loadMessagesFromAcontext(
     }
 
     // Convert Acontext messages to ChatMessage format
-    const chatMessages = messages.items.map((msg: any, index: number) => {
+    const chatMessages = (messages.items as AcontextMessageItem[]).map((msg, index: number) => {
       // Extract content - handle both string and array formats
       // Preserve Vision API format (array) so images can be used as context
       let content: string | Array<
@@ -1399,7 +1520,11 @@ export async function loadMessagesFromAcontext(
         content = msg.content;
       } else if (Array.isArray(msg.content)) {
         // Preserve Vision API format (array) for images
-        content = msg.content;
+        // Type assertion needed because Acontext API may return slightly different structure
+        content = msg.content as Array<
+          | { type: "text"; text: string }
+          | { type: "image_url"; image_url: { url: string } }
+        >;
       } else {
         content = String(msg.content);
       }
@@ -1409,8 +1534,8 @@ export async function loadMessagesFromAcontext(
         sessionId: acontextSessionId,
         role: (msg.role || "user") as "user" | "assistant" | "system",
         content,
-        createdAt: msg.created_at || msg.timestamp || new Date(),
-        toolCalls: msg.tool_calls || undefined,
+        createdAt: msg.created_at || new Date(),
+        toolCalls: (msg.tool_calls as import("@/types/chat").ToolInvocation[] | undefined) || undefined,
       };
     });
 
@@ -1442,6 +1567,9 @@ export async function createAcontextSessionDirectly(
     return null;
   }
 
+  let acontextSession: { id: string } | null = null;
+  let diskId: string | undefined;
+
   try {
     // Create session in Acontext with userId in configs (no Space binding)
     const configs = {
@@ -1454,20 +1582,19 @@ export async function createAcontextSessionDirectly(
       configs,
     });
 
-    const sessionCreatePayload: Record<string, unknown> = {
+    const sessionCreatePayload = {
       configs,
     };
 
-    const acontextSession = await acontext.sessions.create(
-      sessionCreatePayload as any
-    );
+    acontextSession = await acontext.sessions.create(
+      sessionCreatePayload
+    ) as AcontextSession;
 
     console.debug("[Acontext] Session created successfully", {
       acontextSessionId: acontextSession.id,
     });
 
     // Create a dedicated Disk for this session
-    let diskId: string | undefined;
     try {
       const disk = await acontext.disks.create();
       diskId = disk.id;
@@ -1503,8 +1630,30 @@ export async function createAcontextSessionDirectly(
       .single();
 
     if (error) {
-      console.warn("[Acontext] Failed to store mapping in Supabase:", error.message);
-      // Continue anyway - the session exists in Acontext
+      console.error("[Acontext] Failed to store mapping in Supabase:", error.message);
+      
+      // Rollback: Clean up created resources
+      if (diskId) {
+        try {
+          await acontext.disks.delete(diskId);
+          console.debug("[Acontext] Rolled back disk creation", { diskId });
+        } catch (deleteError) {
+          console.error("[Acontext] Failed to rollback disk:", deleteError);
+        }
+      }
+      
+      if (acontextSession) {
+        try {
+          await acontext.sessions.delete(acontextSession.id);
+          console.debug("[Acontext] Rolled back session creation", { 
+            sessionId: acontextSession.id 
+          });
+        } catch (deleteError) {
+          console.error("[Acontext] Failed to rollback session:", deleteError);
+        }
+      }
+      
+      throw new Error(`Failed to create session mapping: ${error.message}`);
     }
 
     return {
@@ -1512,6 +1661,32 @@ export async function createAcontextSessionDirectly(
       sessionId: acontextSession.id, // Use Acontext session ID as session ID
     };
   } catch (error) {
+    // If error was already handled (Supabase insert failure), rethrow it
+    if (error instanceof Error && error.message.includes("Failed to create session mapping")) {
+      throw error;
+    }
+    
+    // For other errors, clean up resources and log
+    if (diskId) {
+      try {
+        await acontext.disks.delete(diskId);
+        console.debug("[Acontext] Cleaned up disk after error", { diskId });
+      } catch (deleteError) {
+        console.error("[Acontext] Failed to cleanup disk:", deleteError);
+      }
+    }
+    
+    if (acontextSession) {
+      try {
+        await acontext.sessions.delete(acontextSession.id);
+        console.debug("[Acontext] Cleaned up session after error", { 
+          sessionId: acontextSession.id 
+        });
+      } catch (deleteError) {
+        console.error("[Acontext] Failed to cleanup session:", deleteError);
+      }
+    }
+    
     await logAcontextError("Failed to create Acontext session directly", error, {
       userId,
       title,

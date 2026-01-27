@@ -107,8 +107,10 @@ export function ParallaxCharacter() {
                 alt={character.name}
                 width={800}
                 height={800}
-                className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-[400ms] ease-in-out"
+                className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-400 ease-in-out"
                 style={{
+                  width: "100%",
+                  height: "auto",
                   opacity: 0,
                   transform: "scale(0.95)",
                   filter: prevFilterId ? `url(#${prevFilterId})` : undefined,
@@ -124,13 +126,15 @@ export function ParallaxCharacter() {
             alt={character.name}
             width={800}
             height={800}
-            className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-[400ms] ease-in-out"
+            className="w-full h-auto object-contain rounded-3xl shadow-[0_40px_120px_rgba(0,0,0,0.0)] transition-all duration-400 ease-in-out"
             style={{
+              width: "100%",
+              height: "auto",
               opacity: hasPrev ? (showNew ? 1 : 0) : 1,
               transform: hasPrev ? (showNew ? "scale(1)" : "scale(0.95)") : "scale(1)",
               filter: `url(#${currentFilterId})`,
               // Performance hint: GPU acceleration for filter animations
-              willChange: 'filter, opacity, transform',
+              willChange: "filter, opacity, transform",
             }}
             priority
           />

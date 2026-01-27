@@ -61,6 +61,9 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      transitionDuration: {
+        400: "400ms",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

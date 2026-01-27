@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// This check can be removed, it is just for tutorial purposes
+// Supports both NEXT_PUBLIC_SUPABASE_* and NEXT_PUBLIC_PPT_SUPABASE_* (e.g. Vercel)
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
+
 export const hasEnvVars =
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  !!getSupabaseUrl() && !!getSupabasePublishableKey();

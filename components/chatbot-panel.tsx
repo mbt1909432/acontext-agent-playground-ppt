@@ -68,7 +68,7 @@ function AnimatedAvatar({
           alt={alt}
           fill
           sizes={sizes}
-          className="object-cover transition-all duration-[400ms] ease-in-out"
+          className="object-cover transition-all duration-400 ease-in-out"
           style={{
             opacity: 0,
             transform: "scale(0.95)",
@@ -83,7 +83,7 @@ function AnimatedAvatar({
         alt={alt}
         fill
         sizes={sizes}
-        className="object-cover transition-all duration-[400ms] ease-in-out"
+        className="object-cover transition-all duration-400 ease-in-out"
         style={{
           opacity: hasPrev ? (showNew ? 1 : 0) : 1,
           transform: hasPrev ? (showNew ? "scale(1)" : "scale(0.95)") : "scale(1)",
@@ -115,6 +115,11 @@ interface ChatbotPanelProps {
    * Defaults to the Acontext logo.
    */
   assistantAvatarSrc?: string;
+  /**
+   * Optional session ID to load on mount (e.g. from /protected/[id] URL).
+   * When set, messages for this session are fetched and the session is selected.
+   */
+  initialSessionId?: string;
 }
 
 type AvailableTool = {
@@ -764,6 +769,7 @@ export function ChatbotPanel({
   systemPrompt,
   assistantName = "PPT Girl",
   assistantAvatarSrc,
+  initialSessionId,
 }: ChatbotPanelProps) {
   const { character, characterId } = useCharacter();
   // Use Context avatar if prop is not provided, otherwise use prop (for backward compatibility)
@@ -1087,6 +1093,13 @@ export function ChatbotPanel({
 
     fetchSessions();
   }, [fullPage]);
+
+  // Load initial session from URL (e.g. /protected/[id]) when provided
+  useEffect(() => {
+    if (!fullPage || !initialSessionId) return;
+    handleLoadSessionMessages(initialSessionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount when initialSessionId is set
+  }, [fullPage, initialSessionId]);
 
   // Fetch available tools for display
   useEffect(() => {

@@ -13,7 +13,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Acontext_Agent_Chatbot_Playgroud",
+  title: "Acontext Agent Chatbot Playground",
   description: "Acontext-aware autonomous chatbot playground for monitoring and analysis",
 };
 
