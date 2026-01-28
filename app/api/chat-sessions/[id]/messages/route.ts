@@ -42,7 +42,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
     // Verify the session belongs to the authenticated user and check if it has a disk
     const { data: sessionData, error: sessionError } = await supabase
       .from("chat_sessions")
-      .select("id, acontext_disk_id")
+      .select("id, acontext_disk_id, character_id")
       .eq("id", id) // id is now acontext_session_id
       .eq("user_id", user.id)
       .maybeSingle();
@@ -81,6 +81,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
     // Load messages from Acontext (with automatic context editing strategies applied)
     const messages = await loadMessages(id);
 
+    const withToolCalls = messages.filter((m) => m.toolCalls && m.toolCalls.length > 0);
+    console.log("[ToolCallsDebug] GET /api/chat-sessions/[id]/messages: returning messages", {
+      sessionId: id,
+      total: messages.length,
+      withToolCallsCount: withToolCalls.length,
+      toolCallsPerMsg: messages.map((m, i) => ({ i, role: m.role, n: m.toolCalls?.length ?? 0 })),
+    });
+
     // Get current token counts for the session (for UI display)
     let tokenCounts: { total_tokens: number } | undefined;
     const counts = await getAcontextTokenCounts(id);
@@ -92,6 +100,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       messages, 
       tokenCounts,
       acontextDiskId: currentDiskId, // Include diskId in response so frontend can update
+      characterId: sessionData?.character_id ?? undefined, // Return locked characterId
     });
   } catch (error) {
     return NextResponse.json(formatErrorResponse(error, false), {

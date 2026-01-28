@@ -331,4 +331,35 @@
   .markdown-content .hljs {
     @apply bg-muted;
   }
+
+  /* Chat bubble: compact markdown (tighter spacing, minimal line-break gaps) */
+  .chat-message-body .markdown-content {
+    @apply leading-snug;
+  }
+  .chat-message-body .markdown-content p {
+    @apply my-0.5;
+  }
+  .chat-message-body .markdown-content ul,
+  .chat-message-body .markdown-content ol {
+    @apply my-0.5 ml-3 space-y-0;
+  }
+  .chat-message-body .markdown-content li {
+    @apply py-0;
+  }
+  .chat-message-body .markdown-content h1,
+  .chat-message-body .markdown-content h2,
+  .chat-message-body .markdown-content h3,
+  .chat-message-body .markdown-content h4,
+  .chat-message-body .markdown-content h5,
+  .chat-message-body .markdown-content h6 {
+    @apply mt-1 mb-0.5;
+  }
+  .chat-message-body .markdown-content blockquote {
+    @apply my-0.5;
+  }
+  .chat-message-body .markdown-content pre,
+  .chat-message-body .markdown-content img,
+  .chat-message-body .markdown-content table {
+    @apply my-1;
+  }
 }

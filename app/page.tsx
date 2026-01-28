@@ -10,7 +10,6 @@ import { ParallaxCharacter } from "@/components/parallax-character";
 import { InteractiveDemoGallery } from "@/components/interactive-demo-gallery";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { CharacterSwitcher } from "@/components/character-switcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { hasEnvVars } from "@/lib/utils";
@@ -68,9 +67,6 @@ function CharacterGrid() {
 
 export default function Home() {
   const { character } = useCharacter();
-  const [currentAvatarSrc, setCurrentAvatarSrc] = useState(character.avatarPath);
-  const [prevAvatarSrc, setPrevAvatarSrc] = useState<string | null>(null);
-  const [showNewAvatar, setShowNewAvatar] = useState(false);
   const [showMoreCharacterInfo, setShowMoreCharacterInfo] = useState(false);
   const [isCharacterCardHovered, setIsCharacterCardHovered] = useState(false);
   const [isSmScreen, setIsSmScreen] = useState(false);
@@ -83,29 +79,6 @@ export default function Home() {
   const bestForRemaining = character.bestFor?.slice(2) ?? [];
   const hasMoreDetails =
     !!character.description || bestForRemaining.length > 0 || (character.prompts?.length ?? 0) > 0;
-
-  // Handle character switching animation for nav avatar
-  useEffect(() => {
-    if (character.avatarPath !== currentAvatarSrc) {
-      // Save old avatar
-      setPrevAvatarSrc(currentAvatarSrc);
-      // Update to new avatar, initially transparent
-      setCurrentAvatarSrc(character.avatarPath);
-      setShowNewAvatar(false);
-      // Use double requestAnimationFrame to ensure DOM update before triggering animation
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setShowNewAvatar(true);
-        });
-      });
-      // Clean up after animation completes
-      const timer = setTimeout(() => {
-        setPrevAvatarSrc(null);
-        setShowNewAvatar(false);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [character.avatarPath, currentAvatarSrc]);
 
   // Reset details toggle when switching character
   useEffect(() => {
@@ -157,7 +130,6 @@ export default function Home() {
     };
   }, [circleStart.x, circleStart.y, dragStart.x, dragStart.y, isDragging]);
 
-  const hasPrevAvatar = prevAvatarSrc !== null;
   const avatarObjectClass = "object-cover object-[center_5%]";
   return (
     <main className="relative min-h-screen bg-background text-foreground dark:bg-[#0b0b0f] dark:text-neutral-50">
@@ -170,55 +142,16 @@ export default function Home() {
         <nav className="relative border-b bg-card/50 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/60">
           <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
             <div className="flex items-center gap-3">
-              <Link
-                href="/"
-                className="flex items-center gap-2"
-              >
-                <div className="relative h-10 w-10 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 overflow-hidden">
-                  {/* Old avatar - fade out */}
-                  {hasPrevAvatar && (
-                  <Image
-                    key={`prev-${prevAvatarSrc}`}
-                    src={prevAvatarSrc!}
-                    alt={character.name}
-                    width={40}
-                    height={40}
-                    className={`absolute inset-0 h-10 w-10 ${avatarObjectClass} transition-all duration-400 ease-in-out`}
-                    style={{
-                      opacity: 0,
-                      transform: "scale(0.95)",
-                    }}
-                    priority
-                  />
-                  )}
-                  {/* New avatar - fade in */}
-                  <Image
-                    key={currentAvatarSrc}
-                    src={currentAvatarSrc}
-                    alt={character.name}
-                    width={40}
-                    height={40}
-                    className={`h-10 w-10 ${avatarObjectClass} transition-all duration-400 ease-in-out`}
-                    style={{
-                      opacity: hasPrevAvatar ? (showNewAvatar ? 1 : 0) : 1,
-                      transform: hasPrevAvatar ? (showNewAvatar ? "scale(1)" : "scale(0.95)") : "scale(1)",
-                    }}
-                    priority
-                  />
-                </div>
-                <span className="text-sm sm:text-lg font-semibold tracking-tight">
-                  Acontext PPT Girl
+              <Link href="/" className="flex items-center gap-2">
+                <span className="text-base sm:text-xl font-semibold tracking-tight">
+                  PPT Partner
                 </span>
               </Link>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden sm:inline-block">
-                Acontext-based AI slide generator for beautiful PPT-style decks
-              </span>
-              <AuthButton />
-              <CharacterSwitcher />
               <ThemeSwitcher />
+              <AuthButton />
             </div>
           </div>
         </nav>
@@ -232,7 +165,7 @@ export default function Home() {
                 {/* Tag */}
                 <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
                   <Badge variant="secondary" className="text-sm sm:text-base">
-                    Acontext PPT Girl · AI Slide Generator
+                    PPT Partner · AI Slide Generator
                   </Badge>
                 </div>
 
@@ -315,7 +248,7 @@ export default function Home() {
                     aria-label="Drag character avatar"
                   >
                     <Image
-                      src={currentAvatarSrc}
+                      src={character.avatarPath}
                       alt={character.name}
                       width={72}
                       height={72}
@@ -451,7 +384,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-semibold">Paste Your Content</h3>
                   <p className="text-muted-foreground">
-                    Share your text, notes, or topic. PPT Girl analyzes and proposes a slide-by-slide outline.
+                    Share your text, notes, or topic. PPT Partner analyzes and proposes a slide-by-slide outline.
                   </p>
                 </div>
                 <div className="text-center space-y-4">
@@ -469,7 +402,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-semibold">Get Your Slides</h3>
                   <p className="text-muted-foreground">
-                    PPT Girl generates beautiful 16:9 slide images with consistent style, ready for your presentation.
+                    PPT Partner generates beautiful 16:9 slide images with consistent style, ready for your presentation.
                   </p>
                 </div>
               </div>
@@ -503,7 +436,7 @@ export default function Home() {
                   <CardContent className="pt-6">
                     <h3 className="text-lg font-semibold mb-2">🧠 Persistent Memory</h3>
                     <p className="text-sm text-muted-foreground">
-                      PPT Girl remembers your previous slides, preferences, and presentation structure across sessions.
+                      PPT Partner remembers your previous slides, preferences, and presentation structure across sessions.
                     </p>
                   </CardContent>
                 </Card>
@@ -519,7 +452,7 @@ export default function Home() {
                   <CardContent className="pt-6">
                     <h3 className="text-lg font-semibold mb-2">📈 Learning Over Time</h3>
                     <p className="text-sm text-muted-foreground">
-                      The more presentations you create, the better PPT Girl understands your style and preferences.
+                      The more presentations you create, the better PPT Partner understands your style and preferences.
                     </p>
                   </CardContent>
                 </Card>
@@ -550,7 +483,7 @@ export default function Home() {
           <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                © 2026 Acontext PPT Girl Slide Generator
+                © 2026 PPT Partner Slide Generator
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 <Link

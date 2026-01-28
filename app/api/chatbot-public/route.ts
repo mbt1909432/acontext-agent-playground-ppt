@@ -59,6 +59,14 @@ Constraints:
 - You CAN use Acontext tools like todo and disk tools as needed.
 - Treat this as a temporary workspace scoped to this browser only.
 
+Output formatting rules (critical for the UI):
+- When you provide an image to the user, ALWAYS include BOTH:
+  1) A clickable Markdown link: [Open image](URL)
+  2) A renderable Markdown image: ![Slide image](URL)
+- NEVER put image URLs inside code blocks.
+- If there are multiple images, list them and include a Markdown image for each.
+- If only a long presigned URL exists, still wrap it using Markdown image syntax so the UI can render it.
+
 Your primary goals:
 1. Help the user explore Acontext capabilities safely in demo mode.
 2. Use tools thoughtfully, but avoid actions that assume a persistent, authenticated identity.`;
@@ -453,10 +461,42 @@ export async function POST(request: NextRequest) {
                 sendEvent("tool_call_complete", {
                   toolCall: event.toolCall,
                 });
+                // Persist tool result as an OpenAI "tool" message for round-trip replay
+                if (acontextSessionId) {
+                  const content =
+                    typeof event.toolCall.result === "string"
+                      ? event.toolCall.result
+                      : event.toolCall.result != null
+                      ? JSON.stringify(event.toolCall.result)
+                      : event.toolCall.error
+                      ? `ERROR: ${event.toolCall.error}`
+                      : "Done";
+                  await storeMessageInAcontext(
+                    acontextSessionId,
+                    "tool",
+                    content,
+                    "openai",
+                    undefined,
+                    event.toolCall.id
+                  );
+                }
               } else if (event.type === "tool_call_error") {
                 sendEvent("tool_call_error", {
                   toolCall: event.toolCall,
                 });
+                // Persist tool error as a "tool" message for round-trip replay
+                if (acontextSessionId) {
+                  const content =
+                    event.toolCall.error ? `ERROR: ${event.toolCall.error}` : "ERROR";
+                  await storeMessageInAcontext(
+                    acontextSessionId,
+                    "tool",
+                    content,
+                    "openai",
+                    undefined,
+                    event.toolCall.id
+                  );
+                }
               } else if (event.type === "final_message") {
                 if (acontextSessionId) {
                   await storeMessageInAcontext(
@@ -561,6 +601,28 @@ export async function POST(request: NextRequest) {
         "openai",
         completion.toolCalls ?? undefined
       );
+
+      // Also persist tool results as OpenAI "tool" messages so they can be replayed after refresh
+      if (completion.toolCalls && completion.toolCalls.length > 0) {
+        for (const tc of completion.toolCalls) {
+          const content =
+            typeof tc.result === "string"
+              ? tc.result
+              : tc.result != null
+              ? JSON.stringify(tc.result)
+              : tc.error
+              ? `ERROR: ${tc.error}`
+              : "Done";
+          await storeMessageInAcontext(
+            acontextSessionId,
+            "tool",
+            content,
+            "openai",
+            undefined,
+            tc.id
+          );
+        }
+      }
     }
 
     let tokenCounts: { total_tokens: number } | undefined;

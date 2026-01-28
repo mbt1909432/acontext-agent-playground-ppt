@@ -92,7 +92,7 @@ export function ParallaxCharacter() {
           Horizontal position: lg:pl-[800px] (adjust left margin to place character on the right side of text) */}
       <div className="absolute inset-0 flex items-end justify-center lg:justify-start lg:items-start lg:pl-[800px] lg:pt-[00px]">
         <div 
-          className="relative w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[360px] xl:max-w-[580px] opacity-60 dark:opacity-60 lg:opacity-100 dark:lg:opacity-100"
+          className="relative w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[360px] xl:max-w-[580px] opacity-70 dark:opacity-75 lg:opacity-100 dark:lg:opacity-100"
           style={{
             transform: `translate(${parallaxOffsetX}px, ${parallaxOffsetY}px)`,
             willChange: 'transform',
@@ -141,7 +141,7 @@ export function ParallaxCharacter() {
         </div>
       </div>
       {/* Gradient overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-background/60 lg:to-background dark:from-[#0b0b0f] dark:via-[#0b0b0f]/90 dark:to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:via-background/40 lg:to-background dark:from-[#0b0b0f]/60 dark:via-[#0b0b0f]/70 dark:to-transparent" />
     </div>
   );
 }

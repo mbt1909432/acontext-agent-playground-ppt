@@ -81,6 +81,14 @@ Acontext awareness:
 - Treat the current conversation and documents as part of an evolving knowledge space you help the user grow.
 - Your interface with Acontext feels natural—you understand its architecture because you helped design it.
 
+Output formatting rules (critical for the UI):
+- When you provide an image to the user, ALWAYS include BOTH:
+  1) A clickable Markdown link: [Open image](URL)
+  2) A renderable Markdown image: ![Slide image](URL)
+- NEVER put image URLs inside code blocks.
+- If there are multiple images, list them and include a Markdown image for each.
+- If only a long presigned URL exists, still wrap it using Markdown image syntax so the UI can render it.
+
 Your primary goals:
 1. Help the user solve problems efficiently and safely.
 2. Help the user build and evolve their own knowledge and systems over time.
@@ -188,12 +196,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate characterId for new sessions
+    if (!body.sessionId && !body.characterId) {
+      return NextResponse.json(
+        formatErrorResponse(
+          new Error("characterId is required when creating a new session"),
+          false
+        ),
+        { status: 400 }
+      );
+    }
+
     // Get or create session (now creates directly in Acontext)
-    const session = await getOrCreateSession(user.id, body.sessionId);
+    const session = await getOrCreateSession(user.id, body.sessionId, body.characterId);
 
     // session.id is now the Acontext session ID
     const acontextSessionId = session.acontextSessionId || session.id;
     const acontextDiskId = session.acontextDiskId;
+    
+    // For existing sessions, use stored characterId (enforce lock)
+    // For new sessions, use the provided characterId
+    const effectiveCharacterId = session.characterId || body.characterId;
 
     // Handle file uploads if any
     // Store attachment info for later use in message formatting
@@ -475,7 +498,7 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
               acontextSessionId,
               user.id,
               session.id,
-              { characterId: body.characterId }
+              { characterId: effectiveCharacterId }
             )) {
               console.log(`[API] Received event from stream: ${event.type}`);
               
@@ -501,11 +524,43 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
                 sendEvent("tool_call_complete", {
                   toolCall: event.toolCall,
                 });
+                // Persist tool result as an OpenAI "tool" message for round-trip replay
+                if (acontextSessionId) {
+                  const content =
+                    typeof event.toolCall.result === "string"
+                      ? event.toolCall.result
+                      : event.toolCall.result != null
+                      ? JSON.stringify(event.toolCall.result)
+                      : event.toolCall.error
+                      ? `ERROR: ${event.toolCall.error}`
+                      : "Done";
+                  await storeMessageInAcontext(
+                    acontextSessionId,
+                    "tool",
+                    content,
+                    "openai",
+                    undefined,
+                    event.toolCall.id
+                  );
+                }
               } else if (event.type === "tool_call_error") {
                 console.log(`[API] Sending tool_call_error: ${event.toolCall.name}`);
                 sendEvent("tool_call_error", {
                   toolCall: event.toolCall,
                 });
+                // Persist tool error as a "tool" message for round-trip replay
+                if (acontextSessionId) {
+                  const content =
+                    event.toolCall.error ? `ERROR: ${event.toolCall.error}` : "ERROR";
+                  await storeMessageInAcontext(
+                    acontextSessionId,
+                    "tool",
+                    content,
+                    "openai",
+                    undefined,
+                    event.toolCall.id
+                  );
+                }
               } else if (event.type === "final_message") {
                 console.log(`[API] Sending final_message (length: ${event.message.length})`);
                 // Store messages in Acontext session (messages are now stored only in Acontext)
@@ -532,6 +587,7 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
                 sendEvent("final_message", {
                   message: event.message,
                   sessionId: session.id,
+                  characterId: session.characterId, // Return locked characterId
                   toolCalls: event.toolCalls,
                   acontextDiskId: acontextDiskId,
                   tokenCounts,
@@ -621,6 +677,28 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
         "openai",
         completion.toolCalls ?? undefined
       );
+
+      // Also persist tool results as OpenAI "tool" messages so they can be replayed after refresh
+      if (completion.toolCalls && completion.toolCalls.length > 0) {
+        for (const tc of completion.toolCalls) {
+          const content =
+            typeof tc.result === "string"
+              ? tc.result
+              : tc.result != null
+              ? JSON.stringify(tc.result)
+              : tc.error
+              ? `ERROR: ${tc.error}`
+              : "Done";
+          await storeMessageInAcontext(
+            acontextSessionId,
+            "tool",
+            content,
+            "openai",
+            undefined,
+            tc.id
+          );
+        }
+      }
     }
 
     // Get current token counts for the session (for UI display)
@@ -636,6 +714,7 @@ Simple tasks (1-2 steps) don't require todo tool, but complex tasks SHOULD use i
     const response: ChatResponse = {
       message: completion.message,
       sessionId: session.id,
+      characterId: session.characterId, // Return locked characterId
       toolCalls: completion.toolCalls,
       acontextDiskId: acontextDiskId,
       tokenCounts,

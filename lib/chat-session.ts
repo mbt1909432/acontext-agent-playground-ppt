@@ -16,10 +16,16 @@ import { getAcontextClient } from "@/lib/acontext-client";
  */
 export async function createChatSession(
   userId: string,
-  title?: string
+  title?: string,
+  characterId?: string
 ): Promise<ChatSession> {
+  // CharacterId is required for new sessions
+  if (!characterId) {
+    throw new Error("characterId is required when creating a new session");
+  }
+
   // Create session directly in Acontext
-  const result = await createAcontextSessionDirectly(userId, title);
+  const result = await createAcontextSessionDirectly(userId, title, characterId);
   
   if (!result) {
     throw new Error("Failed to create Acontext session");
@@ -43,6 +49,7 @@ export async function createChatSession(
       updatedAt: new Date(),
       title: title || "New Chat",
       acontextSessionId: result.acontextSessionId,
+      characterId,
     };
   }
 
@@ -51,9 +58,10 @@ export async function createChatSession(
     userId: data.user_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-      title: data.title,
-      acontextSessionId: data.acontext_session_id,
-      acontextDiskId: data.acontext_disk_id,
+    title: data.title,
+    acontextSessionId: data.acontext_session_id,
+    acontextDiskId: data.acontext_disk_id,
+    characterId: data.character_id,
   };
 }
 
@@ -153,7 +161,8 @@ export async function compressSessionContext(sessionId: string) {
  */
 export async function getOrCreateSession(
   userId: string,
-  sessionId?: string
+  sessionId?: string,
+  characterId?: string
 ): Promise<ChatSession> {
   if (sessionId) {
     // sessionId is now the Acontext session ID
@@ -201,6 +210,7 @@ export async function getOrCreateSession(
         title: data.title,
         acontextSessionId: data.acontext_session_id,
         acontextDiskId: diskId,
+        characterId: data.character_id, // Return stored characterId (locked for this session)
       };
     }
     
@@ -214,9 +224,15 @@ export async function getOrCreateSession(
       updatedAt: new Date(),
       title: "Chat",
       acontextSessionId: sessionId,
+      // characterId is undefined for old sessions
     };
   }
 
-  return await createChatSession(userId);
+  // Creating new session - characterId is required
+  if (!characterId) {
+    throw new Error("characterId is required when creating a new session");
+  }
+
+  return await createChatSession(userId, undefined, characterId);
 }
 

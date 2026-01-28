@@ -29,6 +29,11 @@ export interface ChatSession {
   title?: string;
   acontextSessionId?: string;
   acontextDiskId?: string;
+  /**
+   * Character ID locked for this session (e.g., "character1", "character2")
+   * If undefined/null, the session uses global character selection (backward compatibility)
+   */
+  characterId?: string;
 }
 
 export interface LLMConfig {
@@ -102,6 +107,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   message: string;
   sessionId: string;
+  characterId?: string; // Locked character ID for this session
   toolCalls?: ToolInvocation[];
   acontextDiskId?: string;
   /**

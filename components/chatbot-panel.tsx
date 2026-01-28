@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, LayoutList, Images } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
-import { useCharacter } from "@/contexts/character-context";
+import { useCharacter, type CharacterId } from "@/contexts/character-context";
 import { useBreakpoints } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -574,12 +575,233 @@ function formatStepContent(step: unknown): React.ReactNode {
   return highlightKeywords(decoded);
 }
 
+type ImageGenerateResultSummary = {
+  artifactPath?: string;
+  publicUrl?: string;
+  message?: string;
+  thumbnailPath?: string;
+};
+
+function getToolDebugModeFromLocation(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function useToolDebugMode(): [boolean, (next: boolean) => void] {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromQuery = getToolDebugModeFromLocation();
+    if (fromQuery) {
+      setEnabled(true);
+      return;
+    }
+    try {
+      const v = window.localStorage.getItem("acontext_tool_debug");
+      setEnabled(v === "true");
+    } catch {
+      // Ignore storage access errors
+    }
+  }, []);
+
+  const setAndPersist = (next: boolean) => {
+    setEnabled(next);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("acontext_tool_debug", next ? "true" : "false");
+    } catch {
+      // Ignore storage access errors
+    }
+  };
+
+  return [enabled, setAndPersist];
+}
+
+function safeParseJsonObject(input: unknown): unknown {
+  if (typeof input === "string") {
+    try {
+      return JSON.parse(input);
+    } catch {
+      return input;
+    }
+  }
+  return input;
+}
+
+function getImageGenerateSummary(result: unknown): ImageGenerateResultSummary | null {
+  const parsed = safeParseJsonObject(result);
+  if (!parsed || typeof parsed !== "object") return null;
+  const obj = parsed as Record<string, unknown>;
+  const artifactPath = typeof obj.artifactPath === "string" ? obj.artifactPath : undefined;
+  const publicUrl = typeof obj.publicUrl === "string" ? obj.publicUrl : undefined;
+  const message = typeof obj.message === "string" ? obj.message : undefined;
+  const thumbnailPath = typeof obj.thumbnailPath === "string" ? obj.thumbnailPath : undefined;
+  if (!artifactPath && !publicUrl && !message && !thumbnailPath) return null;
+  return { artifactPath, publicUrl, message, thumbnailPath };
+}
+
+function clipText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max)}…`;
+}
+
+function getToolLabel(toolName: string): string {
+  switch (toolName) {
+    case "image_generate":
+      return "Generate slide image";
+    case "browser_use_task":
+      return "Browser automation";
+    default:
+      if (toolName.startsWith("acontext_disk_")) return "File operation";
+      if (toolName.startsWith("todo_")) return "Task management";
+      return `Tool: ${toolName}`;
+  }
+}
+
+function extractKeyParameters(toolName: string, arguments_: Record<string, unknown>): Array<{ label: string; value: React.ReactNode }> {
+  const fields: Array<{ label: string; value: React.ReactNode }> = [];
+
+  if (toolName === "image_generate") {
+    if (typeof arguments_.prompt === "string") {
+      fields.push({ label: "Prompt", value: <ExpandableText text={arguments_.prompt} max={200} /> });
+    }
+    if (typeof arguments_.size === "string") {
+      fields.push({ label: "Size", value: arguments_.size });
+    }
+    if (typeof arguments_.output_dir === "string") {
+      fields.push({ label: "Output", value: <span className="font-mono">{arguments_.output_dir}</span> });
+    }
+  } else if (toolName === "browser_use_task") {
+    if (typeof arguments_.task === "string") {
+      fields.push({ label: "Task", value: <ExpandableText text={arguments_.task} max={200} /> });
+    }
+  } else if (toolName.startsWith("todo_")) {
+    if (typeof arguments_.description === "string") {
+      fields.push({ label: "Description", value: <ExpandableText text={arguments_.description} max={200} /> });
+    }
+    if (typeof arguments_.title === "string") {
+      fields.push({ label: "Title", value: arguments_.title });
+    }
+  } else if (toolName.startsWith("acontext_disk_")) {
+    if (typeof arguments_.filePath === "string") {
+      fields.push({ label: "Path", value: <span className="font-mono">{arguments_.filePath}</span> });
+    }
+    if (typeof arguments_.path === "string") {
+      fields.push({ label: "Path", value: <span className="font-mono">{arguments_.path}</span> });
+    }
+    if (typeof arguments_.filename === "string") {
+      fields.push({ label: "Filename", value: <span className="font-mono">{arguments_.filename}</span> });
+    }
+  }
+
+  // For unknown tools, show first few non-empty string/number fields
+  if (fields.length === 0) {
+    const entries = Object.entries(arguments_ || {});
+    for (const [key, val] of entries.slice(0, 3)) {
+      if (typeof val === "string" && val.length > 0) {
+        fields.push({ label: key, value: <ExpandableText text={val} max={150} /> });
+      } else if (typeof val === "number" || typeof val === "boolean") {
+        fields.push({ label: key, value: String(val) });
+      }
+    }
+  }
+
+  return fields;
+}
+
+function StatusBadge({ status }: { status: "running" | "done" | "failed" }) {
+  if (status === "failed") {
+    return (
+      <span className="text-[11px] font-medium text-destructive px-1.5 py-0.5 rounded bg-destructive/10">
+        Failed
+      </span>
+    );
+  }
+  if (status === "done") {
+    return (
+      <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded bg-emerald-500/10">
+        Done
+      </span>
+    );
+  }
+  return (
+    <span className="text-[11px] font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted/40">
+      Running…
+    </span>
+  );
+}
+
+function FieldRow({
+  label,
+  value,
+  actions,
+}: {
+  label: string;
+  value: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+      <div className="text-[11px] text-foreground break-all">{value}</div>
+      {actions}
+    </div>
+  );
+}
+
+function ExpandableText({ text, max = 220 }: { text: string; max?: number }) {
+  const [open, setOpen] = useState(false);
+  if (text.length <= max) return <span className="text-foreground">{text}</span>;
+  return (
+    <span className="text-foreground">
+      {open ? text : clipText(text, max)}{" "}
+      <button
+        type="button"
+        className="text-primary underline underline-offset-2"
+        onClick={() => setOpen(!open)}
+      >
+        {open ? "Show less" : "Show more"}
+      </button>
+    </span>
+  );
+}
+
+function CopyButton({ value, label = "Copy" }: { value: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="h-7 px-2 text-[11px]"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1200);
+        } catch {
+          // Ignore clipboard failures (permissions, unsupported browsers)
+        }
+      }}
+    >
+      {copied ? "Copied" : label}
+    </Button>
+  );
+}
+
 /**
  * Tool Calls Display Component - Shows tool invocation details
  * Supports streaming display for Browser Use tasks
  */
 function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolInvocation[]; isFullPage?: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const [debugMode, setDebugMode] = useToolDebugMode();
   
   // Check if any tool call is a Browser Use task
   const browserUseCalls = toolCalls.filter(
@@ -606,37 +828,141 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
 
         {expanded && (
           <div className="space-y-3 pt-1 animate-fade-in">
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                onClick={() => setDebugMode(!debugMode)}
+              >
+                Developer mode: {debugMode ? "On" : "Off"}
+              </button>
+            </div>
             {toolCalls.map((toolCall, idx) => {
+              const status: "running" | "done" | "failed" =
+                toolCall.error ? "failed" : toolCall.result != null ? "done" : "running";
+              const label = getToolLabel(toolCall.name);
+
               return (
                 <Card key={toolCall.id || idx} className="rounded-lg border border-border/80 bg-card shadow-sm">
                   <CardContent className="p-4 space-y-2.5">
                     {/* Tool Name */}
                     <div className="flex items-center gap-2 border-l-2 border-primary pl-2.5">
-                      <span className="text-sm font-mono font-medium text-primary">
-                        {toolCall.name}
+                      <span className="text-sm font-medium text-foreground">
+                        {label}
                       </span>
-                      {toolCall.error && (
-                        <span className="ml-auto text-xs font-medium text-destructive px-1.5 py-0.5 rounded bg-destructive/10">
-                          Error
-                        </span>
+                      <div className="ml-auto">
+                        <StatusBadge status={status} />
+                      </div>
+                    </div>
+
+                    {/* Parameters (user-friendly, no JSON) */}
+                    {(() => {
+                      const keyParams = extractKeyParameters(toolCall.name, toolCall.arguments || {});
+                      if (keyParams.length === 0) return null;
+                      return (
+                        <div className="rounded-lg border border-border/80 bg-muted/20 p-2.5">
+                          <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                            Parameters:
+                          </div>
+                          <div className="space-y-1.5">
+                            {keyParams.map((param, pIdx) => (
+                              <FieldRow key={pIdx} label={param.label} value={param.value} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* User-friendly Result (no JSON) */}
+                    <div className="rounded-lg border border-border/80 bg-muted/20 p-2.5">
+                      <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                        Result:
+                      </div>
+
+                      {toolCall.error ? (
+                        <div className="text-xs text-destructive">
+                          <ExpandableText text={toolCall.error} max={260} />
+                        </div>
+                      ) : toolCall.name === "image_generate" && toolCall.result != null ? (
+                        (() => {
+                          const summary = getImageGenerateSummary(toolCall.result);
+                          return (
+                            <div className="space-y-2">
+                              <div className="text-xs text-foreground">
+                                {summary?.message ? <ExpandableText text={summary.message} /> : "Image generated."}
+                              </div>
+                              {summary?.artifactPath && (
+                                <FieldRow
+                                  label="File"
+                                  value={<span className="font-mono">{summary.artifactPath}</span>}
+                                  actions={<CopyButton value={summary.artifactPath} label="Copy path" />}
+                                />
+                              )}
+                              {summary?.thumbnailPath && (
+                                <FieldRow
+                                  label="Thumbnail"
+                                  value={<span className="font-mono">{summary.thumbnailPath}</span>}
+                                  actions={<CopyButton value={summary.thumbnailPath} label="Copy path" />}
+                                />
+                              )}
+                              {summary?.publicUrl && (
+                                <FieldRow
+                                  label="Link"
+                                  value={
+                                    <a
+                                      href={summary.publicUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-primary underline underline-offset-2"
+                                    >
+                                      Open
+                                    </a>
+                                  }
+                                  actions={<CopyButton value={summary.publicUrl} label="Copy link" />}
+                                />
+                              )}
+                              {!summary && (
+                                <div className="text-xs text-muted-foreground">
+                                  Completed successfully.
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : typeof toolCall.result === "string" ? (
+                        <div className="text-xs text-foreground">
+                          <ExpandableText text={toolCall.result} max={320} />
+                        </div>
+                      ) : toolCall.result != null ? (
+                        <div className="text-xs text-muted-foreground">
+                          Completed successfully.
+                        </div>
+                      ) : toolCall.steps && toolCall.steps.length > 0 ? (
+                        <div className="text-xs text-foreground">
+                          Running… <span className="text-muted-foreground">({toolCall.steps.length} updates)</span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-foreground">Running…</div>
                       )}
                     </div>
 
-                    {/* Tool Arguments */}
-                    <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
-                      <div className="mb-1.5 text-xs font-medium text-muted-foreground">
-                        Parameters:
-                      </div>
-                      <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
-                        {JSON.stringify(toolCall.arguments, null, 2)}
-                      </pre>
-                    </div>
+                    {/* Parameters (collapsed by default) */}
+                    {debugMode && (
+                      <details className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                        <summary className="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                          Parameters (debug)
+                        </summary>
+                        <pre className="mt-2 text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
+                          {JSON.stringify(toolCall.arguments, null, 2)}
+                        </pre>
+                      </details>
+                    )}
 
                     {/* Streaming Steps History (for Browser Use tasks) */}
-                    {toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
+                    {debugMode && toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
                       <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
                         <div className="mb-1.5 text-xs font-medium text-muted-foreground">
-                          Steps ({toolCall.steps.length}):
+                          Steps (debug) ({toolCall.steps.length}):
                         </div>
                         <div className="space-y-2 max-h-60 overflow-y-auto">
                           {toolCall.steps.map((step, stepIdx) => (
@@ -656,10 +982,10 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                       </div>
                     )}
                     {/* Fallback: Show single step if steps array is not available */}
-                    {(!toolCall.steps || toolCall.steps.length === 0) && toolCall.step !== undefined && toolCall.result === undefined && !toolCall.error && (
+                    {debugMode && (!toolCall.steps || toolCall.steps.length === 0) && toolCall.step !== undefined && toolCall.result === undefined && !toolCall.error && (
                       <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
                         <div className="mb-1 text-xs text-muted-foreground">
-                          Step:
+                          Step (debug):
                         </div>
                         <pre className="text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto">
                           {formatStepContent(toolCall.step)}
@@ -667,31 +993,28 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                       </div>
                     )}
 
-                    {/* Tool Result or Error */}
-                    {toolCall.error ? (
-                      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-2">
-                        <div className="mb-1 text-xs text-destructive">
-                          Error:
-                        </div>
-                        <div className="text-xs font-mono text-destructive">{toolCall.error}</div>
-                      </div>
-                    ) : toolCall.result !== undefined && toolCall.result !== null ? (
-                      <div className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
-                        <div className="mb-1.5 text-xs font-medium text-muted-foreground">
-                          Result:
-                        </div>
-                        <pre className="text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
-                          {formatStepContent(toolCall.result)}
+                    {/* Raw output (collapsed by default) */}
+                    {debugMode && (toolCall.result !== undefined || toolCall.error || (toolCall.steps && toolCall.steps.length > 0)) && (
+                      <details className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                        <summary className="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                          Raw (debug)
+                        </summary>
+                        <pre className="mt-2 text-xs font-mono overflow-x-auto break-words whitespace-pre-wrap">
+                          {JSON.stringify(
+                            {
+                              id: toolCall.id,
+                              name: toolCall.name,
+                              arguments: toolCall.arguments,
+                              result: toolCall.result,
+                              error: toolCall.error,
+                              steps: toolCall.steps,
+                            },
+                            null,
+                            2
+                          )}
                         </pre>
-                      </div>
-                    ) : toolCall.result === null ? (
-                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-2">
-                        <div className="mb-1 text-xs text-yellow-600 dark:text-yellow-400">
-                          Result:
-                        </div>
-                        <div className="text-xs font-mono italic text-yellow-700 dark:text-yellow-300">null (No result returned)</div>
-                      </div>
-                    ) : null}
+                      </details>
+                    )}
 
                     {/* Invocation Time */}
                     {toolCall.invokedAt && (
@@ -728,16 +1051,104 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
 
       {expanded && (
         <div className="space-y-2 pt-1 text-xs animate-fade-in">
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              onClick={() => setDebugMode(!debugMode)}
+            >
+              Developer mode: {debugMode ? "On" : "Off"}
+            </button>
+          </div>
           {toolCalls.map((toolCall, idx) => {
+            const status: "running" | "done" | "failed" =
+              toolCall.error ? "failed" : toolCall.result != null ? "done" : "running";
+            const label = getToolLabel(toolCall.name);
+
             return (
-              <div key={toolCall.id || idx} className="rounded-lg border border-border/80 bg-card p-2.5 space-y-1.5 shadow-sm">
-                <div className="font-semibold text-primary border-l-2 border-primary pl-2">{toolCall.name}</div>
-                <div>
-                  <div className="text-muted-foreground font-medium">Parameters:</div>
-                  <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
-                    {JSON.stringify(toolCall.arguments, null, 2)}
-                  </pre>
+                <div key={toolCall.id || idx} className="rounded-lg border border-border/80 bg-card p-2.5 space-y-2 shadow-sm">
+                <div className="flex items-center gap-2 border-l-2 border-primary pl-2">
+                  <div className="font-semibold text-foreground">{label}</div>
+                  <div className="ml-auto">
+                    <StatusBadge status={status} />
+                  </div>
                 </div>
+
+                {/* Parameters (user-friendly, no JSON) */}
+                {(() => {
+                  const keyParams = extractKeyParameters(toolCall.name, toolCall.arguments || {});
+                  if (keyParams.length === 0) return null;
+                  return (
+                    <div className="rounded-md border border-border/70 bg-muted/20 p-2">
+                      <div className="text-[11px] font-medium text-muted-foreground mb-1">Parameters:</div>
+                      <div className="space-y-1">
+                        {keyParams.map((param, pIdx) => (
+                          <div key={pIdx} className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-medium text-muted-foreground">{param.label}</span>
+                            <div className="text-[10px] text-foreground break-all">{param.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Summary */}
+                <div className="rounded-md border border-border/70 bg-muted/20 p-2">
+                  <div className="text-[11px] font-medium text-muted-foreground mb-1">Result:</div>
+                  {toolCall.error ? (
+                    <div className="text-[11px] text-destructive">
+                      <ExpandableText text={toolCall.error} max={240} />
+                    </div>
+                  ) : toolCall.name === "image_generate" && toolCall.result != null ? (
+                    (() => {
+                      const summary = getImageGenerateSummary(toolCall.result);
+                      return (
+                        <div className="space-y-1 text-[11px]">
+                          <div>{summary?.message ? <ExpandableText text={summary.message} max={240} /> : "Image generated."}</div>
+                          {summary?.artifactPath && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-muted-foreground">File</span>
+                              <span className="font-mono break-all">{summary.artifactPath}</span>
+                            </div>
+                          )}
+                          {summary?.publicUrl && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <a href={summary.publicUrl} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 break-all">
+                                Open
+                              </a>
+                            </div>
+                          )}
+                          {!summary && <div className="text-muted-foreground">Completed successfully.</div>}
+                        </div>
+                      );
+                    })()
+                  ) : typeof toolCall.result === "string" ? (
+                    <div className="text-[11px]">
+                      <ExpandableText text={toolCall.result} max={260} />
+                    </div>
+                  ) : toolCall.result != null ? (
+                    <div className="text-[11px] text-muted-foreground">Completed successfully.</div>
+                  ) : toolCall.steps && toolCall.steps.length > 0 ? (
+                    <div className="text-[11px]">
+                      Running… <span className="text-muted-foreground">({toolCall.steps.length} updates)</span>
+                    </div>
+                  ) : (
+                    <div className="text-[11px]">Running…</div>
+                  )}
+                </div>
+
+                {/* Parameters (collapsed) */}
+                {debugMode && (
+                  <details className="rounded-md border border-border/70 bg-muted/30 p-2">
+                    <summary className="cursor-pointer select-none text-[11px] font-medium text-muted-foreground">
+                      Parameters (debug)
+                    </summary>
+                    <pre className="mt-2 text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
+                      {JSON.stringify(toolCall.arguments, null, 2)}
+                    </pre>
+                  </details>
+                )}
                 {/* Streaming Steps History (for Browser Use tasks) */}
                 {toolCall.steps && toolCall.steps.length > 0 && toolCall.result === undefined && !toolCall.error && (
                   <div>
@@ -765,24 +1176,28 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                     </pre>
                   </div>
                 )}
-                {toolCall.error ? (
-                  <div className="rounded bg-destructive/10 px-1.5 text-destructive">
-                    <div className="text-muted-foreground font-medium">Error:</div>
-                    <div>{toolCall.error}</div>
-                  </div>
-                ) : toolCall.result !== undefined && toolCall.result !== null ? (
-                  <div>
-                    <div className="text-muted-foreground font-medium">Result:</div>
-                    <pre className="text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
-                      {formatStepContent(toolCall.result)}
+                {/* Raw (collapsed) */}
+                {debugMode && (toolCall.result !== undefined || toolCall.error || (toolCall.steps && toolCall.steps.length > 0)) && (
+                  <details className="rounded-md border border-border/70 bg-muted/30 p-2">
+                    <summary className="cursor-pointer select-none text-[11px] font-medium text-muted-foreground">
+                      Raw (debug)
+                    </summary>
+                    <pre className="mt-2 text-[10px] overflow-x-auto break-words whitespace-pre-wrap">
+                      {JSON.stringify(
+                        {
+                          id: toolCall.id,
+                          name: toolCall.name,
+                          arguments: toolCall.arguments,
+                          result: toolCall.result,
+                          error: toolCall.error,
+                          steps: toolCall.steps,
+                        },
+                        null,
+                        2
+                      )}
                     </pre>
-                  </div>
-                ) : toolCall.result === null ? (
-                  <div>
-                    <div className="text-muted-foreground font-medium">Result:</div>
-                    <div className="text-[10px] text-yellow-600 dark:text-yellow-400 italic">null (No result returned)</div>
-                  </div>
-                ) : null}
+                  </details>
+                )}
               </div>
             );
           })}
@@ -796,15 +1211,11 @@ export function ChatbotPanel({
   className,
   fullPage = false,
   systemPrompt,
-  assistantName = "PPT Girl",
+  assistantName = "PPT Partner",
   assistantAvatarSrc,
   initialSessionId,
 }: ChatbotPanelProps) {
-  const { character, characterId } = useCharacter();
-  // Use Context avatar if prop is not provided, otherwise use prop (for backward compatibility)
-  const avatarSrc = assistantAvatarSrc || character.chatbotAvatarPath;
-  // Use character's systemPrompt if prop is not provided, otherwise use prop
-  const effectiveSystemPrompt = systemPrompt || character.systemPrompt;
+  const { character, characterId, characters } = useCharacter();
   const [isOpen, setIsOpen] = useState(fullPage);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -850,9 +1261,23 @@ export function ChatbotPanel({
   }>>([]);
   const [tokenCounts, setTokenCounts] = useState<{ total_tokens: number } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
-  const [pingLoading, setPingLoading] = useState(false);
-  const [pingResponse, setPingResponse] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  // Character selection for new sessions
+  const [showCharacterSelectModal, setShowCharacterSelectModal] = useState(false);
+  const [selectedCharacterForNewSession, setSelectedCharacterForNewSession] = useState<CharacterId | null>(null);
+  const [sessionCharacterId, setSessionCharacterId] = useState<CharacterId | null>(null); // Locked character for current session
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null); // Track which session is being loaded
+  
+  // Get effective character: use sessionCharacterId if set, otherwise use global character
+  const effectiveCharacter = sessionCharacterId 
+    ? characters.find((c) => c.id === sessionCharacterId) || character
+    : character;
+  
+  // Use Context avatar if prop is not provided, otherwise use prop (for backward compatibility)
+  // Use effectiveCharacter's avatar for display
+  const avatarSrc = assistantAvatarSrc || effectiveCharacter.chatbotAvatarPath;
+  // Use character's systemPrompt if prop is not provided, otherwise use prop
+  const effectiveSystemPrompt = systemPrompt || effectiveCharacter.systemPrompt;
 
   const { isMd, isLg } = useBreakpoints();
   const SIDEBAR_STORAGE_KEY = "chatbot-sidebars";
@@ -895,27 +1320,6 @@ export function ChatbotPanel({
   const setRightSidebarOpen = (open: boolean) => {
     setRightSidebarOpenState(open);
     persistSidebars({ right: open });
-  };
-  
-  const handlePing = async () => {
-    setPingLoading(true);
-    setPingResponse(null);
-    try {
-      const res = await fetch("/api/acontext/healthcheck", {
-        method: "GET",
-        cache: "no-store",
-      });
-      const data = await res.json();
-      if (res.ok && data.ok) {
-        setPingResponse("pong");
-      } else {
-        setPingResponse("error");
-      }
-    } catch {
-      setPingResponse("error");
-    } finally {
-      setPingLoading(false);
-    }
   };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1203,8 +1607,11 @@ export function ChatbotPanel({
     }
 
     try {
-      setIsLoading(true);
       setError(null);
+      // Clear messages first to prevent showing Processing state
+      setMessages([]);
+      setLoadingSessionId(targetSessionId);
+      setIsLoading(true);
       const res = await fetch(`/api/chat-sessions/${targetSessionId}/messages`);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -1214,6 +1621,14 @@ export function ChatbotPanel({
       setMessages(data.messages ?? []);
       setTokenCounts(data.tokenCounts ?? null);
       setSessionId(targetSessionId);
+      
+      // Set locked character ID for this session
+      if (data.characterId) {
+        setSessionCharacterId(data.characterId as CharacterId);
+      } else {
+        // Old session without characterId - allow global character selection
+        setSessionCharacterId(null);
+      }
       
       // Clear selected files when switching sessions
       setSelectedFiles([]);
@@ -1229,17 +1644,22 @@ export function ChatbotPanel({
           updatedSessions[sessionIndex] = {
             ...updatedSessions[sessionIndex],
             acontextDiskId: data.acontextDiskId,
+            characterId: data.characterId,
           };
           setSessions(updatedSessions);
         }
       } else {
-        // Extract acontextDiskId from the sessions list as fallback
+        // Extract acontextDiskId and characterId from the sessions list as fallback
         const session = sessions.find((s) => s.id === targetSessionId);
         if (session?.acontextDiskId) {
           setAcontextDiskId(session.acontextDiskId);
         } else {
           // Clear diskId if session doesn't have one
           setAcontextDiskId(undefined);
+        }
+        // Also set characterId from session list if not in API response
+        if (!data.characterId && session?.characterId) {
+          setSessionCharacterId(session.characterId as CharacterId);
         }
       }
     } catch (err) {
@@ -1248,6 +1668,7 @@ export function ChatbotPanel({
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+      setLoadingSessionId(null);
     }
   };
 
@@ -1261,6 +1682,36 @@ export function ChatbotPanel({
     setInput("");
     // Clear selected files when creating new session
     setSelectedFiles([]);
+    // Reset character selection state
+    setSessionCharacterId(null);
+    setSelectedCharacterForNewSession(null);
+    // Show character selection modal immediately
+    setShowCharacterSelectModal(true);
+  };
+
+  const handleSelectCharacterForNewSession = (characterId: CharacterId) => {
+    setSelectedCharacterForNewSession(characterId);
+    // Set sessionCharacterId immediately so UI updates to show correct character
+    setSessionCharacterId(characterId);
+    
+    // Get character info to create mock greeting message
+    const selectedCharData = characters.find((c) => c.id === characterId);
+    
+    if (selectedCharData) {
+      // Add mock greeting message from the selected character
+      const mockMessage: ChatMessage = {
+        id: `mock-${Date.now()}`,
+        role: "assistant",
+        content: `Hi! I'm ${selectedCharData.name}. ${selectedCharData.tagline}`,
+        createdAt: new Date(),
+      };
+      setMessages([mockMessage]);
+    }
+  };
+
+  const handleCancelCharacterSelection = () => {
+    setSelectedCharacterForNewSession(null);
+    setShowCharacterSelectModal(false);
   };
 
   const handleDeleteSession = async (targetSessionId: string) => {
@@ -1965,6 +2416,12 @@ export function ChatbotPanel({
   const handleSend = async () => {
     if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
+    // Check if we need to select a character for new session
+    if (!sessionId && !selectedCharacterForNewSession) {
+      setShowCharacterSelectModal(true);
+      return;
+    }
+
     const messageContent = input.trim();
     const currentAttachments = [...attachments];
     
@@ -2082,7 +2539,8 @@ export function ChatbotPanel({
           // Optional custom system prompt/persona for specialized agents (e.g., PPT agent)
           systemPrompt: effectiveSystemPrompt || undefined,
           // Server-only context (does not affect LLM tool schema)
-          characterId,
+          // For new sessions, use selectedCharacterForNewSession; for existing sessions, use sessionCharacterId or global characterId
+          characterId: sessionId ? (sessionCharacterId || characterId) : (selectedCharacterForNewSession || characterId),
           enabledToolNames: enabledToolsForRequest,
           stream: true, // Enable streaming for Browser Use tasks
           attachments: attachmentsForAPI.length > 0 ? attachmentsForAPI : undefined,
@@ -2234,6 +2692,10 @@ export function ChatbotPanel({
                   } else if (eventType === "final_message") {
                     finalMessage = parsed.message || "";
                     finalSessionId = parsed.sessionId || sessionId;
+                    // Store characterId if provided (for new sessions)
+                    if (parsed.characterId) {
+                      setSessionCharacterId(parsed.characterId as CharacterId);
+                    }
                     // Store acontextDiskId if provided
                     if (parsed.acontextDiskId) {
                       setAcontextDiskId(parsed.acontextDiskId);
@@ -2278,6 +2740,8 @@ export function ChatbotPanel({
         // Set session ID if this is the first message
         if (!sessionId && finalSessionId) {
           setSessionId(finalSessionId);
+          // Clear selectedCharacterForNewSession since session is now created
+          setSelectedCharacterForNewSession(null);
 
           // Refresh sessions list so that the new session appears in the sidebar
           if (fullPage) {
@@ -2289,10 +2753,13 @@ export function ChatbotPanel({
                 const refreshedSessions = data.sessions ?? [];
                 setSessions(refreshedSessions);
                 
-                // Update acontextDiskId from refreshed session if available
+                // Update acontextDiskId and characterId from refreshed session if available
                 const refreshedSession = refreshedSessions.find((s: ChatSession) => s.id === finalSessionId);
                 if (refreshedSession?.acontextDiskId) {
                   setAcontextDiskId(refreshedSession.acontextDiskId);
+                }
+                if (refreshedSession?.characterId) {
+                  setSessionCharacterId(refreshedSession.characterId as CharacterId);
                 }
               } catch (err) {
                 console.error("Failed to refresh sessions", err);
@@ -2307,6 +2774,12 @@ export function ChatbotPanel({
         // Set session ID if this is the first message
         if (!sessionId && data.sessionId) {
           setSessionId(data.sessionId);
+          // Clear selectedCharacterForNewSession since session is now created
+          setSelectedCharacterForNewSession(null);
+          // Set locked characterId if provided
+          if (data.characterId) {
+            setSessionCharacterId(data.characterId as CharacterId);
+          }
         }
         
         // Store acontextDiskId if provided
@@ -2437,11 +2910,6 @@ export function ChatbotPanel({
             )}
             {/* Messages area */}
             <div className="scrollbar-subtle flex-1 overflow-y-auto space-y-4 pr-2">
-              {messages.length === 0 && (
-                <div className="text-center text-muted-foreground text-sm py-8">
-                  Start a conversation by sending a message below.
-                </div>
-              )}
               {messages.map((message, index) => (
                 <div
                   key={index}
@@ -2449,29 +2917,29 @@ export function ChatbotPanel({
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm relative overflow-hidden ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted border-l-4 border-primary/30"
-                    }`}
-                  >
+                  {message.role === "user" ? (
+                    <div className="max-w-[80%] text-sm leading-snug text-foreground relative z-10">
+                      {renderMessageContent(message.content)}
+                    </div>
+                  ) : (
+                  <div className="max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm relative overflow-hidden bg-muted border-l-4 border-primary/30">
                     {message.toolCalls && message.toolCalls.length > 0 && (
                       <ToolCallsDisplay toolCalls={message.toolCalls} isFullPage={false} />
                     )}
-                    <div className="text-sm relative z-10">
+                    <div className="chat-message-body text-sm leading-snug relative z-10">
                       {renderMessageContent(message.content)}
                     </div>
-                    {message.role === "assistant" && index === messages.length - 1 && isLoading && (
+                    {index === messages.length - 1 && isLoading && (
                       <div className="text-sm flex items-center gap-2 mt-2">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
                         <span className="text-muted-foreground">Processing...</span>
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               ))}
-              {isLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
+              {isLoading && !loadingSessionId && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-xl px-4 py-2.5 border-l-4 border-primary/30 shadow-sm flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -2635,36 +3103,63 @@ export function ChatbotPanel({
                     ? new Date(s.createdAt)
                     : s.createdAt;
                 const isDeleting = deletingSessionId === s.id;
+                const sessionCharacter = s.characterId 
+                  ? characters.find((c) => c.id === s.characterId)
+                  : null;
                 return (
                   <div
                     key={s.id}
-                    className={`group flex w-full items-center gap-2 rounded-lg border-l-2 px-2.5 py-2.5 text-sm transition-colors ${
+                    className={`group flex w-full items-start gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition-colors ${
                       isActive
                         ? "border-primary bg-accent"
                         : "border-border bg-card hover:bg-accent"
                     }`}
                   >
+                    {/* Character avatar */}
+                    {sessionCharacter ? (
+                      <div className="flex-shrink-0">
+                        <div className="relative w-14 h-14 rounded-full border-2 border-primary/30 overflow-hidden bg-card ring-1 ring-primary/10">
+                          <Image
+                            src={sessionCharacter.chatbotAvatarPath}
+                            alt={sessionCharacter.name}
+                            fill
+                            className="object-cover object-[center_5%]"
+                            sizes="56px"
+                            quality={95}
+                            priority={isActive}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-shrink-0 w-14 h-14 rounded-full border border-border bg-muted flex items-center justify-center">
+                        <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    
+                    {/* Session info */}
                     <button
                       type="button"
                       onClick={() => handleLoadSessionMessages(s.id)}
-                      className="flex-1 text-left"
+                      className="flex-1 text-left min-w-0"
                     >
-                      <div className="mb-0.5 line-clamp-2 text-xs font-medium">
+                      <div className="mb-1 line-clamp-2 text-xs font-medium text-foreground">
                         {s.title || "Untitled Session"}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[10px] text-muted-foreground">
                         {createdAt instanceof Date
-                          ? createdAt.toLocaleString()
+                          ? createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                           : String(createdAt)}
                       </div>
                     </button>
+                    
+                    {/* Delete button */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteSession(s.id);
                       }}
-                      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground opacity-0 transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                      className="flex-shrink-0 mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground opacity-0 transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                       aria-label="Delete session"
                     >
                       {isDeleting ? (
@@ -2706,15 +3201,18 @@ export function ChatbotPanel({
           {/* Top bar */}
           <div className="flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-2 border-2 border-primary/30 bg-primary/5 px-3 py-1.5 text-xs text-primary rounded-full shadow-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-slow" />
-                <span className="font-medium">Active Session</span>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 border-2 border-primary/30 bg-primary/5 px-3 py-1.5 text-xs text-primary rounded-full shadow-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-slow" />
+                  <span className="font-medium">Active Session</span>
                 </div>
-              <h1 className="text-xl font-bold sm:text-2xl flex items-center gap-2">
-                <span className="text-primary">Ready</span>
-                <span className="text-foreground"> for Input</span>
-                <Heart className="h-5 w-5 text-primary/60 animate-pulse-slow hidden sm:inline-block" />
-              </h1>
+                {sessionCharacterId && (
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground bg-muted rounded-full">
+                    <span className="text-primary/80">Character:</span>
+                    <span className="font-medium">{characters.find((c) => c.id === sessionCharacterId)?.name || sessionCharacterId}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Controls - mobile layout */}
@@ -2806,27 +3304,6 @@ export function ChatbotPanel({
               >
                 <FolderOpen className="h-3 w-3 text-primary" />
               </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handlePing}
-                disabled={pingLoading}
-                className="h-8 w-8 flex-shrink-0 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
-              >
-                {pingLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                ) : (
-                  <span className="text-[10px] text-primary">ping</span>
-                )}
-              </Button>
-
-              {pingResponse && (
-                <span className="ml-1 flex-shrink-0 text-[10px] font-mono text-muted-foreground">
-                  {pingResponse}
-                </span>
-              )}
             </div>
 
             {/* Controls - desktop / tablet layout */}
@@ -2841,7 +3318,7 @@ export function ChatbotPanel({
                   aria-label="打开幻灯片列表"
                 >
                   <Images className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-primary">Images</span>
+                  <span className="text-primary">Slides</span>
                 </Button>
               )}
               {/* Sample prompts (Describe monitoring scenario, Provide context) - hidden to save space */}
@@ -2931,40 +3408,80 @@ export function ChatbotPanel({
                 <FolderOpen className="h-3 w-3 text-primary" />
                 <span className="text-primary">Files</span>
               </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handlePing}
-                disabled={pingLoading}
-                className="text-xs h-7 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
-              >
-                {pingLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                ) : (
-                  <span className="text-primary">ping</span>
-                )}
-              </Button>
-              {pingResponse && (
-                <span className="text-xs font-mono text-muted-foreground">
-                  {pingResponse}
-                </span>
-              )}
             </div>
           </div>
 
           {/* Messages area */}
           <div className="scrollbar-subtle flex min-h-0 min-w-0 flex-1 flex-col space-y-3 overflow-y-auto pr-1 sm:space-y-4 sm:pr-2">
-            {messages.length === 0 && (
-              <div className="py-12 text-center animate-fade-in">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 relative">
-                  <Heart className="h-10 w-10 text-primary animate-heartbeat" />
-                  <Sparkles className="h-5 w-5 text-primary/60 absolute -top-1 -right-1 animate-pulse-slow" />
+            {/* Loading session indicator */}
+            {loadingSessionId && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <div className="absolute inset-0 h-12 w-12 animate-ping text-primary/20">
+                      <Loader2 className="h-full w-full" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl font-semibold animate-pulse">Loading session</span>
+                    <span className="flex gap-1">
+                      <span className="inline-block w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="inline-block w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="inline-block w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-primary mb-2">System Ready</div>
-                <div className="text-xs text-muted-foreground max-w-md mx-auto">
-                  Type your question below or use a sample prompt to start. I'm here to help! 💕
+              </div>
+            )}
+            {/* Character selection embedded in message area */}
+            {messages.length === 0 && !sessionId && showCharacterSelectModal && !loadingSessionId && (
+              <div className="flex-1 flex flex-col items-center justify-center py-6 px-4 min-h-0">
+                <div className="w-full max-w-5xl">
+                  <div className="text-center mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-2">Choose Your AI Designer</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Select a character for this new session</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+                    {characters.map((char) => {
+                      const isSelected = selectedCharacterForNewSession === char.id;
+                      return (
+                        <button
+                          key={char.id}
+                          onClick={() => handleSelectCharacterForNewSession(char.id)}
+                          className={`group relative rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                            isSelected
+                              ? "border-primary shadow-lg scale-105"
+                              : "border-border hover:border-primary/50 hover:shadow-md"
+                          }`}
+                        >
+                          <div className="aspect-square relative bg-card/80 backdrop-blur-sm">
+                            <Image
+                              src={char.avatarPath}
+                              alt={char.name}
+                              fill
+                              className="object-cover object-[center_5%] [filter:drop-shadow(0_0_1px_rgba(0,0,0,0.85))_drop-shadow(0_0_10px_rgba(0,0,0,0.25))]"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              quality={95}
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-black/10" />
+                            {isSelected && (
+                              <div className="pointer-events-none absolute inset-0 bg-primary/10" />
+                            )}
+                          </div>
+                          <div className="p-2.5 sm:p-3">
+                            <h3 className="font-semibold text-xs sm:text-sm mb-1">{char.name}</h3>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{char.tagline}</p>
+                            {isSelected && (
+                              <Badge variant="default" className="mt-1.5 text-[10px] px-1.5 py-0.5">
+                                Selected
+                              </Badge>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -2977,8 +3494,54 @@ export function ChatbotPanel({
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
-                  <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10">
+                  <div className="flex flex-col items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+                      <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10">
+                        <AnimatedAvatar
+                          src={avatarSrc}
+                          alt={assistantName}
+                          sizes="(max-width: 640px) 48px, (max-width: 768px) 64px, (max-width: 1024px) 80px, 96px"
+                          priority
+                        />
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-primary/80 text-center leading-tight line-clamp-2 w-12 sm:w-16 md:w-20 lg:w-24">
+                      {effectiveCharacter.name}
+                    </span>
+                  </div>
+                )}
+                {message.role === "user" ? (
+                  <div className="max-w-[85%] sm:max-w-[80%] text-xs sm:text-sm whitespace-pre-wrap leading-relaxed break-words text-foreground" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                    <div className="chat-message-body text-sm leading-snug">
+                      {renderMessageContent(message.content)}
+                    </div>
+                  </div>
+                ) : (
+                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                  {message.toolCalls && message.toolCalls.length > 0 && (
+                    <ToolCallsDisplay
+                      toolCalls={message.toolCalls}
+                      isFullPage={true}
+                    />
+                  )}
+                  <div className="chat-message-body text-sm leading-snug">
+                    {renderMessageContent(message.content)}
+                  </div>
+                  {index === messages.length - 1 && isLoading && (
+                    <div className="text-sm leading-relaxed flex items-center gap-2 mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-muted-foreground">Processing...</span>
+                    </div>
+                  )}
+                </div>
+                )}
+              </div>
+            ))}
+            {isLoading && !loadingSessionId && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
+              <div className="flex justify-start items-start gap-2 sm:gap-3 animate-fade-in">
+                <div className="flex flex-col items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+                    <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10 animate-fade-in">
                       <AnimatedAvatar
                         src={avatarSrc}
                         alt={assistantName}
@@ -2987,50 +3550,12 @@ export function ChatbotPanel({
                       />
                     </div>
                   </div>
-                )}
-                <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                  <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
-                    {message.role === "assistant" && (
-                      <Heart className="h-3 w-3 text-primary/60 animate-pulse-slow" />
-                    )}
-                    {message.role === "user" ? "User" : assistantName}
-                  </div>
-                  {message.toolCalls && message.toolCalls.length > 0 && (
-                    <ToolCallsDisplay
-                      toolCalls={message.toolCalls}
-                      isFullPage={true}
-                    />
-                  )}
-                  <div className="text-sm leading-relaxed">
-                    {renderMessageContent(message.content)}
-                  </div>
-                  {message.role === "assistant" && index === messages.length - 1 && isLoading && (
-                    <div className="text-sm leading-relaxed flex items-center gap-2 mt-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span className="text-muted-foreground">Processing...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== "assistant") && (
-              <div className="flex justify-start items-start gap-2 sm:gap-3 animate-fade-in">
-                <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
-                  <div className="relative w-full h-full rounded-full border-[2px] sm:border-[3px] border-primary/40 shadow-md overflow-hidden bg-card ring-1 sm:ring-2 ring-primary/10 animate-fade-in">
-                    <AnimatedAvatar
-                      src={avatarSrc}
-                      alt={assistantName}
-                      sizes="(max-width: 640px) 48px, (max-width: 768px) 64px, (max-width: 1024px) 80px, 96px"
-                      priority
-                    />
-                  </div>
+                  <span className="text-xs font-medium text-primary/80 text-center leading-tight line-clamp-2 w-12 sm:w-16 md:w-20 lg:w-24">
+                    {effectiveCharacter.name}
+                  </span>
                 </div>
                 <div className="max-w-[85%] sm:max-w-[80%] rounded-xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed border-l-4 border-primary/30 bg-card shadow-sm relative overflow-hidden break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 animate-pulse-slow" />
-                  <div className="mb-1.5 text-xs font-medium text-primary/80 flex items-center gap-1.5">
-                    <Heart className="h-3 w-3 text-primary/60 animate-pulse-slow" />
-                    {assistantName}
-                  </div>
                   <div className="text-sm leading-relaxed flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     <span className="text-muted-foreground">Processing...</span>
@@ -3303,9 +3828,9 @@ export function ChatbotPanel({
                   const selectionOrder = isSelected ? selectedFiles.indexOf(fileKey) + 1 : null;
 
                   return (
-                    <div
-                      key={fileKey}
-                      className={`rounded-xl border bg-card p-4 space-y-2.5 ${
+                  <div
+                    key={fileKey}
+                    className={`group rounded-xl border bg-card p-4 space-y-2.5 ${
                         isSelected ? "ring-2 ring-primary" : ""
                       }`}
                   >
@@ -3330,7 +3855,12 @@ export function ChatbotPanel({
                           {file.filename || file.path || "Unknown file"}
                         </span>
                       </div>
-                        <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            "flex items-center gap-2",
+                            "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100"
+                          )}
+                        >
                         {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
                           <a
                             href={preview?.publicUrl || filePublicUrls.get(fileKey)}
@@ -3823,7 +4353,7 @@ export function ChatbotPanel({
                     <File className="h-3 w-3 text-primary flex-shrink-0" />
                   </div>
 
-                  <div className="group">
+                  <div>
                     {/* Image Preview */}
                     {preview && (
                       <div className="mt-2">
@@ -3880,13 +4410,8 @@ export function ChatbotPanel({
                       </div>
                     )}
 
-                    {/* Download and Delete buttons - hover to show when preview exists */}
-                    <div
-                      className={`flex gap-2 ${preview
-                        ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100"
-                        : ""
-                      }`}
-                    >
+                    {/* Download and Delete buttons - always visible */}
+                    <div className="flex gap-2">
                       {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
                         <a
                           href={preview?.publicUrl || filePublicUrls.get(fileKey)}
@@ -3969,28 +4494,57 @@ export function ChatbotPanel({
                     const isActive = s.id === sessionId;
                     const createdAt = typeof s.createdAt === "string" ? new Date(s.createdAt) : s.createdAt;
                     const isDeleting = deletingSessionId === s.id;
+                    const sessionCharacter = s.characterId 
+                      ? characters.find((c) => c.id === s.characterId)
+                      : null;
                     return (
                       <div
                         key={s.id}
                         className={cn(
-                          "group flex w-full items-center gap-2 rounded-lg border-l-2 px-2.5 py-2.5 text-sm transition-colors",
+                          "group flex w-full items-start gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm transition-colors",
                           isActive ? "border-primary bg-accent" : "border-border bg-card hover:bg-accent"
                         )}
                       >
+                        {/* Character avatar */}
+                        {sessionCharacter ? (
+                          <div className="flex-shrink-0">
+                            <div className="relative w-14 h-14 rounded-full border-2 border-primary/30 overflow-hidden bg-card ring-1 ring-primary/10">
+                              <Image
+                                src={sessionCharacter.chatbotAvatarPath}
+                                alt={sessionCharacter.name}
+                                fill
+                                className="object-cover object-[center_5%]"
+                                sizes="56px"
+                                quality={95}
+                                priority={isActive}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-shrink-0 w-14 h-14 rounded-full border border-border bg-muted flex items-center justify-center">
+                            <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        
+                        {/* Session info */}
                         <button
                           type="button"
                           onClick={() => { handleLoadSessionMessages(s.id); setLeftDrawerOpen(false); }}
-                          className="flex-1 text-left"
+                          className="flex-1 text-left min-w-0"
                         >
-                          <div className="mb-0.5 line-clamp-2 text-xs font-medium">{s.title || "Untitled Session"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {createdAt instanceof Date ? createdAt.toLocaleString() : String(createdAt)}
+                          <div className="mb-1 line-clamp-2 text-xs font-medium text-foreground">{s.title || "Untitled Session"}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {createdAt instanceof Date 
+                              ? createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                              : String(createdAt)}
                           </div>
                         </button>
+                        
+                        {/* Delete button */}
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleDeleteSession(s.id); }}
-                          className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground opacity-0 transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                          className="flex-shrink-0 mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground opacity-0 transition-all hover:border-destructive hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                           aria-label="Delete session"
                         >
                           {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -4005,9 +4559,9 @@ export function ChatbotPanel({
         </div>
       )}
 
-      {/* Images drawer (tablet + mobile) */}
+      {/* Slides drawer (tablet + mobile) */}
       {rightDrawerOpen && !isLg && (
-        <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="图片列表">
+        <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="幻灯片列表">
           <div
             className="absolute inset-0 bg-black/50"
             aria-hidden="true"
@@ -4022,7 +4576,7 @@ export function ChatbotPanel({
             <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
               <span className="text-sm font-semibold flex items-center gap-2">
                 <FolderOpen className="h-4 w-4 text-primary" />
-                Images
+                Slides
               </span>
               <button
                 type="button"
@@ -4035,7 +4589,7 @@ export function ChatbotPanel({
             </div>
             <div className="scrollbar-subtle flex-1 overflow-y-auto px-4 py-3 space-y-4">
               <div className="text-xs text-muted-foreground">
-                {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length} image
+                {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length} slide
                 {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length !== 1 ? "s" : ""}
               </div>
               {files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length > 0 && (
@@ -4058,7 +4612,7 @@ export function ChatbotPanel({
               {isFilesLoading && files.length === 0 && (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="ml-2 text-xs text-muted-foreground">Loading images...</span>
+                  <span className="ml-2 text-xs text-muted-foreground">Loading slides...</span>
                 </div>
               )}
               {filesError && (
@@ -4069,7 +4623,7 @@ export function ChatbotPanel({
               {!isFilesLoading && !filesError && files.filter(f => { const { isImage } = detectFileType(f.filename, f.mimeType); return isImage; }).length === 0 && (
                 <div className="py-8 text-center">
                   <File className="mx-auto h-8 w-8 text-muted-foreground/40 mb-2" />
-                  <div className="text-xs text-muted-foreground">No images found</div>
+                  <div className="text-xs text-muted-foreground">No slides found</div>
                 </div>
               )}
               <div className="space-y-2">
@@ -4084,7 +4638,13 @@ export function ChatbotPanel({
                   const isSelected = selectedFiles.includes(fileKey);
                   const selectionOrder = isSelected ? selectedFiles.indexOf(fileKey) + 1 : null;
                   return (
-                    <div key={fileKey} className={cn("rounded-lg border bg-card p-2 space-y-2", isSelected && "ring-2 ring-primary")}>
+                    <div
+                      key={fileKey}
+                      className={cn(
+                        "group rounded-lg border bg-card p-2 space-y-2",
+                        isSelected && "ring-2 ring-primary"
+                      )}
+                    >
                       <div className="flex items-center gap-2 min-w-0">
                         <Checkbox checked={isSelected} onCheckedChange={() => handleToggleFileSelection(fileKey)} id={`select-drawer-${fileKey}`} />
                         {selectionOrder && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground flex-shrink-0">{selectionOrder}</span>}
@@ -4099,7 +4659,12 @@ export function ChatbotPanel({
                           )}
                         </div>
                       )}
-                      <div className="flex gap-2">
+                      <div
+                        className={cn(
+                          "flex gap-2",
+                          "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100"
+                        )}
+                      >
                         {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
                           <a href={preview?.publicUrl || filePublicUrls.get(fileKey)} download={file.filename || file.path || "download"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center flex-1 rounded-md border bg-background px-2 py-1 text-xs font-medium text-primary shadow-sm hover:bg-accent"> <Download className="mr-1 h-3 w-3" />Download</a>
                         )}

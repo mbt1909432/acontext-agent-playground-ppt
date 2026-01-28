@@ -51,6 +51,18 @@ export type ImageGenerateToolResult = {
    */
   publicUrl?: string | null;
   /**
+   * Markdown image snippet that the assistant can paste so the UI renders an image.
+   */
+  markdownImage?: string | null;
+  /**
+   * Markdown link snippet for opening the image in a new tab.
+   */
+  markdownLink?: string | null;
+  /**
+   * Human-readable guidance to avoid non-rendering plain URLs.
+   */
+  renderingHint?: string | null;
+  /**
    * Optional text returned by the upstream model (if any).
    */
   text?: string;
@@ -65,7 +77,7 @@ export const getImageGenerateToolSchema = {
   function: {
     name: "image_generate",
     description:
-      "Generate one or more images from a text prompt. The image model is selected by the server from environment variables; the tool caller cannot override the model. Results are saved as artifacts to the current Acontext Disk.",
+      "Generate one or more images from a text prompt. The image model is selected by the server from environment variables; the tool caller cannot override the model. Results are saved as artifacts to the current Acontext Disk. IMPORTANT: If the tool returns a presigned URL (often containing query parameters like X-Amz-*), you MUST output the FULL URL exactly as provided, including the entire query string. Do NOT shorten, 'clean', or remove the ?X-Amz-... portion, or the image may become inaccessible and fail to render.",
     parameters: {
       type: "object",
       properties: {
@@ -474,10 +486,19 @@ export async function runImageGenerate(
   }
 
   // Frontend can generate its own in‑memory thumbnail/preview from artifactPath if needed.
+  const markdownImage = publicUrl ? `![Slide image](${publicUrl})` : null;
+  const markdownLink = publicUrl ? `[Open image](${publicUrl})` : null;
+  const renderingHint = publicUrl
+    ? "To render this image in the UI, include a Markdown image like: ![Slide image](URL). IMPORTANT: If the URL contains presigned query parameters (e.g. ?X-Amz-...), you MUST include the FULL URL including the entire query string. Do not shorten, redact, or remove the query portion, or the image may be inaccessible. Do not paste URLs inside code blocks."
+    : "A public URL was not available. If you need the image to render inline, request a public URL and then include it using Markdown image syntax: ![Slide image](URL).";
+
   return {
     artifactPath: artifactPath ?? null,
     thumbnailPath: null,
     publicUrl,
+    markdownImage,
+    markdownLink,
+    renderingHint,
     text: textOut,
     message: artifactPath
       ? "Image generated successfully"

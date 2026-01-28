@@ -296,24 +296,19 @@ export function InteractiveDemoGallery() {
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
+                {message.role === "user" ? (
+                  <div className="max-w-[90%] sm:max-w-[80%] lg:max-w-[70%] text-sm whitespace-pre-wrap text-foreground break-words">
+                    {message.content}
+                  </div>
+                ) : (
                 <div
-                  className={`max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm transition-all duration-200 relative overflow-hidden group ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground hover:shadow-md"
-                      : "bg-muted border-l-4 border-primary/30"
-                  }`}
+                  className={`max-w-[90%] sm:max-w-[80%] lg:max-w-[70%] rounded-xl px-4 py-2.5 shadow-sm relative overflow-hidden bg-muted border-l-4 border-primary/30`}
                 >
-                  {message.role === "assistant" && (
-                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/60 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
                   <div className="text-sm whitespace-pre-wrap relative z-10">
-                    {message.role === "user" ? (
-                      message.content
-                    ) : (
-                      <div className="markdown-content">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
+                    <div className="markdown-content">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
                             a: ({ node, ...props }) => (
                               <a
                                 {...props}
@@ -350,18 +345,18 @@ export function InteractiveDemoGallery() {
                             ol: ({ node, ...props }) => (
                               <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
                             ),
-                            p: ({ node, ...props }) => <p className="my-2" {...props} />,
+                            p: ({ node, ...props }) => <p className="my-0.5" {...props} />,
                           }}
                         >
                           {message.displayContent !== undefined ? message.displayContent : message.content}
                         </ReactMarkdown>
-                      </div>
-                    )}
+                    </div>
                     {currentTyping === message.id && (
                       <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
                     )}
                   </div>
                 </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />

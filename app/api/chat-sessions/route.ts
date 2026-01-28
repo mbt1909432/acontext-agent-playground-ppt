@@ -46,6 +46,7 @@ export async function GET(_request: NextRequest) {
         title: s.title ?? undefined,
         acontextSessionId: s.acontext_session_id ?? s.id, // Use id if acontext_session_id is null
         acontextDiskId: s.acontext_disk_id ?? undefined,
+        characterId: s.character_id ?? undefined, // Locked character ID for this session
       })) ?? [];
 
     return NextResponse.json({ sessions });

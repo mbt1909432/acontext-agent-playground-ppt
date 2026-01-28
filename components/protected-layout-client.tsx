@@ -2,11 +2,8 @@
 
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { CharacterSwitcher } from "@/components/character-switcher";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useCharacter } from "@/contexts/character-context";
 
 /**
  * Client-only layout shell for /protected routes.
@@ -17,24 +14,15 @@ export function ProtectedLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
-  const { character } = useCharacter();
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* Top navigation */}
       <nav className="flex-shrink-0 border-b bg-card/50 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex h-16 w-full items-center justify-between pl-4 sm:pl-6 lg:pl-12 pr-3 sm:pr-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link href="/" className="flex items-center gap-2">
-              <Image
-                src={character.avatarPath}
-                alt={character.name}
-                width={100}
-                height={100}
-                className="h-8 w-8 rounded-full border-2 border-primary/50 shadow-md ring-1 ring-primary/20 object-cover object-top"
-                priority
-              />
-              <span className="text-xs sm:text-sm font-semibold tracking-tight">
-                PPT Girl
+              <span className="text-base sm:text-lg font-semibold tracking-tight">
+                PPT Partner
               </span>
             </Link>
             <Link href="/" className="hidden sm:block">
@@ -45,9 +33,8 @@ export function ProtectedLayoutClient({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <AuthButton />
-            <CharacterSwitcher />
             <ThemeSwitcher />
+            <AuthButton />
           </div>
         </div>
       </nav>

@@ -56,6 +56,7 @@ interface AcontextMessageItem {
     image_url?: { url: string };
   }>;
   tool_calls?: unknown;
+  tool_call_id?: string;
   created_at?: string | Date;
 }
 
@@ -1266,13 +1267,14 @@ export async function getAcontextArtifactContent(
  */
 export async function storeMessageInAcontext(
   acontextSessionId: string,
-  role: "user" | "assistant" | "system",
+  role: "user" | "assistant" | "system" | "tool",
   content: string | Array<
     | { type: "text"; text: string }
     | { type: "image_url"; image_url: { url: string } }
   >,
   format: "openai" | "anthropic" | "gemini" = "openai",
-  toolCalls?: ToolInvocation[] | null
+  toolCalls?: ToolInvocation[] | null,
+  toolCallId?: string
 ): Promise<boolean> {
   const acontext = getAcontextClient();
   if (!acontext) {
@@ -1286,7 +1288,27 @@ export async function storeMessageInAcontext(
       content,
     };
     if (role === "assistant" && toolCalls && toolCalls.length > 0) {
-      messageBlob.tool_calls = toolCalls;
+      // IMPORTANT: Store tool calls using OpenAI-compatible schema so Acontext
+      // can round-trip them when reading with format: "openai".
+      messageBlob.tool_calls = toolCalls.map((tc) => ({
+        id: tc.id,
+        type: "function",
+        function: {
+          name: tc.name,
+          // OpenAI schema requires a JSON string for arguments
+          arguments: JSON.stringify(tc.arguments ?? {}),
+        },
+      }));
+      console.log("[ToolCallsDebug] storeMessageInAcontext: storing assistant message with tool_calls", {
+        acontextSessionId,
+        toolCallsCount: toolCalls.length,
+        toolNames: toolCalls.map((tc) => tc.name),
+      });
+    }
+
+    if (role === "tool" && toolCallId) {
+      // OpenAI tool response messages must include tool_call_id to associate with tool_calls[*].id
+      messageBlob.tool_call_id = toolCallId;
     }
 
     const contentLength = typeof content === "string"
@@ -1512,8 +1534,29 @@ export async function loadMessagesFromAcontext(
       return [];
     }
 
-    // Convert Acontext messages to ChatMessage format
-    const chatMessages = (messages.items as AcontextMessageItem[]).map((msg, index: number) => {
+    // Debug: log raw message shape from Acontext to trace tool_calls persistence
+    const rawItems = messages.items as AcontextMessageItem[];
+    const withToolCalls = rawItems.filter((m) => m.tool_calls != null && (Array.isArray(m.tool_calls) ? m.tool_calls.length > 0 : true));
+    console.log("[ToolCallsDebug] loadMessagesFromAcontext: raw getMessages result", {
+      acontextSessionId,
+      totalMessages: rawItems.length,
+      messageKeysSample: rawItems[0] ? Object.keys(rawItems[0]) : [],
+      messagesWithToolCalls: withToolCalls.length,
+      toolCallsPerMsg: rawItems.map((m, i) => ({ index: i, role: m.role, hasToolCalls: !!m.tool_calls, toolCallsLength: Array.isArray(m.tool_calls) ? m.tool_calls.length : (m.tool_calls ? 1 : 0) })),
+    });
+
+    // Build tool result lookup so we can attach results back to tool_calls
+    const toolResultsByToolCallId = new Map<string, string>();
+    for (const item of rawItems) {
+      if (item.role === "tool" && item.tool_call_id && typeof item.content === "string") {
+        toolResultsByToolCallId.set(item.tool_call_id, item.content);
+      }
+    }
+
+    // Convert Acontext messages to ChatMessage format (exclude role: tool from UI)
+    const chatMessages = rawItems
+      .filter((m) => m.role !== "tool")
+      .map((msg, index: number) => {
       // Extract content - handle both string and array formats
       // Preserve Vision API format (array) so images can be used as context
       let content: string | Array<
@@ -1533,13 +1576,49 @@ export async function loadMessagesFromAcontext(
         content = String(msg.content);
       }
 
+      // Parse OpenAI tool_calls schema into our internal ToolInvocation[]
+      let toolCalls: import("@/types/chat").ToolInvocation[] | undefined;
+      if (msg.role === "assistant" && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
+        toolCalls = msg.tool_calls
+          .map((tc: any) => {
+            const id = typeof tc?.id === "string" ? tc.id : `toolcall-${index}`;
+            const fnName = typeof tc?.function?.name === "string" ? tc.function.name : "unknown";
+            const rawArgs = typeof tc?.function?.arguments === "string" ? tc.function.arguments : "{}";
+            let parsedArgs: Record<string, unknown> = {};
+            try {
+              parsedArgs = JSON.parse(rawArgs || "{}");
+            } catch {
+              parsedArgs = {};
+            }
+
+            const toolResult = toolResultsByToolCallId.get(id);
+            let parsedResult: unknown = toolResult;
+            if (typeof toolResult === "string") {
+              try {
+                parsedResult = JSON.parse(toolResult);
+              } catch {
+                parsedResult = toolResult;
+              }
+            }
+
+            return {
+              id,
+              name: fnName,
+              arguments: parsedArgs,
+              result: toolResult != null ? parsedResult : undefined,
+              invokedAt: msg.created_at || new Date(),
+            } as import("@/types/chat").ToolInvocation;
+          })
+          .filter(Boolean);
+      }
+
       return {
         id: msg.id || `acontext-${index}`,
         sessionId: acontextSessionId,
         role: (msg.role || "user") as "user" | "assistant" | "system",
         content,
         createdAt: msg.created_at || new Date(),
-        toolCalls: (msg.tool_calls as import("@/types/chat").ToolInvocation[] | undefined) || undefined,
+        toolCalls,
       };
     });
 
@@ -1564,7 +1643,8 @@ export async function loadMessagesFromAcontext(
  */
 export async function createAcontextSessionDirectly(
   userId: string,
-  title?: string
+  title?: string,
+  characterId?: string
 ): Promise<{ acontextSessionId: string; sessionId: string } | null> {
   const acontext = getAcontextClient();
   if (!acontext) {
@@ -1584,6 +1664,7 @@ export async function createAcontextSessionDirectly(
     console.debug("[Acontext] Creating session directly", {
       userId,
       configs,
+      characterId,
     });
 
     const sessionCreatePayload = {
@@ -1629,6 +1710,7 @@ export async function createAcontextSessionDirectly(
         acontext_session_id: acontextSession.id,
         acontext_disk_id: diskId,
         title: title || "New Chat",
+        character_id: characterId || null, // Store character ID for session locking
       })
       .select()
       .single();
