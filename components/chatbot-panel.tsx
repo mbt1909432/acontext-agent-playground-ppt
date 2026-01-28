@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, LayoutList, Images } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Plus, ChevronDown, Wrench, Trash2, Paperclip, File, FolderOpen, AlertTriangle, FileText, ExternalLink, Download, Heart, Sparkles, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, LayoutList, Images, Pencil } from "lucide-react";
 import type { ChatMessage, ChatResponse, ToolInvocation, ChatSession } from "@/types/chat";
 import { useCharacter, type CharacterId } from "@/contexts/character-context";
 import { useBreakpoints } from "@/lib/hooks/use-media-query";
@@ -1253,6 +1253,18 @@ export function ChatbotPanel({
   const [isBatchDownloading, setIsBatchDownloading] = useState(false); // Track batch download progress
   // Track in-flight preview loads to avoid duplicate /artifacts/content requests
   const previewLoadPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
+  const [editingFileKey, setEditingFileKey] = useState<string | null>(null);
+  const [editPromptByFileKey, setEditPromptByFileKey] = useState<Map<string, string>>(new Map());
+  const [editPreviewByFileKey, setEditPreviewByFileKey] = useState<
+    Map<string, { previewArtifactPath: string; publicUrl: string; mimeType: string }>
+  >(new Map());
+  const [isEditPreviewingByFileKey, setIsEditPreviewingByFileKey] = useState<Map<string, boolean>>(
+    new Map()
+  );
+  const [isEditApplyingByFileKey, setIsEditApplyingByFileKey] = useState<Map<string, boolean>>(
+    new Map()
+  );
+  const [editErrorByFileKey, setEditErrorByFileKey] = useState<Map<string, string>>(new Map());
   const [attachments, setAttachments] = useState<Array<{
     filename: string;
     content: string; // base64 for images/files, text content for text files
@@ -1281,6 +1293,178 @@ export function ChatbotPanel({
 
   const { isMd, isLg } = useBreakpoints();
   const SIDEBAR_STORAGE_KEY = "chatbot-sidebars";
+
+  const getFileKey = (file: { id?: string; path?: string; filename?: string }, indexFallback?: number): string => {
+    return file.id || file.path || file.filename || (indexFallback != null ? String(indexFallback) : "");
+  };
+
+  const getArtifactPathForEdit = (file: { path?: string; filename?: string }, fileKey: string): string | null => {
+    // Prefer the full artifact path (as returned by listAcontextArtifacts); fallback to fileKey if it's a plausible path.
+    const p = (file.path || "").trim();
+    if (p) return p;
+    const fk = (fileKey || "").trim();
+    if (fk.includes("/")) return fk;
+    return null;
+  };
+
+  const setMapFlag = (setter: React.Dispatch<React.SetStateAction<Map<string, boolean>>>, key: string, value: boolean) => {
+    setter((prev) => {
+      const next = new Map(prev);
+      next.set(key, value);
+      return next;
+    });
+  };
+
+  const setMapString = (setter: React.Dispatch<React.SetStateAction<Map<string, string>>>, key: string, value: string) => {
+    setter((prev) => {
+      const next = new Map(prev);
+      next.set(key, value);
+      return next;
+    });
+  };
+
+  const deleteMapKey = <T,>(setter: React.Dispatch<React.SetStateAction<Map<string, T>>>, key: string) => {
+    setter((prev) => {
+      const next = new Map(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const handleOpenEdit = (fileKey: string) => {
+    setEditingFileKey((prev) => (prev === fileKey ? null : fileKey));
+    deleteMapKey(setEditErrorByFileKey, fileKey);
+  };
+
+  const handlePreviewEdit = async (file: { path?: string; filename?: string }, fileKey: string) => {
+    const artifactPath = getArtifactPathForEdit(file, fileKey);
+    const prompt = (editPromptByFileKey.get(fileKey) || "").trim();
+    if (!artifactPath) {
+      setMapString(setEditErrorByFileKey, fileKey, "Cannot edit: missing artifact path for this file.");
+      return;
+    }
+    if (!prompt) {
+      setMapString(setEditErrorByFileKey, fileKey, "Please enter an edit instruction.");
+      return;
+    }
+
+    deleteMapKey(setEditErrorByFileKey, fileKey);
+    setMapFlag(setIsEditPreviewingByFileKey, fileKey, true);
+    const previewStartedAt = Date.now();
+    const controller = new AbortController();
+    const timeoutMs = 120_000;
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      console.log("[UI] image-edit preview start", { fileKey, artifactPath, promptLength: prompt.length, timeoutMs });
+      const res = await fetch("/api/acontext/artifacts/image-edit/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artifactPath, prompt, diskId: acontextDiskId }),
+        signal: controller.signal,
+      });
+      const data = (await res.json()) as any;
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Preview request failed");
+      }
+      setEditPreviewByFileKey((prev) => {
+        const next = new Map(prev);
+        next.set(fileKey, {
+          previewArtifactPath: data.previewArtifactPath,
+          publicUrl: data.publicUrl,
+          mimeType: data.mimeType,
+        });
+        return next;
+      });
+      console.log("[UI] image-edit preview success", { fileKey, elapsedMs: Date.now() - previewStartedAt });
+    } catch (e) {
+      const msg =
+        e instanceof DOMException && e.name === "AbortError"
+          ? `Preview timed out after ${Math.round(timeoutMs / 1000)}s.`
+          : e instanceof Error
+          ? e.message
+          : "Preview failed";
+      console.error("[UI] image-edit preview error", { fileKey, error: msg, elapsedMs: Date.now() - previewStartedAt });
+      setMapString(setEditErrorByFileKey, fileKey, msg);
+    } finally {
+      window.clearTimeout(timeoutId);
+      setMapFlag(setIsEditPreviewingByFileKey, fileKey, false);
+    }
+  };
+
+  const handleDiscardEdit = (fileKey: string) => {
+    deleteMapKey(setEditErrorByFileKey, fileKey);
+    deleteMapKey(setEditPreviewByFileKey, fileKey);
+    setEditingFileKey(null);
+  };
+
+  const handleApplyEdit = async (file: { path?: string; filename?: string }, fileKey: string) => {
+    const originalArtifactPath = getArtifactPathForEdit(file, fileKey);
+    const preview = editPreviewByFileKey.get(fileKey);
+    if (!originalArtifactPath) {
+      setMapString(setEditErrorByFileKey, fileKey, "Cannot apply: missing original artifact path.");
+      return;
+    }
+    if (!preview?.previewArtifactPath) {
+      setMapString(setEditErrorByFileKey, fileKey, "Please generate a preview before applying.");
+      return;
+    }
+
+    deleteMapKey(setEditErrorByFileKey, fileKey);
+    setMapFlag(setIsEditApplyingByFileKey, fileKey, true);
+    const applyStartedAt = Date.now();
+    const controller = new AbortController();
+    const timeoutMs = 60_000;
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      console.log("[UI] image-edit apply start", { fileKey, originalArtifactPath, previewArtifactPath: preview.previewArtifactPath, timeoutMs });
+      const res = await fetch("/api/acontext/artifacts/image-edit/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalArtifactPath,
+          previewArtifactPath: preview.previewArtifactPath,
+          diskId: acontextDiskId,
+          deletePreviewAfterApply: true,
+        }),
+        signal: controller.signal,
+      });
+      const data = (await res.json()) as any;
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Apply request failed");
+      }
+
+      // Update cached URL and preview map so sidebar refreshes immediately.
+      const newUrl = data.publicUrl as string;
+      setFilePublicUrls((prev) => new Map(prev).set(fileKey, newUrl));
+      setFilePreviews((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(fileKey);
+        next.set(fileKey, {
+          content: newUrl,
+          mimeType: data.mimeType || existing?.mimeType || "image/jpeg",
+          isLoading: false,
+          isUrl: true,
+          publicUrl: newUrl,
+        });
+        return next;
+      });
+
+      handleDiscardEdit(fileKey);
+      console.log("[UI] image-edit apply success", { fileKey, elapsedMs: Date.now() - applyStartedAt });
+    } catch (e) {
+      const msg =
+        e instanceof DOMException && e.name === "AbortError"
+          ? `Apply timed out after ${Math.round(timeoutMs / 1000)}s.`
+          : e instanceof Error
+          ? e.message
+          : "Apply failed";
+      console.error("[UI] image-edit apply error", { fileKey, error: msg, elapsedMs: Date.now() - applyStartedAt });
+      setMapString(setEditErrorByFileKey, fileKey, msg);
+    } finally {
+      window.clearTimeout(timeoutId);
+      setMapFlag(setIsEditApplyingByFileKey, fileKey, false);
+    }
+  };
 
   const [leftSidebarOpen, setLeftSidebarOpenState] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpenState] = useState(true);
@@ -4318,7 +4502,7 @@ export function ChatbotPanel({
               return isImage;
             })
             .map((file, index) => {
-              const fileKey = file.id || file.path || file.filename || String(index);
+              const fileKey = getFileKey(file, index);
               const preview = filePreviews.get(fileKey);
               const mimeType = file.mimeType || "";
               const { isImage } = detectFileType(file.filename, mimeType);
@@ -4335,7 +4519,7 @@ export function ChatbotPanel({
               return (
                 <div
                   key={fileKey}
-                  className={`rounded-lg border bg-card p-2 space-y-2 ${
+                  className={`group rounded-lg border bg-card p-2 space-y-2 ${
                     isSelected ? "ring-2 ring-primary" : ""
                   }`}
                 >
@@ -4410,8 +4594,8 @@ export function ChatbotPanel({
                       </div>
                     )}
 
-                    {/* Download and Delete buttons - always visible */}
-                    <div className="flex gap-2">
+                    {/* Download and Delete buttons - hover to show on desktop */}
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100">
                       {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
                         <a
                           href={preview?.publicUrl || filePublicUrls.get(fileKey)}
@@ -4693,7 +4877,7 @@ export function ChatbotPanel({
         }
 
         const currentFile = imageFiles[selectedImageIndex];
-        const fileKey = currentFile.id || currentFile.path || currentFile.filename || String(selectedImageIndex);
+        const fileKey = getFileKey(currentFile, selectedImageIndex);
         const preview = filePreviews.get(fileKey);
         const mimeType = currentFile.mimeType || "";
         const previewMimeType = preview?.mimeType || mimeType;
@@ -4703,16 +4887,29 @@ export function ChatbotPanel({
             ? `data:${previewMimeType};base64,${preview.content.replace(/\s/g, '')}`
             : null;
 
+        const isEditing = editingFileKey === fileKey;
+        const editPrompt = editPromptByFileKey.get(fileKey) || "";
+        const editPreview = editPreviewByFileKey.get(fileKey);
+        const isPreviewingEdit = isEditPreviewingByFileKey.get(fileKey) === true;
+        const isApplyingEdit = isEditApplyingByFileKey.get(fileKey) === true;
+        const editError = editErrorByFileKey.get(fileKey);
+
         if (!imageSrc) return null;
 
         return (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
-            onClick={() => setSelectedImageIndex(null)}
+            onClick={() => {
+              setSelectedImageIndex(null);
+              setEditingFileKey(null);
+            }}
           >
             {/* Close button */}
             <button
-              onClick={() => setSelectedImageIndex(null)}
+              onClick={() => {
+                setSelectedImageIndex(null);
+                setEditingFileKey(null);
+              }}
               className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
               aria-label="Close lightbox"
             >
@@ -4773,13 +4970,115 @@ export function ChatbotPanel({
               />
 
               {/* Image info */}
-              <div className="mt-4 text-center">
+              <div className="mt-4 w-full max-w-3xl text-center space-y-2">
                 <div className="text-white text-sm font-medium">
                   {currentFile.filename || currentFile.path || "Unknown file"}
                 </div>
                 {imageFiles.length > 1 && (
                   <div className="text-white/70 text-xs mt-1">
                     {selectedImageIndex + 1} / {imageFiles.length}
+                  </div>
+                )}
+
+                {/* Lightbox actions */}
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                  {(preview?.publicUrl || filePublicUrls.get(fileKey)) && (
+                    <a
+                      href={preview?.publicUrl || filePublicUrls.get(fileKey)}
+                      download={currentFile.filename || currentFile.path || "download"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded-md border border-white/40 bg-white/5 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-white/15 transition-colors"
+                    >
+                      <Download className="mr-1 h-3 w-3" />
+                      Download
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit(fileKey);
+                    }}
+                    className="inline-flex items-center justify-center rounded-md border border-white/30 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/90 shadow-sm hover:bg-white/15 hover:text-white transition-colors"
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    {isEditing ? "Close edit" : "Edit"}
+                  </button>
+                </div>
+
+                {isEditing && (
+                  <div className="mt-3 rounded-lg border border-white/20 bg-black/40 p-3 text-left space-y-2">
+                    <div className="text-xs font-semibold text-white">Edit this slide</div>
+                    <textarea
+                      value={editPrompt}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setEditPromptByFileKey((prev) => new Map(prev).set(fileKey, v));
+                      }}
+                      placeholder="Describe how to edit this image…"
+                      className="w-full min-h-[80px] resize-y rounded-md border border-white/30 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    />
+                    {editError && <div className="text-xs text-destructive">{editError}</div>}
+
+                    {editPreview?.publicUrl && (
+                      <div className="space-y-1">
+                        <div className="text-[11px] text-white/70">Preview</div>
+                        <div className="rounded border border-white/30 bg-black/40 overflow-hidden">
+                          <img
+                            src={editPreview.publicUrl}
+                            alt="Edited preview"
+                            className="w-full h-auto max-h-60 object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isPreviewingEdit || isApplyingEdit}
+                        onClick={() => handlePreviewEdit(currentFile, fileKey)}
+                        className="text-xs"
+                      >
+                        {isPreviewingEdit ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            Previewing…
+                          </>
+                        ) : (
+                          "Preview"
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!editPreview?.previewArtifactPath || isApplyingEdit || isPreviewingEdit}
+                        onClick={() => handleApplyEdit(currentFile, fileKey)}
+                        className="text-xs"
+                      >
+                        {isApplyingEdit ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            Applying…
+                          </>
+                        ) : (
+                          "Apply"
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={isPreviewingEdit || isApplyingEdit}
+                        onClick={() => handleDiscardEdit(fileKey)}
+                        className="text-xs text-white/80 hover:text-white"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
