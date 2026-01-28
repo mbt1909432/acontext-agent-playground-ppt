@@ -22,7 +22,7 @@ function CharacterGrid() {
   const { characters, characterId, setCharacter } = useCharacter();
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {characters.map((char) => {
         const isActive = char.id === characterId;
         return (
@@ -35,7 +35,7 @@ function CharacterGrid() {
                 : "border-border hover:border-primary/50 hover:shadow-md"
             }`}
           >
-            <div className="aspect-square relative bg-card/80 backdrop-blur-sm">
+            <div className="aspect-square relative">
               <Image
                 src={char.avatarPath}
                 alt={char.name}
@@ -43,8 +43,6 @@ function CharacterGrid() {
                 className="object-cover object-[center_5%] [filter:drop-shadow(0_0_1px_rgba(0,0,0,0.85))_drop-shadow(0_0_10px_rgba(0,0,0,0.25))]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />
-              {/* Light dark overlay to hide transparent-edge seams on dark backgrounds */}
-              <div className="pointer-events-none absolute inset-0 bg-black/10" />
               {isActive && (
                 <div className="pointer-events-none absolute inset-0 bg-primary/10" />
               )}

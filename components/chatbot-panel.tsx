@@ -4898,7 +4898,7 @@ export function ChatbotPanel({
 
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/90 backdrop-blur-sm py-6"
             onClick={() => {
               setSelectedImageIndex(null);
               setEditingFileKey(null);
@@ -4952,14 +4952,17 @@ export function ChatbotPanel({
 
             {/* Image container */}
             <div
-              className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+              className="relative w-full max-w-[90vw] flex flex-col items-center"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Image */}
               <img
                 src={imageSrc}
                 alt={currentFile.filename || "Image"}
-                className="max-w-full max-h-[85vh] object-contain"
+                className={cn(
+                  "max-w-full object-contain",
+                  isEditing ? "max-h-[62vh]" : "max-h-[85vh]"
+                )}
                 onError={(e) => {
                   console.error("[UI] Failed to load image in lightbox", {
                     fileKey,
@@ -4971,9 +4974,6 @@ export function ChatbotPanel({
 
               {/* Image info */}
               <div className="mt-4 w-full max-w-3xl text-center space-y-2">
-                <div className="text-white text-sm font-medium">
-                  {currentFile.filename || currentFile.path || "Unknown file"}
-                </div>
                 {imageFiles.length > 1 && (
                   <div className="text-white/70 text-xs mt-1">
                     {selectedImageIndex + 1} / {imageFiles.length}
