@@ -7,8 +7,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { flushSync } from "react-dom";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { StreamdownMessage } from "@/components/markdown/streamdown-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,28 +172,15 @@ function normalizeMessageContent(
     .join("\n");
 }
 
-/** Extract link text from ReactMarkdown link children for console debug */
-function getLinkText(children: React.ReactNode): string {
-  if (children == null) return "";
-  if (typeof children === "string") return children;
-  if (Array.isArray(children)) return children.map((c) => (typeof c === "string" ? c : "")).join("");
-  return String(children);
-}
-
-/** Dedupe link logs per page load — avoid duplicate logs from re-renders */
-const loggedLinkKeys = new Set<string>();
-function logLinkOnce(href: string, text: string): void {
-  const key = `${href}|${text}`;
-  if (loggedLinkKeys.has(key)) return;
-  loggedLinkKeys.add(key);
-  console.log(`<a href="${href}">${text}</a>`);
-}
 
 /**
  * Render message content with support for images and markdown
  * Handles both string content and Vision API format (array with text and images)
  */
-function renderMessageContent(content: ChatMessage["content"]): React.ReactNode {
+function renderMessageContent(
+  content: ChatMessage["content"],
+  acontextDiskId?: string
+): React.ReactNode {
   // If content is an array (Vision API format), render images and text
   if (Array.isArray(content)) {
     const parts: React.ReactNode[] = [];
@@ -204,89 +190,8 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
       if (item.type === "text") {
         // Render text with markdown
         parts.push(
-          <div key={`text-${key++}`} className="mb-2 markdown-content">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                // Customize link rendering
-                a: ({ node, ...props }) => {
-                  const href = props.href ?? "";
-                  const text = getLinkText(props.children);
-                  if (href) logLinkOnce(href, text);
-                  return (
-                    <a
-                      {...props}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
-                    />
-                  );
-                },
-                // Customize code block rendering
-                code: (codeProps: any) => {
-                  const { inline, className, children, ...props } = codeProps;
-                  const match = /language-(\w+)/.exec(className || "");
-                  return !inline && match ? (
-                    <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    </pre>
-                  ) : (
-                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                // Customize image rendering
-                img: ({ node, ...props }) => (
-                  <img
-                    {...props}
-                    className="max-w-full h-auto rounded-lg border border-border my-2"
-                    style={{ maxHeight: "400px" }}
-                  />
-                ),
-                // Customize list rendering
-                ul: ({ node, ...props }) => (
-                  <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props} />
-                ),
-                ol: ({ node, ...props }) => (
-                  <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
-                ),
-                // Customize heading rendering
-                h1: ({ node, ...props }) => (
-                  <h1 className="text-xl font-bold mt-4 mb-2" {...props} />
-                ),
-                h2: ({ node, ...props }) => (
-                  <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />
-                ),
-                h3: ({ node, ...props }) => (
-                  <h3 className="text-base font-semibold mt-2 mb-1" {...props} />
-                ),
-                // Customize paragraph rendering
-                p: ({ node, ...props }) => (
-                  <p className="my-2" {...props} />
-                ),
-                // Customize blockquote rendering
-                blockquote: ({ node, ...props }) => (
-                  <blockquote className="border-l-4 border-primary/30 pl-4 italic my-2 text-muted-foreground" {...props} />
-                ),
-                // Customize table rendering
-                table: ({ node, ...props }) => (
-                  <div className="overflow-x-auto my-2">
-                    <table className="min-w-full border-collapse border border-border rounded-lg" {...props} />
-                  </div>
-                ),
-                th: ({ node, ...props }) => (
-                  <th className="border border-border px-4 py-2 bg-muted font-semibold text-left" {...props} />
-                ),
-                td: ({ node, ...props }) => (
-                  <td className="border border-border px-4 py-2" {...props} />
-                ),
-              }}
-            >
-              {item.text}
-            </ReactMarkdown>
+          <div key={`text-${key++}`} className="mb-2">
+            <StreamdownMessage content={item.text} acontextDiskId={acontextDiskId} />
           </div>
         );
       } else if (item.type === "image_url") {
@@ -308,92 +213,7 @@ function renderMessageContent(content: ChatMessage["content"]): React.ReactNode 
   }
 
   // If content is a string, render with markdown
-  return (
-    <div className="markdown-content">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          // Customize link rendering
-          a: ({ node, ...props }) => {
-            const href = props.href ?? "";
-            const text = getLinkText(props.children);
-            if (href) logLinkOnce(href, text);
-            return (
-              <a
-                {...props}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors break-all"
-              />
-            );
-          },
-          // Customize code block rendering
-          code: (codeProps: any) => {
-            const { inline, className, children, ...props } = codeProps;
-            const match = /language-(\w+)/.exec(className || "");
-            return !inline && match ? (
-              <pre className="bg-muted rounded-lg p-4 overflow-x-auto my-2">
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              </pre>
-            ) : (
-              <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
-                {children}
-              </code>
-            );
-          },
-          // Customize image rendering
-          img: ({ node, ...props }) => (
-            <img
-              {...props}
-              className="max-w-full h-auto rounded-lg border border-border my-2"
-              style={{ maxHeight: "400px" }}
-            />
-          ),
-          // Customize list rendering
-          ul: ({ node, ...props }) => (
-            <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props} />
-          ),
-          ol: ({ node, ...props }) => (
-            <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props} />
-          ),
-          // Customize heading rendering
-          h1: ({ node, ...props }) => (
-            <h1 className="text-xl font-bold mt-4 mb-2" {...props} />
-          ),
-          h2: ({ node, ...props }) => (
-            <h2 className="text-lg font-semibold mt-3 mb-2" {...props} />
-          ),
-          h3: ({ node, ...props }) => (
-            <h3 className="text-base font-semibold mt-2 mb-1" {...props} />
-          ),
-          // Customize paragraph rendering
-          p: ({ node, ...props }) => (
-            <p className="my-2" {...props} />
-          ),
-          // Customize blockquote rendering
-          blockquote: ({ node, ...props }) => (
-            <blockquote className="border-l-4 border-primary/30 pl-4 italic my-2 text-muted-foreground" {...props} />
-          ),
-          // Customize table rendering
-          table: ({ node, ...props }) => (
-            <div className="overflow-x-auto my-2">
-              <table className="min-w-full border-collapse border border-border rounded-lg" {...props} />
-            </div>
-          ),
-          th: ({ node, ...props }) => (
-            <th className="border border-border px-4 py-2 bg-muted font-semibold text-left" {...props} />
-          ),
-          td: ({ node, ...props }) => (
-            <td className="border border-border px-4 py-2" {...props} />
-          ),
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
+  return <StreamdownMessage content={content} acontextDiskId={acontextDiskId} />;
 }
 
 /**
@@ -639,7 +459,8 @@ function getImageGenerateSummary(result: unknown): ImageGenerateResultSummary | 
   if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, unknown>;
   const artifactPath = typeof obj.artifactPath === "string" ? obj.artifactPath : undefined;
-  const publicUrl = typeof obj.publicUrl === "string" ? obj.publicUrl : undefined;
+  const stableUrl = typeof obj.stableUrl === "string" ? obj.stableUrl : undefined;
+  const publicUrl = stableUrl || (typeof obj.publicUrl === "string" ? obj.publicUrl : undefined);
   const message = typeof obj.message === "string" ? obj.message : undefined;
   const thumbnailPath = typeof obj.thumbnailPath === "string" ? obj.thumbnailPath : undefined;
   if (!artifactPath && !publicUrl && !message && !thumbnailPath) return null;
@@ -905,22 +726,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                                   actions={<CopyButton value={summary.thumbnailPath} label="Copy path" />}
                                 />
                               )}
-                              {summary?.publicUrl && (
-                                <FieldRow
-                                  label="Link"
-                                  value={
-                                    <a
-                                      href={summary.publicUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-primary underline underline-offset-2"
-                                    >
-                                      Open
-                                    </a>
-                                  }
-                                  actions={<CopyButton value={summary.publicUrl} label="Copy link" />}
-                                />
-                              )}
+                              {/* Intentionally hide URLs (presigned URLs expire; stable URLs are not user-facing here). */}
                               {!summary && (
                                 <div className="text-xs text-muted-foreground">
                                   Completed successfully.
@@ -947,7 +753,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                     </div>
 
                     {/* Parameters (collapsed by default) */}
-                    {debugMode && (
+                    {debugMode && toolCall.name !== "image_generate" && (
                       <details className="rounded-lg border border-border/80 bg-muted/30 p-2.5">
                         <summary className="cursor-pointer text-xs font-medium text-muted-foreground select-none">
                           Parameters (debug)
@@ -1112,13 +918,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                               <span className="font-mono break-all">{summary.artifactPath}</span>
                             </div>
                           )}
-                          {summary?.publicUrl && (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <a href={summary.publicUrl} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 break-all">
-                                Open
-                              </a>
-                            </div>
-                          )}
+                          {/* Intentionally hide URLs (presigned URLs expire; stable URLs are not user-facing here). */}
                           {!summary && <div className="text-muted-foreground">Completed successfully.</div>}
                         </div>
                       );
@@ -1139,7 +939,7 @@ function ToolCallsDisplay({ toolCalls, isFullPage = false }: { toolCalls: ToolIn
                 </div>
 
                 {/* Parameters (collapsed) */}
-                {debugMode && (
+                {debugMode && toolCall.name !== "image_generate" && (
                   <details className="rounded-md border border-border/70 bg-muted/30 p-2">
                     <summary className="cursor-pointer select-none text-[11px] font-medium text-muted-foreground">
                       Parameters (debug)
@@ -1248,7 +1048,7 @@ export function ChatbotPanel({
     isUrl?: boolean; // true if content is a URL (publicUrl) instead of base64/text
     publicUrl?: string; // public URL for direct access to the file
   }>>(new Map());
-  const [filePublicUrls, setFilePublicUrls] = useState<Map<string, string>>(new Map()); // Store publicUrl for each file
+  const [filePublicUrls, setFilePublicUrls] = useState<Map<string, string>>(new Map()); // Store stable URL for each file
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]); // Track selected files for batch download (array to maintain order)
   const [isBatchDownloading, setIsBatchDownloading] = useState(false); // Track batch download progress
   // Track in-flight preview loads to avoid duplicate /artifacts/content requests
@@ -1305,6 +1105,13 @@ export function ChatbotPanel({
     const fk = (fileKey || "").trim();
     if (fk.includes("/")) return fk;
     return null;
+  };
+
+  const getStableArtifactUrl = (filePath?: string): string | null => {
+    const p = (filePath || "").trim();
+    if (!p) return null;
+    const base = `/api/acontext/artifacts/public-url?filePath=${encodeURIComponent(p)}`;
+    return acontextDiskId ? `${base}&diskId=${encodeURIComponent(acontextDiskId)}` : base;
   };
 
   const setMapFlag = (setter: React.Dispatch<React.SetStateAction<Map<string, boolean>>>, key: string, value: boolean) => {
@@ -1595,78 +1402,44 @@ export function ChatbotPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acontextDiskId]);
 
-  // Auto-load previews for previewable files when files list changes
-  // This now works for both Files modal and right sidebar
+  // Auto-populate stable URLs and lightweight image previews when file list changes.
   useEffect(() => {
-    // Function to fetch publicUrl for a file (lightweight, should be much faster than full content)
-    const fetchFilePublicUrl = async (file: {
-      id?: string;
-      path?: string;
-      filename?: string;
-      mimeType?: string;
-    }) => {
-      const fileKey = file.id || file.path || file.filename || "";
-      if (!fileKey || !file.path) return;
-
-      // Skip if already fetched
-      if (filePublicUrls.has(fileKey)) return;
-
-      try {
-        const url = acontextDiskId
-          ? `/api/acontext/artifacts/content?filePath=${encodeURIComponent(file.path)}&diskId=${encodeURIComponent(acontextDiskId)}&metaOnly=true`
-          : `/api/acontext/artifacts/content?filePath=${encodeURIComponent(file.path)}&metaOnly=true`;
-
-        const res = await fetch(url);
-        if (!res.ok) return;
-
-        const data = await res.json();
-        if (data.success && data.publicUrl) {
-          // Store public URL for download / external open
-          setFilePublicUrls(prev => new Map(prev).set(fileKey, data.publicUrl));
-
-          // Also create a lightweight preview entry for image files so that
-          // the Files modal can render an inline preview without any extra
-          // thumbnail artifacts being written to Acontext Disk.
-          const mimeType = file.mimeType || "";
-          const { isImage } = detectFileType(file.filename, mimeType);
-
-          if (isImage) {
-            setFilePreviews(prev => {
-              const next = new Map(prev);
-              const existing = next.get(fileKey);
-
-              // Do not overwrite an existing or in-flight preview.
-              if (existing && (existing.content || existing.isLoading)) {
-                return next;
-              }
-
-              next.set(fileKey, {
-                content: data.publicUrl,
-                mimeType: mimeType || "image/*",
-                isLoading: false,
-                isUrl: true,
-                publicUrl: data.publicUrl,
-              });
-
-              return next;
-            });
-          }
-        }
-      } catch (err) {
-        console.error("[UI] Failed to fetch publicUrl for file", { fileKey, error: err });
-      }
-    };
-
     files.forEach((file) => {
       const fileKey = file.id || file.path || file.filename || "";
       if (!fileKey || !file.path) return;
 
-      // Prefetch publicUrl metadata for all files (used for download links, etc.)
-      // and, for images, populate a lightweight preview based on the publicUrl.
-      fetchFilePublicUrl(file);
+      const stableUrl = getStableArtifactUrl(file.path);
+      if (!stableUrl) return;
+
+      // Store stable URL for download / external open
+      setFilePublicUrls((prev) => {
+        if (prev.has(fileKey) && prev.get(fileKey) === stableUrl) return prev;
+        const next = new Map(prev);
+        next.set(fileKey, stableUrl);
+        return next;
+      });
+
+      // Populate lightweight preview for images using stable URL (no presigned caching).
+      const mimeType = file.mimeType || "";
+      const { isImage } = detectFileType(file.filename, mimeType);
+      if (!isImage) return;
+
+      setFilePreviews((prev) => {
+        const next = new Map(prev);
+        const existing = next.get(fileKey);
+        if (existing && (existing.content || existing.isLoading)) return next;
+        next.set(fileKey, {
+          content: stableUrl,
+          mimeType: mimeType || "image/*",
+          isLoading: false,
+          isUrl: true,
+          publicUrl: stableUrl,
+        });
+        return next;
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [files, filePreviews, filePublicUrls, acontextDiskId]);
+  }, [files, acontextDiskId]);
 
   // Typewriter effect: gradually display buffered content
   const startTypewriter = (messageId: string, targetContent: string) => {
@@ -2163,7 +1936,7 @@ export function ChatbotPanel({
 
     setIsBatchDownloading(true);
     try {
-      // Collect selected files with their publicUrls in selection order
+      // Collect selected files with their stable URLs in selection order
       const selectedItems: Array<{ url: string; filename: string }> = [];
       
       // Process files in the order they were selected
@@ -2178,16 +1951,16 @@ export function ChatbotPanel({
         const { isImage } = detectFileType(file.filename, file.mimeType);
         if (!isImage) continue; // Only download images
         
-        const publicUrl = filePublicUrls.get(fileKey) || 
-                         filePreviews.get(fileKey)?.publicUrl;
+        const stableUrl =
+          filePublicUrls.get(fileKey) || filePreviews.get(fileKey)?.publicUrl;
         
-        if (!publicUrl) {
-          console.warn("[UI] No publicUrl for file", { fileKey, filename: file.filename });
+        if (!stableUrl) {
+          console.warn("[UI] No stable URL for file", { fileKey, filename: file.filename });
           continue;
         }
         
         selectedItems.push({
-          url: publicUrl,
+          url: stableUrl,
           filename: file.filename || file.path || `file-${fileKey}`,
         });
       }
@@ -2417,17 +2190,21 @@ export function ChatbotPanel({
           hasPublicUrl: !!data.publicUrl,
         });
         
-        // For images, prefer using publicUrl if available (more efficient and avoids base64 issues)
-        if (detectedIsImage && data.publicUrl) {
-          console.log("[UI] handleLoadFilePreview: Using publicUrl for image", {
-            publicUrl: data.publicUrl,
+        // For images, prefer using a stable URL (resolves to a fresh presigned URL on demand)
+        if (detectedIsImage) {
+          const stableUrl = getStableArtifactUrl(file.path);
+          if (!stableUrl) {
+            throw new Error("No stable URL available for image");
+          }
+          console.log("[UI] handleLoadFilePreview: Using stable URL for image", {
+            stableUrl,
           });
           setFilePreviews(prev => new Map(prev).set(fileKey, {
-            content: data.publicUrl, // Store URL as content for images
+            content: stableUrl, // Store URL as content for images
             mimeType: finalMimeType,
             isLoading: false,
             isUrl: true, // Flag to indicate this is a URL, not base64 content
-            publicUrl: data.publicUrl, // Store publicUrl for display
+            publicUrl: stableUrl, // Store stable URL for display
           }));
           return;
         }
@@ -3103,7 +2880,7 @@ export function ChatbotPanel({
                 >
                   {message.role === "user" ? (
                     <div className="max-w-[80%] text-sm leading-snug text-foreground relative z-10">
-                      {renderMessageContent(message.content)}
+                      {renderMessageContent(message.content, acontextDiskId)}
                     </div>
                   ) : (
                   <div className="max-w-[80%] rounded-xl px-4 py-2.5 shadow-sm relative overflow-hidden bg-muted border-l-4 border-primary/30">
@@ -3111,7 +2888,7 @@ export function ChatbotPanel({
                       <ToolCallsDisplay toolCalls={message.toolCalls} isFullPage={false} />
                     )}
                     <div className="chat-message-body text-sm leading-snug relative z-10">
-                      {renderMessageContent(message.content)}
+                      {renderMessageContent(message.content, acontextDiskId)}
                     </div>
                     {index === messages.length - 1 && isLoading && (
                       <div className="text-sm flex items-center gap-2 mt-2">
@@ -3697,7 +3474,7 @@ export function ChatbotPanel({
                 {message.role === "user" ? (
                   <div className="max-w-[85%] sm:max-w-[80%] text-xs sm:text-sm whitespace-pre-wrap leading-relaxed break-words text-foreground" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     <div className="chat-message-body text-sm leading-snug">
-                      {renderMessageContent(message.content)}
+                      {renderMessageContent(message.content, acontextDiskId)}
                     </div>
                   </div>
                 ) : (
@@ -3709,7 +3486,7 @@ export function ChatbotPanel({
                     />
                   )}
                   <div className="chat-message-body text-sm leading-snug">
-                    {renderMessageContent(message.content)}
+                    {renderMessageContent(message.content, acontextDiskId)}
                   </div>
                   {index === messages.length - 1 && isLoading && (
                     <div className="text-sm leading-relaxed flex items-center gap-2 mt-2">
@@ -4459,7 +4236,7 @@ export function ChatbotPanel({
                   ) : (
                     <>
                       <Sparkles className="mr-1 h-3 w-3" />
-                      generate ({selectedFiles.length}) pdf
+                      download ({selectedFiles.length}) ppt
                     </>
                   )}
                 </Button>
@@ -4789,7 +4566,7 @@ export function ChatbotPanel({
                     <label htmlFor="select-all-images-drawer" className="text-xs font-medium cursor-pointer">Select all</label>
                   </div>
                   <Button onClick={handleBatchDownload} disabled={isBatchDownloading || selectedFiles.length === 0} size="sm" className="w-full text-xs">
-                    {isBatchDownloading ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Generating...</> : <><Sparkles className="mr-1 h-3 w-3" />generate ({selectedFiles.length}) pdf</>}
+                    {isBatchDownloading ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Generating...</> : <><Sparkles className="mr-1 h-3 w-3" />download ({selectedFiles.length}) ppt</>}
                   </Button>
                 </div>
               )}
@@ -4910,10 +4687,10 @@ export function ChatbotPanel({
                 setSelectedImageIndex(null);
                 setEditingFileKey(null);
               }}
-              className="absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+              className="group absolute top-4 right-4 z-10 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 transition-colors shadow-md hover:shadow-lg"
               aria-label="Close lightbox"
             >
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 transition-transform duration-150 group-hover:scale-110" />
             </button>
 
             {/* Left arrow */}
@@ -4926,10 +4703,10 @@ export function ChatbotPanel({
                     return prev === 0 ? imageFiles.length - 1 : prev - 1;
                   });
                 }}
-                className="absolute left-4 z-10 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors"
+                className="group absolute left-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/60 p-3 text-white hover:bg-black/80 transition-colors shadow-md hover:shadow-lg"
                 aria-label="Previous image"
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-8 w-8 transition-transform duration-150 group-hover:scale-110" />
               </button>
             )}
 
@@ -4943,10 +4720,10 @@ export function ChatbotPanel({
                     return prev === imageFiles.length - 1 ? 0 : prev + 1;
                   });
                 }}
-                className="absolute right-4 z-10 rounded-full bg-black/50 p-3 text-white hover:bg-black/70 transition-colors"
+                className="group absolute right-4 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/60 p-3 text-white hover:bg-black/80 transition-colors shadow-md hover:shadow-lg"
                 aria-label="Next image"
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-8 w-8 transition-transform duration-150 group-hover:scale-110" />
               </button>
             )}
 
