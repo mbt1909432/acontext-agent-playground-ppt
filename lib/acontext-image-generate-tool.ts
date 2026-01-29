@@ -39,37 +39,6 @@ export type ImageGenerateToolResult = {
    * If generation fails or upstream returns no image, this is null.
    */
   artifactPath: string | null;
-  /**
-   * The generated thumbnail image artifact path in Acontext Disk.
-   * This is a smaller, compressed version of the main image, suitable for previews.
-   * If thumbnail generation or upload fails, this is null.
-   */
-  thumbnailPath?: string | null;
-  /**
-   * Public URL for directly viewing/downloading the generated image.
-   * This is resolved from Acontext after upload. If not available, this is null.
-   */
-  publicUrl?: string | null;
-  /**
-   * Markdown image snippet that the assistant can paste so the UI renders an image.
-   */
-  markdownImage?: string | null;
-  /**
-   * Markdown link snippet for opening the image in a new tab.
-   */
-  markdownLink?: string | null;
-  /**
-   * Human-readable guidance to avoid non-rendering plain URLs.
-   */
-  renderingHint?: string | null;
-  /**
-   * Optional text returned by the upstream model (if any).
-   */
-  text?: string;
-  /**
-   * Human-friendly status message (keep it small to avoid context bloat).
-   */
-  message: string;
 };
 
 export const getImageGenerateToolSchema = {
@@ -77,7 +46,7 @@ export const getImageGenerateToolSchema = {
   function: {
     name: "image_generate",
     description:
-      "Generate one or more images from a text prompt. The image model is selected by the server from environment variables; the tool caller cannot override the model. Results are saved as artifacts to the current Acontext Disk. IMPORTANT: If the tool returns a presigned URL (often containing query parameters like X-Amz-*), you MUST output the FULL URL exactly as provided, including the entire query string. Do NOT shorten, 'clean', or remove the ?X-Amz-... portion, or the image may become inaccessible and fail to render.",
+      "Generate one or more images from a text prompt. The image model is selected by the server from environment variables; the tool caller cannot override the model. Results are saved as artifacts to the current Acontext Disk. IMPORTANT: Return ONLY the artifactPath. Do not output any presigned/public URLs. When you mention a generated image in your natural language response, refer to it using the artifact path with a 'disk::' prefix (for example: disk::ppt_slides/image_123.jpg), not a URL.",
     parameters: {
       type: "object",
       properties: {
@@ -382,6 +351,8 @@ export async function runImageGenerate(
       : [];
 
   const images: Array<{ mimeType: string; data: string }> = [];
+  // We intentionally keep any upstream text output internal.
+  // The tool result returned to the model must only contain artifactPath.
   let textOut: string | undefined = undefined;
 
   for (const p of parts) {
@@ -405,8 +376,6 @@ export async function runImageGenerate(
   if (images.length === 0) {
     return {
       artifactPath: null,
-      text: textOut,
-      message: "Image generation failed: upstream did not return an image",
     };
   }
 
@@ -485,24 +454,8 @@ export async function runImageGenerate(
     }
   }
 
-  // Frontend can generate its own in‑memory thumbnail/preview from artifactPath if needed.
-  const markdownImage = publicUrl ? `![Slide image](${publicUrl})` : null;
-  const markdownLink = publicUrl ? `[Open image](${publicUrl})` : null;
-  const renderingHint = publicUrl
-    ? "To render this image in the UI, include a Markdown image like: ![Slide image](URL). IMPORTANT: If the URL contains presigned query parameters (e.g. ?X-Amz-...), you MUST include the FULL URL including the entire query string. Do not shorten, redact, or remove the query portion, or the image may be inaccessible. Do not paste URLs inside code blocks."
-    : "A public URL was not available. If you need the image to render inline, request a public URL and then include it using Markdown image syntax: ![Slide image](URL).";
-
   return {
     artifactPath: artifactPath ?? null,
-    thumbnailPath: null,
-    publicUrl,
-    markdownImage,
-    markdownLink,
-    renderingHint,
-    text: textOut,
-    message: artifactPath
-      ? "Image generated successfully"
-      : "Image generation failed: image generated but artifact upload failed",
   };
 }
 
