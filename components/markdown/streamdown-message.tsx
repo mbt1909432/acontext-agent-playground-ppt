@@ -156,13 +156,14 @@ export function StreamdownMessage({
             );
           },
           // Customize list rendering
+          // Lists: keep items略微分开，但不要额外上下外边距
           ul: ({ children, ...props }) => (
-            <ul className="list-disc list-inside space-y-1 my-2 ml-4" {...props}>
+            <ul className="list-disc list-inside space-y-0.5 ml-4" {...props}>
               {children}
             </ul>
           ),
           ol: ({ children, ...props }) => (
-            <ol className="list-decimal list-inside space-y-1 my-2 ml-4" {...props}>
+            <ol className="list-decimal list-inside space-y-0.5 ml-4" {...props}>
               {children}
             </ol>
           ),

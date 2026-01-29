@@ -271,12 +271,14 @@
   }
 
   .markdown-content p {
-    @apply my-2;
+    /* Slight vertical spacing but tighter than default */
+    @apply my-1;
   }
 
   .markdown-content ul,
   .markdown-content ol {
-    @apply my-2 ml-4 space-y-1;
+    /* Keep lists visually grouped but reduce gaps between items */
+    @apply my-1 ml-4 space-y-0.5;
   }
 
   .markdown-content ul {
