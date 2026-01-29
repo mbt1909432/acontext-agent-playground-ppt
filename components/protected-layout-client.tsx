@@ -18,11 +18,11 @@ export function ProtectedLayoutClient({
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* Top navigation */}
       <nav className="flex-shrink-0 border-b bg-card/50 backdrop-blur-sm">
-        <div className="flex h-16 w-full items-center justify-between pl-4 sm:pl-6 lg:pl-12 pr-3 sm:pr-4">
+        <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-12">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-base sm:text-lg font-semibold tracking-tight">
-                PPT Partner
+                PPT Girl
               </span>
             </Link>
             <Link href="/" className="hidden sm:block">

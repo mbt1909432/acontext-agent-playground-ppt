@@ -1011,7 +1011,7 @@ export function ChatbotPanel({
   className,
   fullPage = false,
   systemPrompt,
-  assistantName = "PPT Partner",
+  assistantName = "PPT Girl",
   assistantAvatarSrc,
   initialSessionId,
 }: ChatbotPanelProps) {

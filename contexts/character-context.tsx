@@ -10,8 +10,8 @@ export type CharacterId =
   | "character5"
   | "character6"
   | "character7"
-  | "character8"
-  | "character9";
+  // character8 (Nana's Dog) and character9 (Astra tech-minimal) are fully removed
+  ;
 
 export interface CharacterGlowConfig {
   /** Hex color for glow/outline (e.g. "#ff4d6d") */
@@ -705,7 +705,11 @@ export function CharacterProvider({
   };
 
   const character = CHARACTERS[characterId];
-  const characters = Object.values(CHARACTERS);
+  // Hide character8 (Nana's Dog) and character9 (Astra tech-minimal) from the UI grid,
+  // while keeping their configs available for any historical sessions that reference them.
+  const characters = Object.values(CHARACTERS).filter(
+    (c) => c.id !== "character8" && c.id !== "character9"
+  );
 
   // Always provide context, but use default character until mounted to prevent hydration mismatch
   // The context value will update after mount when localStorage is read

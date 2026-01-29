@@ -66,22 +66,31 @@ export async function POST(request: NextRequest) {
     const PAGE_H = 595;
 
     const errors: Array<{ url: string; filename: string; error: string }> = [];
+    let pagesAdded = 0;
+
+    const origin = request.nextUrl.origin;
 
     // Process each URL in order (maintains selection order)
     for (const item of urls) {
       try {
         const { url, filename } = item;
 
+        // Normalize to absolute URL for Node/server fetch
+        const fetchUrl =
+          typeof url === "string" && url.startsWith("/")
+            ? `${origin}${url}`
+            : url;
+
         console.log("[API] batch-download: Fetching image for PDF", {
-          url: url.substring(0, 100) + "...",
+          url: fetchUrl.substring(0, 100) + "...",
           filename,
         });
 
         // Fetch the image from the public URL
-        const response = await fetch(url, {
+        const response = await fetch(fetchUrl, {
           headers: {
-            'Accept': 'image/*',
-            'Accept-Encoding': 'identity',
+            Accept: "image/*",
+            "Accept-Encoding": "identity",
           },
         });
 
@@ -91,7 +100,7 @@ export async function POST(request: NextRequest) {
 
         // Get content type from response headers
         const contentType = response.headers.get("content-type") || "image/png";
-        
+
         // Check if it's actually an image
         if (!contentType.startsWith("image/")) {
           throw new Error(`Not an image: ${contentType}`);
@@ -110,7 +119,8 @@ export async function POST(request: NextRequest) {
         const isPng =
           contentType === "image/png" || filename.toLowerCase().endsWith(".png");
 
-        const embedBytes = isJpeg || isPng ? buffer : await sharp(buffer).png().toBuffer();
+        const embedBytes =
+          isJpeg || isPng ? buffer : await sharp(buffer).png().toBuffer();
         const embeddedImage = isJpeg
           ? await pdfDoc.embedJpg(embedBytes)
           : await pdfDoc.embedPng(embedBytes);
@@ -126,6 +136,7 @@ export async function POST(request: NextRequest) {
         const y = (PAGE_H - drawH) / 2;
 
         page.drawImage(embeddedImage, { x, y, width: drawW, height: drawH });
+        pagesAdded += 1;
 
         console.log("[API] batch-download: Added PDF page", {
           filename,
@@ -148,11 +159,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (pagesAdded === 0) {
+      console.error("[API] batch-download: No images could be added to PDF", {
+        totalRequested: urls.length,
+        errorCount: errors.length,
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "No valid images could be added to the PDF. Please try regenerating slides or refreshing the page.",
+        },
+        { status: 422 }
+      );
+    }
+
     // Generate the PDF file
     const pdfBytes = await pdfDoc.save();
 
     console.log("[API] POST /api/acontext/artifacts/batch-download: PDF generated", {
-      pageCount: urls.length - errors.length,
+      pageCount: pagesAdded,
       errorCount: errors.length,
       fileSize: pdfBytes.length,
     });

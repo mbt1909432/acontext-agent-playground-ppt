@@ -17,7 +17,7 @@ export default async function ProtectedPage() {
       <div className="flex-1 min-h-0">
         <ChatbotPanel
           fullPage
-          assistantName="PPT Partner"
+          assistantName="PPT Girl"
         />
       </div>
     </div>

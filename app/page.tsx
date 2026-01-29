@@ -142,7 +142,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <span className="text-base sm:text-xl font-semibold tracking-tight">
-                  PPT Partner
+                  PPT Girl
                 </span>
               </Link>
             </div>
@@ -163,7 +163,7 @@ export default function Home() {
                 {/* Tag */}
                 <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
                   <Badge variant="secondary" className="text-sm sm:text-base">
-                    PPT Partner · AI Slide Generator
+                    PPT Girl · AI Slide Generator
                   </Badge>
                 </div>
 
@@ -382,7 +382,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-semibold">Paste Your Content</h3>
                   <p className="text-muted-foreground">
-                    Share your text, notes, or topic. PPT Partner analyzes and proposes a slide-by-slide outline.
+                    Share your text, notes, or topic. PPT Girl analyzes and proposes a slide-by-slide outline.
                   </p>
                 </div>
                 <div className="text-center space-y-4">
@@ -400,7 +400,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-semibold">Get Your Slides</h3>
                   <p className="text-muted-foreground">
-                    PPT Partner generates beautiful 16:9 slide images with consistent style, ready for your presentation.
+                    PPT Girl generates beautiful 16:9 slide images with consistent style, ready for your presentation.
                   </p>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export default function Home() {
                   <CardContent className="pt-6">
                     <h3 className="text-lg font-semibold mb-2">🧠 Persistent Memory</h3>
                     <p className="text-sm text-muted-foreground">
-                      PPT Partner remembers your previous slides, preferences, and presentation structure across sessions.
+                      PPT Girl remembers your previous slides, preferences, and presentation structure across sessions.
                     </p>
                   </CardContent>
                 </Card>
@@ -449,9 +449,9 @@ export default function Home() {
                 <Card className="border-primary/20">
                   <CardContent className="pt-6">
                     <h3 className="text-lg font-semibold mb-2">📈 Learning Over Time</h3>
-                    <p className="text-sm text-muted-foreground">
-                      The more presentations you create, the better PPT Partner understands your style and preferences.
-                    </p>
+                  <p className="text-sm text-muted-foreground">
+                    The more presentations you create, the better PPT Girl understands your style and preferences.
+                  </p>
                   </CardContent>
                 </Card>
                 <Card className="border-primary/20">
@@ -481,7 +481,7 @@ export default function Home() {
           <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                © 2026 PPT Partner Slide Generator
+                © 2026 PPT Girl Slide Generator
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 <Link

@@ -25,7 +25,7 @@ export default async function ProtectedSessionPage({
       <div className="flex-1 min-h-0">
         <ChatbotPanel
           fullPage
-          assistantName="PPT Partner"
+          assistantName="PPT Girl"
           initialSessionId={id}
         />
       </div>
