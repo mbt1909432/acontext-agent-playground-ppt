@@ -269,7 +269,7 @@ export function InteractiveDemoGallery() {
     : null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full min-w-0">
       {/* Left: Chat area */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20 shadow-xl dark:bg-neutral-900/80 dark:border-neutral-800">
         <CardHeader>

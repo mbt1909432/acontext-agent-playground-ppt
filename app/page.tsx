@@ -135,7 +135,7 @@ export default function Home() {
       <ParallaxCharacter />
 
       {/* Content Layer */}
-      <div className="relative z-10">
+      <div className="relative z-10 w-full">
         {/* Top navigation */}
         <nav className="relative border-b bg-card/50 backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/60">
           <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-12">
@@ -468,9 +468,9 @@ export default function Home() {
         </div>
 
         {/* Interactive Demo Section */}
-        <div className="relative py-12 sm:py-16 lg:py-20 border-t">
+        <div className="relative w-full py-12 sm:py-16 lg:py-20 border-t">
           <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12">
-            <div className="max-w-7xl">
+            <div className="max-w-7xl mx-auto w-full">
               <InteractiveDemoGallery />
             </div>
           </div>
